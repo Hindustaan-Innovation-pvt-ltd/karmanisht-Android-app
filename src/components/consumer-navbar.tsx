@@ -1,0 +1,56 @@
+// @ts-nocheck
+import React from 'react';
+import { View, TouchableOpacity, Platform } from 'react-native';
+import { Ionicons, Feather } from '@expo/vector-icons';
+import { useRouter, usePathname } from 'expo-router';
+
+export type TabName = 'home' | 'services' | 'contact' | 'profile';
+
+interface ConsumerNavbarProps {
+    activeTab?: TabName;
+}
+
+export default function ConsumerNavbar({ activeTab = 'home' }: ConsumerNavbarProps) {
+    const router = useRouter();
+
+    const tabs: { name: TabName, icon: any, library: any }[] = [
+        { name: 'home', icon: 'home', library: Ionicons },
+        { name: 'services', icon: 'briefcase', library: Feather },
+        { name: 'contact', icon: 'clipboard-outline', library: Ionicons },
+        { name: 'profile', icon: 'person-outline', library: Ionicons },
+    ];
+
+    return (
+        <View 
+            className="absolute bottom-0 left-0 right-0 h-28 bg-white dark:bg-slate-900 flex-row items-center justify-around border-t border-gray-100 dark:border-slate-800 px-2 pb-4"
+            style={Platform.OS === 'web' ? { boxShadow: '0 -10px 25px -5px rgba(0, 0, 0, 0.1)' } : { elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 20 }}
+        >
+            {tabs.map((tab) => {
+                const isActive = activeTab === tab.name;
+                const IconLib = tab.library;
+                
+                return (
+                    <TouchableOpacity 
+                        key={tab.name}
+                        className={`${isActive ? 'bg-black dark:bg-slate-700 w-16 h-16 rounded-2xl' : 'w-16 h-16'} items-center justify-center`}
+                        style={isActive ? (Platform.OS === 'web' ? { boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' } : { elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3 }) : {}}
+                        onPress={() => {
+                            if (tab.name === 'home') router.push('/(protected)/consumer');
+                            else if (tab.name === 'services') router.push('/(protected)/consumer/services');
+                            else if (tab.name === 'contact') router.push('/(protected)/consumer/contact' as any); 
+                            else if (tab.name === 'profile') router.push('/(protected)/consumer/profile' as any);
+                        }}
+                    >
+                        <IconLib 
+                            name={tab.icon} 
+                            size={isActive ? 28 : 24} 
+                            color={isActive ? 'white' : '#9CA3AF'} 
+                        />
+                    </TouchableOpacity>
+                );
+            })}
+        </View>
+    );
+}
+
+

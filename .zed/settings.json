@@ -1,0 +1,10 @@
+{
+  "context_servers": {
+    "insforge": {
+      "source": "custom",
+      "type": "http",
+      "url": "https://mcp.insforge.dev/mcp",
+      "headers": {}
+    }
+  }
+}
