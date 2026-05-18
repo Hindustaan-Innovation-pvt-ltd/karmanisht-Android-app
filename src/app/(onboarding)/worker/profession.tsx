@@ -65,7 +65,7 @@ export default function Profession() {
         <SafeAreaProvider>
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
                 <BackButton />
-                <Progress currentStep={2} totalSteps={4} />
+                <Progress currentStep={3} totalSteps={5} />
 
                 <View className='px-5 pt-4 pb-2'>
                     <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Your profession</Text>

@@ -15,7 +15,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 function Login() {
     const router = useRouter()
-    const { loginWithMobile, setUser, refreshProfile } = useAppContext()
+    const { setUser, refreshProfile } = useAppContext()
     const [mobile, setMobile] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -27,6 +27,25 @@ function Login() {
 
         setLoading(true);
         try {
+            // First, verify that an account actually exists with this number
+            const { data: consumer } = await insforge.database
+                .from('users')
+                .select('id')
+                .eq('mobile', mobile)
+                .maybeSingle();
+
+            const { data: worker } = await insforge.database
+                .from('service_providers')
+                .select('id')
+                .eq('mobile', mobile)
+                .maybeSingle();
+
+            if (!consumer && !worker) {
+                Alert.alert('Account Not Found', 'No account exists with this mobile number. Please sign up first.');
+                setLoading(false);
+                return;
+            }
+
             // Send actual OTP using backend edge function
             const { data, error } = await insforge.functions.invoke('send-otp', {
                 body: { mobile }
@@ -166,64 +185,64 @@ function Login() {
 
     return (
         <SafeAreaView className='flex-col flex-1 relative bg-white dark:bg-slate-950'>
-                <View className='flex-1'>
-                    <Image source={require('@assets/images/background.png')} className='w-full h-full' />
-                </View>
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    enabled
-                    keyboardVerticalOffset={0}
-                >
-                    <View className='p-4 flex-col gap-6'>
-                        <View className='flex-col gap-4 items-center'>
-                            <TouchableOpacity
-                                className='flex-row px-4 items-center border border-slate-300 dark:border-slate-700 w-full py-3 rounded-lg relative bg-white dark:bg-slate-900'
-                                activeOpacity={0.7}
-                                onPress={handleGoogleSignIn}
-                                disabled={loading}
-                            >
-                                <Google className='absolute left-4' />
-                                <Text className='w-full text-lg font-semibold text-center text-slate-900 dark:text-slate-100'>
-                                    Sign in with Google
-                                </Text>
-                            </TouchableOpacity>
+            <View className='flex-1'>
+                <Image source={require('@assets/images/background.png')} className='w-full h-full' />
+            </View>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                enabled
+                keyboardVerticalOffset={0}
+            >
+                <View className='p-4 flex-col gap-6'>
+                    <View className='flex-col gap-4 items-center'>
+                        <TouchableOpacity
+                            className='flex-row px-4 items-center border border-slate-300 dark:border-slate-700 w-full py-3 rounded-lg relative bg-white dark:bg-slate-900'
+                            activeOpacity={0.7}
+                            onPress={handleGoogleSignIn}
+                            disabled={loading}
+                        >
+                            <Google className='absolute left-4' />
+                            <Text className='w-full text-lg font-semibold text-center text-slate-900 dark:text-slate-100'>
+                                Sign in with Google
+                            </Text>
+                        </TouchableOpacity>
 
-                            <Text className='text-center font-semibold text-slate-900 dark:text-slate-100'>OR</Text>
-                        </View>
-                        <View className='flex-col gap-4'>
-                            <TextInput
-                                className='rounded-lg outline p-4 border border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100'
-                                placeholder='Enter Mobile No.'
-                                placeholderTextColor={useColorScheme() === 'dark' ? '#64748b' : '#94a3b8'}
-                                keyboardType='phone-pad'
-                                value={mobile}
-                                onChangeText={setMobile}
-                                maxLength={10}
-                            />
-                            <TouchableOpacity
-                                className='bg-black dark:bg-slate-800 py-4 rounded-lg items-center'
-                                activeOpacity={0.7}
-                                onPress={handleGetOtp}
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <ActivityIndicator color="white" />
-                                ) : (
-                                    <Text className='text-white dark:text-slate-100 font-bold text-lg'>Get-OTP</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                        <View className='flex-col gap-2'>
-                            <Text className='text-center text-lg font-medium text-slate-500'>Don&apos;t Have a Account yet ?</Text>
-                            <TouchableOpacity onPress={() => {
-                                router.push("/(onboarding)/auth/register")
-                            }}>
-                                <Text className='text-center text-black dark:text-white font-bold'>Create new account</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <Text className='text-center font-semibold text-slate-900 dark:text-slate-100'>OR</Text>
                     </View>
-                </KeyboardAvoidingView>
-            </SafeAreaView>
+                    <View className='flex-col gap-4'>
+                        <TextInput
+                            className='rounded-lg outline p-4 border border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100'
+                            placeholder='Enter Mobile No.'
+                            placeholderTextColor={useColorScheme() === 'dark' ? '#64748b' : '#94a3b8'}
+                            keyboardType='phone-pad'
+                            value={mobile}
+                            onChangeText={setMobile}
+                            maxLength={10}
+                        />
+                        <TouchableOpacity
+                            className='bg-black dark:bg-slate-800 py-4 rounded-lg items-center'
+                            activeOpacity={0.7}
+                            onPress={handleGetOtp}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text className='text-white dark:text-slate-100 font-bold text-lg'>Get-OTP</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                    <View className='flex-col gap-2'>
+                        <Text className='text-center text-lg font-medium text-slate-500'>Don&apos;t Have a Account yet ?</Text>
+                        <TouchableOpacity onPress={() => {
+                            router.push("/(onboarding)/auth/register")
+                        }}>
+                            <Text className='text-center text-black dark:text-white font-bold'>Create new account</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     )
 }
 

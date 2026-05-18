@@ -43,7 +43,7 @@ export default function AuthCallback() {
               .from('users')
               .select('*')
               .eq('id', insforgeUser.id)
-              .single();
+              .maybeSingle();
 
           if (consumerData) {
               const profile = {
@@ -65,7 +65,7 @@ export default function AuthCallback() {
               .from('service_providers')
               .select('*')
               .eq('id', insforgeUser.id)
-              .single();
+              .maybeSingle();
 
           if (workerData) {
               const profile = {
@@ -85,12 +85,11 @@ export default function AuthCallback() {
               return;
           }
 
-          // User is completely new! Redirect to complete registration.
+          // User is completely new! Redirect to complete registration and ASK them for their role.
           router.replace({
               pathname: '/(onboarding)/auth/register',
               params: {
                   mobile: '',
-                  role: 'consumer',
                   prefilledName: insforgeUser.profile?.name || '',
                   prefilledEmail: insforgeUser.email || '',
                   prefilledUserId: insforgeUser.id

@@ -29,8 +29,8 @@ export default function LocationInfo() {
             searchRadiusKm: radiusKm
         });
         
-        if (user.role === 'worker') {
-            router.push('/(onboarding)/worker/verify-identity')
+        if (user?.role === 'worker') {
+            router.push('/(onboarding)/worker/profession')
         } else {
             router.replace('/(protected)/consumer')
         }
@@ -39,7 +39,7 @@ export default function LocationInfo() {
     return (
         <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
                 <BackButton />
-                <Progress currentStep={user.role === 'worker' ? 3 : 1} totalSteps={4} />
+                <Progress currentStep={2} totalSteps={user?.role === 'worker' ? 5 : 2} />
 
                 <ScrollView className='flex-1'>
                     <View className='p-6'>

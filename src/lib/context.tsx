@@ -107,19 +107,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [workerStats, setWorkerStats] = useState({ rating: 0, jobsDone: 0, responseTime: 'Fast' });
 
     const loginWithMobile = async (mobile: string) => {
-        if (mobile === '9999999999' || mobile === '999999999' || mobile === '+919999999999' || mobile === '+91999999999') {
-            const adminUser = {
-                id: 'admin_user',
-                name: 'Administrator',
-                role: 'admin' as const,
-                phone: mobile,
-                isOnline: true
-            };
-            _setUser(adminUser);
-            await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(adminUser));
-            return adminUser;
-        }
-
         try {
             // First check users table
             let { data, error } = await insforge.database
@@ -155,10 +142,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
 
             if (data) {
+                let finalRole: UserRole = 'consumer';
+                if (isWorker) {
+                    finalRole = 'worker';
+                } else if (data.role === 'admin') {
+                    finalRole = 'admin';
+                }
                 const loggedInUser: UserProfile = {
                     id: data.id,
                     name: data.full_name,
-                    role: (isWorker ? 'worker' : 'consumer') as UserRole,
+                    role: finalRole,
                     phone: data.mobile,
                     isOnline: data.is_active
                 };
@@ -209,8 +202,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 currentUserRole = cachedUser.role;
                 currentUserId = cachedUser.id;
                 
+                // Handle legacy mock admin session
+                if (cachedUser.id === 'admin_user') {
+                    await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+                    _setUser(defaultUser);
+                    return;
+                }
+
                 // Fetch latest from InsForge DB if we have an ID
-                if (cachedUser.id && cachedUser.role !== 'admin') {
+                if (cachedUser.id) {
                     const tableName = cachedUser.role === 'worker' ? 'service_providers' : 'users';
                     const { data, error } = await insforge.database
                         .from(tableName)
@@ -249,7 +249,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                         _setUser(updatedUser);
                         await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
                     } else {
-                        _setUser(cachedUser);
+                        // User not found in DB or error fetching, clear session
+                        await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+                        _setUser(defaultUser);
                     }
                 } else {
                     _setUser(cachedUser);
@@ -367,16 +369,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const updateDatabaseProfile = useCallback(async (updates: Partial<UserProfile>) => {
         let newId = updates.id || user.id;
         const mobileToUse = updates.phone || user.phone;
-        const isAdmin = mobileToUse === '9999999999' || mobileToUse === '999999999' || mobileToUse === '+919999999999' || mobileToUse === '+91999999999';
-
-        if (isAdmin) {
-            _setUser(prev => {
-                const next = { ...prev, ...updates, id: 'admin_user', role: 'admin' };
-                AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(next)).catch(() => {});
-                return next;
-            });
-            return;
-        }
 
         const role = updates.role || user.role || 'consumer';
         const tableName = role === 'worker' ? 'service_providers' : 'users';

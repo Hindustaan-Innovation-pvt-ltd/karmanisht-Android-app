@@ -35,10 +35,10 @@ export default function ConsumerNavbar({ activeTab = 'home' }: ConsumerNavbarPro
                         className={`${isActive ? 'bg-black dark:bg-slate-700 w-16 h-16 rounded-2xl' : 'w-16 h-16'} items-center justify-center`}
                         style={isActive ? (Platform.OS === 'web' ? { boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' } : { elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3 }) : {}}
                         onPress={() => {
-                            if (tab.name === 'home') router.push('/(protected)/consumer');
-                            else if (tab.name === 'services') router.push('/(protected)/consumer/services');
-                            else if (tab.name === 'contact') router.push('/(protected)/consumer/contact' as any); 
-                            else if (tab.name === 'profile') router.push('/(protected)/consumer/profile' as any);
+                            if (tab.name === 'home') router.replace('/(protected)/consumer');
+                            else if (tab.name === 'services') router.replace('/(protected)/consumer/services');
+                            else if (tab.name === 'contact') router.replace('/(protected)/consumer/contact' as any); 
+                            else if (tab.name === 'profile') router.replace('/(protected)/consumer/profile' as any);
                         }}
                     >
                         <IconLib 

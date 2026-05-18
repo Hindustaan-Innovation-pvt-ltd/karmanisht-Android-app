@@ -50,43 +50,41 @@ export default function Otp() {
             if (authError || !authData?.user) {
                 throw new Error(authError?.message || 'Authentication session could not be established');
             }
-
-            // 2.5 Check if it is the admin phone number
-            if (mobile === '9999999999' || mobile === '999999999' || mobile === '+919999999999' || mobile === '+91999999999') {
-                const adminProfile = {
-                    id: authData.user.id || 'admin_user',
-                    name: 'Administrator',
-                    role: 'admin' as const,
-                    phone: mobile,
-                    isOnline: true
-                };
-                await setUser(adminProfile);
-                await AsyncStorage.setItem('@@app_user', JSON.stringify(adminProfile));
-                await refreshProfile();
-                router.replace('/admin');
-                return;
-            }
-
-            // 3. Check database to see if a consumer profile exists
+            // 3. Check database to see if a consumer/admin profile exists
             const { data: consumerData } = await insforge.database
                 .from('users')
                 .select('*')
                 .eq('id', authData.user.id)
                 .single();
 
-            if (consumerData && consumerData.role === 'consumer') {
-                const profile = {
-                    id: consumerData.id,
-                    name: consumerData.full_name || 'Consumer',
-                    role: 'consumer' as const,
-                    phone: mobile,
-                    isOnline: consumerData.is_active
-                };
-                await setUser(profile);
-                await AsyncStorage.setItem('@@app_user', JSON.stringify(profile));
-                await refreshProfile();
-                router.replace('/(protected)/consumer');
-                return;
+            if (consumerData) {
+                if (consumerData.role === 'admin') {
+                    const profile = {
+                        id: consumerData.id,
+                        name: consumerData.full_name || 'Administrator',
+                        role: 'admin' as const,
+                        phone: mobile,
+                        isOnline: consumerData.is_active
+                    };
+                    await setUser(profile);
+                    await AsyncStorage.setItem('@@app_user', JSON.stringify(profile));
+                    await refreshProfile();
+                    router.replace('/admin');
+                    return;
+                } else if (consumerData.role === 'consumer') {
+                    const profile = {
+                        id: consumerData.id,
+                        name: consumerData.full_name || 'Consumer',
+                        role: 'consumer' as const,
+                        phone: mobile,
+                        isOnline: consumerData.is_active
+                    };
+                    await setUser(profile);
+                    await AsyncStorage.setItem('@@app_user', JSON.stringify(profile));
+                    await refreshProfile();
+                    router.replace('/(protected)/consumer');
+                    return;
+                }
             }
 
             // 4. Check database to see if a worker profile exists
@@ -114,22 +112,11 @@ export default function Otp() {
                 return;
             }
 
-            // 5. User is completely new: redirect to choose role and finalize registration!
-            const tempProfile = {
-                id: authData.user.id,
-                name: '',
-                role: null,
-                phone: mobile,
-                isOnline: true
-            };
-            await setUser(tempProfile);
-            await AsyncStorage.setItem('@@app_user', JSON.stringify(tempProfile));
-            await refreshProfile();
-
-            router.replace({
-                pathname: '/(onboarding)/auth/register',
-                params: { mobile }
-            });
+            // 5. User is completely new but trying to log in? Reject it.
+            await insforge.auth.signOut();
+            await AsyncStorage.removeItem('@@app_user');
+            Alert.alert('Account Not Found', 'No account exists with this mobile number. Please sign up first.');
+            router.replace('/(onboarding)/auth/login');
         } catch (err: any) {
             console.error('[OTP] Verification error:', err);
             Alert.alert('Error', err?.message || 'Verification failed');

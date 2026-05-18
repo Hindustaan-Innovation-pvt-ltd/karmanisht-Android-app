@@ -16,7 +16,7 @@ export default function Index() {
         if (hasCheckedAuth && !isLoading) {
             // Authenticated
             if (user?.id) {
-                if (user.role === 'admin' || user.phone === '9999999999' || user.phone === '999999999' || user.phone === '+919999999999' || user.phone === '+91999999999') {
+                if (user.role === 'admin') {
                     router.replace('/admin')
                 } else if (user.role === 'worker') {
                     router.replace('/(protected)/worker')
