@@ -1,14 +1,16 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, Dimensions, Linking } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import ConsumerNavbar from '@/components/consumer-navbar';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import SafeIcon from '@/components/safe-icon';
 import { useTheme } from '@/lib/theme';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
+import HomeMap from '@/components/home-map';
 
 const { width } = Dimensions.get('window');
 
@@ -44,59 +46,107 @@ export default function ConsumerHome() {
     const [showSolidBar, setShowSolidBar] = useState(false);
 
     const router = useRouter();
+    const params = useLocalSearchParams();
+    const [showLiveMap, setShowLiveMap] = useState(false);
 
-    const locationName = user.location || (userLocation ? "Current Location" : "Shankar Nagar, Raipur");
+    useEffect(() => {
+        if (params?.showMap === 'true') {
+            setShowLiveMap(true);
+        }
+    }, [params?.showMap]);
+
+    const [readableAddress, setReadableAddress] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (userLocation?.coords) {
+            Location.reverseGeocodeAsync({
+                latitude: userLocation.coords.latitude,
+                longitude: userLocation.coords.longitude
+            }).then(address => {
+                if (address && address.length > 0) {
+                    const place = address[0];
+                    const name = place.district || place.subregion || place.city || place.name || "";
+                    const city = place.city || place.subregion || place.region || "";
+                    if (name && city && name !== city) {
+                        setReadableAddress(`${name}, ${city}`);
+                    } else {
+                        setReadableAddress(name || city || "Current Location");
+                    }
+                }
+            }).catch(err => {
+                console.warn("Reverse geocoding error:", err);
+            });
+        }
+    }, [userLocation]);
+
+    const locationName = user.location || readableAddress || (userLocation ? "Locating..." : "Shankar Nagar, Raipur");
 
     const renderHeader = () => (
         <SafeAreaProvider>
             <SafeAreaView className='flex-1'>
                 <View className="w-full">
                     {/* Map Header Area */}
-                    <View className="h-[500px] w-full bg-white dark:bg-slate-900 rounded-b-[40px] overflow-hidden relative shadow-sm dark:shadow-none">
-                        <Image
-                            source={require('../../../../assets/images/map.png')}
-                            className="w-full h-full"
-                            resizeMode="cover"
+                    {showLiveMap ? (
+                        <HomeMap
+                            userLocation={userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null}
+                            topOffset={topOffset}
+                            locationName={locationName}
+                            onProfilePress={() => router.push('/(protected)/consumer/profile' as any)}
+                            onLocationPress={() => router.push('/(location)/select-location' as any)}
+                            isDark={isDark}
                         />
+                    ) : (
+                        <View style={{ height: 500 }} className="w-full bg-white dark:bg-slate-900 rounded-b-[40px] overflow-hidden relative shadow-sm dark:shadow-none">
+                            <Image
+                                source={require('../../../../assets/images/map.png')}
+                                className="w-full h-full"
+                                resizeMode="cover"
+                            />
 
-                        {/* Gradient Overlay */}
-                        <LinearGradient
-                            colors={
-                                isDark ? [
-                                    'rgba(9,13,22,1)',
-                                    'rgba(9,13,22,0.9)',
-                                    'rgba(9,13,22,0.7)',
-                                    'rgba(9,13,22,0.3)',
-                                    'transparent',
-                                ] : [
-                                    'rgba(255,255,255,1)',
-                                    'rgba(255,255,255,0.9)',
-                                    'rgba(255,255,255,0.7)',
-                                    'rgba(255,255,255,0.3)',
-                                    'transparent',
-                                ]
-                            }
-                            locations={[0, 0.1, 0.2, 0.5, 1]}
-                            className="absolute top-0 left-0 right-0 h-full z-10 opacity-100 dark:opacity-80"
-                        />
+                            {/* Gradient Overlay */}
+                            <LinearGradient
+                                colors={
+                                    isDark ? [
+                                        'rgba(9,13,22,1)',
+                                        'rgba(9,13,22,0.9)',
+                                        'rgba(9,13,22,0.7)',
+                                        'rgba(9,13,22,0.3)',
+                                        'transparent',
+                                    ] : [
+                                        'rgba(255,255,255,1)',
+                                        'rgba(255,255,255,0.9)',
+                                        'rgba(255,255,255,0.7)',
+                                        'rgba(255,255,255,0.3)',
+                                        'transparent',
+                                    ]
+                                }
+                                locations={[0, 0.1, 0.2, 0.5, 1]}
+                                className="absolute top-0 left-0 right-0 h-full z-10 opacity-100 dark:opacity-80"
+                            />
 
-                        {/* Centered Location Bar */}
-                        <View style={{ top: topOffset }} className="absolute left-[10%] w-[70%] h-14 bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none">
-                            <MaterialCommunityIcons name="target" size={32} color="#3B82F6" />
-                            <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-xl" numberOfLines={1}>
-                                {locationName}
-                            </Text>
+                            {/* Centered Location Bar */}
+                            <TouchableOpacity
+                                onPress={() => router.push('/(location)/select-location' as any)}
+                                style={{ top: topOffset }}
+                                className="absolute left-[10%] w-[70%] h-14 bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none"
+                                activeOpacity={0.8}
+                            >
+                                <MaterialCommunityIcons name="target" size={32} color="#3B82F6" />
+                                <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-xl" numberOfLines={1}>
+                                    {locationName}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Profile Icon */}
+                            <TouchableOpacity
+                                onPress={() => router.push('/(protected)/consumer/profile' as any)}
+                                style={{ top: topOffset }}
+                                className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
+                            >
+                                <Ionicons name="person" size={26} color="white" />
+                            </TouchableOpacity>
                         </View>
-
-                        {/* Profile Icon */}
-                        <TouchableOpacity
-                            onPress={() => router.push('/(protected)/consumer/profile' as any)}
-                            style={{ top: topOffset }}
-                            className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
-                        >
-                            <Ionicons name="person" size={26} color="white" />
-                        </TouchableOpacity>
-                    </View>
+                    )}
 
 
                     {/* Your Contacts Section */}
