@@ -45,6 +45,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     phone: consumerData.mobile || '',
                     isOnline: consumerData.is_active ?? true,
                     searchRadiusKm: consumerData.search_radius_km || 5,
+                    isPremium: consumerData.is_premium ?? false,
                 };
                 set({ user: profile });
                 await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));

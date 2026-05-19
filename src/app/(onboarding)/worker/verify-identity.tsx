@@ -160,13 +160,13 @@ export default function VerifyIdentity() {
                 {/* Submit */}
                 <View className='p-4 border-t border-slate-100 dark:border-slate-900 gap-2'>
                     <TouchableOpacity
-                        onPress={() => router.replace('/(protected)/worker')}
+                        onPress={() => router.replace('/(onboarding)/all-set')}
                         activeOpacity={0.8}
                         className='bg-black dark:bg-blue-600 py-4 rounded-2xl items-center'
                     >
                         <Text className='text-white text-base font-bold'>Submit for review</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => router.replace('/(protected)/worker')} activeOpacity={0.7}>
+                    <TouchableOpacity onPress={() => router.replace('/(onboarding)/all-set')} activeOpacity={0.7}>
                         <Text className='text-center text-sm text-slate-400 font-medium'>Skip, I&apos;ll do this later</Text>
                     </TouchableOpacity>
                 </View>

@@ -9,6 +9,7 @@ export default function OnboardingLayout() {
             <Stack.Screen name="auth/otp" />
             <Stack.Screen name="auth/register" />
             <Stack.Screen name="worker" />
+            <Stack.Screen name="all-set" />
         </Stack>
     )
 }

@@ -1,14 +1,11 @@
+// @ts-nocheck
 import React from 'react'
-import { View, Text, TouchableOpacity, ScrollView, useColorScheme, TextInput, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, useColorScheme, TextInput, Alert, ActivityIndicator, Switch, StyleSheet } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { MapPinIcon, CrosshairIcon } from '@/svg/icons'
 import { useAppStore } from '@/lib/store';
-import BackButton from '@/components/back-button'
-import Progress from '@/components/progress'
 import * as Location from 'expo-location'
-
-const RADIUS_OPTIONS = [1, 2, 5, 10, 20]
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 
 const POPULAR_AREAS = [
     'Shankar Nagar',
@@ -24,15 +21,19 @@ const POPULAR_AREAS = [
 export default function LocationInfo() {
     const { user, updateDatabaseProfile } = useAppStore();
     const isDark = useColorScheme() === 'dark'
-
     const router = useRouter()
+
     const [radiusKm, setRadiusKm] = React.useState(user?.searchRadiusKm || 5)
     const [locationLabel, setLocationLabel] = React.useState(user?.location || 'Shankar Nagar, Raipur')
     const [loadingLocation, setLoadingLocation] = React.useState(false)
+    const [cityWide, setCityWide] = React.useState(user?.searchRadiusKm >= 30 ? true : false)
 
     React.useEffect(() => {
         if (user?.searchRadiusKm) {
             setRadiusKm(user.searchRadiusKm)
+            if (user.searchRadiusKm >= 30) {
+                setCityWide(true)
+            }
         }
         if (user?.location) {
             setLocationLabel(user.location)
@@ -44,15 +45,18 @@ export default function LocationInfo() {
             Alert.alert('Required', 'Please enter or select a location.');
             return;
         }
+
+        const finalRadius = cityWide ? 50 : radiusKm;
+
         await updateDatabaseProfile({
             location: locationLabel.trim(),
-            searchRadiusKm: radiusKm
+            searchRadiusKm: finalRadius
         });
 
         if (user?.role === 'worker') {
             router.push('/(onboarding)/worker/profession')
         } else {
-            router.replace('/(protected)/consumer')
+            router.replace('/(onboarding)/all-set')
         }
     }
 
@@ -86,31 +90,40 @@ export default function LocationInfo() {
         }
     };
 
+    // Calculate dynamic scaling for the coverage area preview circle
+    // 2km -> small, 5km -> medium, 10km -> large, citywide -> full width
+    const getScale = () => {
+        if (cityWide) return 1.35;
+        if (radiusKm <= 2) return 0.65;
+        if (radiusKm <= 5) return 0.95;
+        return 1.2;
+    };
+
     return (
         <SafeAreaProvider>
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
-                <BackButton />
-                <Progress currentStep={2} totalSteps={user?.role === 'worker' ? 5 : 2} />
+                {/* Header Back Button */}
+                <View className="px-4 py-2 flex-row items-center">
+                    <TouchableOpacity onPress={() => router.back()} className="p-1">
+                        <Ionicons name="arrow-back" size={24} color={isDark ? "#F8FAFC" : "#0F172A"} />
+                    </TouchableOpacity>
+                </View>
 
-                <ScrollView className='flex-1'>
-                    <View className='p-6'>
-                        <View className='mb-6'>
-                            <Text className='text-3xl font-bold text-slate-900 dark:text-slate-100'>Service area</Text>
-                            <Text className='text-base text-slate-500 mt-2'>
-                                {user.role === 'worker'
-                                    ? 'Set the range where you can provide services.'
-                                    : 'We will show workers available in your selected area.'}
-                            </Text>
-                        </View>
+                <ScrollView className='flex-1' showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+                    <View className='px-6 pt-2'>
+                        {/* Title */}
+                        <Text className='text-3xl font-black text-slate-900 dark:text-slate-100 mb-6'>
+                            Service radius
+                        </Text>
 
-                        {/* Location Selection Input */}
+                        {/* Location / Area input */}
                         <View className="mb-6">
-                            <Text className='text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-widest'>Your Area / Neighborhood</Text>
-                            <View className='flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-1'>
-                                <MapPinIcon size={20} color={isDark ? "#3b82f6" : "#000"} />
+                            <Text className='text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest'>Your Location / Area</Text>
+                            <View className='flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 py-1'>
+                                <Ionicons name="location-sharp" size={20} color={isDark ? "#3B82F6" : "#64748B"} />
                                 <TextInput
                                     className='flex-1 ml-2 text-base py-3 text-slate-900 dark:text-slate-100 font-medium'
-                                    placeholder='Search or type your area name'
+                                    placeholder='Enter your neighborhood/city'
                                     placeholderTextColor="#94A3B8"
                                     value={locationLabel}
                                     onChangeText={setLocationLabel}
@@ -118,110 +131,133 @@ export default function LocationInfo() {
                                 <TouchableOpacity 
                                     onPress={detectCurrentLocation}
                                     disabled={loadingLocation}
-                                    className='bg-slate-200 dark:bg-slate-800 p-2 rounded-full'
+                                    className='bg-slate-200/60 dark:bg-slate-800 p-2 rounded-full'
                                 >
                                     {loadingLocation ? (
-                                        <ActivityIndicator size="small" color={isDark ? "#3b82f6" : "#000"} />
+                                        <ActivityIndicator size="small" color="#3B82F6" />
                                     ) : (
-                                        <CrosshairIcon size={20} color={isDark ? "#3b82f6" : "#475569"} />
+                                        <MaterialCommunityIcons name="crosshairs-gps" size={18} color="#3B82F6" />
                                     )}
                                 </TouchableOpacity>
                             </View>
                         </View>
 
-                        {/* Suggestions */}
+                        {/* Popular Areas Suggestions */}
                         <View className="mb-6">
-                            <Text className='text-xs font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider'>Popular Raipur Neighborhoods</Text>
+                            <Text className='text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest'>Raipur Neighborhoods</Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                                 {POPULAR_AREAS.map((area) => (
                                     <TouchableOpacity
                                         key={area}
                                         onPress={() => setLocationLabel(`${area}, Raipur`)}
-                                        className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-full"
+                                        className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-4 py-2.5 rounded-full"
                                     >
-                                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">{area}</Text>
+                                        <Text className="text-xs font-bold text-slate-600 dark:text-slate-300">{area}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
                         </View>
 
-                        {/* Coverage Radar / Preview */}
-                        <View className='bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 mb-8 relative overflow-hidden'>
-                            <Text className='text-xs text-slate-400 font-bold uppercase tracking-wider mb-2'>Coverage Radar ({radiusKm} KM)</Text>
-                            
-                            <View className='h-48 bg-slate-100 dark:bg-slate-800/50 rounded-2xl items-center justify-center relative overflow-hidden'>
-                                {/* Radar Rings */}
-                                <View className="absolute size-40 rounded-full border border-blue-500/10 items-center justify-center">
-                                    <View className="size-28 rounded-full border border-blue-500/20 items-center justify-center">
-                                        <View className="size-16 rounded-full border border-blue-500/40 items-center justify-center" />
-                                    </View>
-                                </View>
-                                
-                                {/* Glowing search area representation scaled by radiusKm */}
+                        {/* Coverage Area Preview Card */}
+                        <View className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] p-6 mb-6 items-center justify-between min-h-[220px]">
+                            {/* Circle Radar Preview */}
+                            <View className="flex-1 items-center justify-center my-4">
+                                {/* Outer circle of dynamic scale */}
                                 <View 
                                     style={{
-                                        width: 40 + radiusKm * 6,
-                                        height: 40 + radiusKm * 6,
-                                        borderRadius: 9999,
-                                        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(0, 0, 0, 0.05)',
-                                        borderColor: isDark ? '#3b82f6' : '#000',
+                                        width: 140,
+                                        height: 140,
+                                        borderRadius: 70,
                                         borderWidth: 1.5,
-                                        borderStyle: 'dashed'
+                                        borderColor: isDark ? '#475569' : '#0F172A',
+                                        backgroundColor: isDark ? 'rgba(71, 85, 105, 0.15)' : '#E2E8F0',
+                                        transform: [{ scale: getScale() }]
                                     }}
-                                    className="absolute items-center justify-center"
-                                />
-
-                                {/* Radar Center Pin */}
-                                <View className="size-6 rounded-full bg-black dark:bg-blue-600 items-center justify-center shadow-lg border-2 border-white">
-                                    <View className="size-2 rounded-full bg-white" />
+                                    className="items-center justify-center transition-all duration-300"
+                                >
+                                    {/* Inner Location Pin Badge */}
+                                    <View className="size-10 rounded-full bg-slate-900 dark:bg-slate-100 items-center justify-center border-2 border-white dark:border-slate-950 shadow-md">
+                                        <Ionicons name="location" size={18} color={isDark ? "#0F172A" : "#FFFFFF"} />
+                                    </View>
                                 </View>
+                            </View>
 
-                                {/* Legend/Info */}
-                                <View className="absolute bottom-3 bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-100 dark:border-slate-800">
-                                    <Text className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest text-center">
-                                        Active coverage area: {Math.PI * radiusKm * radiusKm < 10 ? (Math.PI * radiusKm * radiusKm).toFixed(1) : Math.round(Math.PI * radiusKm * radiusKm)} sq km
-                                    </Text>
-                                </View>
+                            <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider self-start">
+                                Coverage area preview
+                            </Text>
+                        </View>
+
+                        {/* Quick Distance Selector */}
+                        <View className="mb-6">
+                            <Text className="text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest">
+                                QUICK DISTANCE
+                            </Text>
+                            <View className="flex-row gap-3">
+                                {[2, 5, 10].map((dist) => {
+                                    const isActive = radiusKm === dist && !cityWide;
+                                    return (
+                                        <TouchableOpacity
+                                            key={dist}
+                                            disabled={cityWide}
+                                            onPress={() => setRadiusKm(dist)}
+                                            style={isActive ? styles.btnActive : styles.btnInactive}
+                                            className={`flex-1 py-3.5 rounded-xl items-center justify-center border ${cityWide ? 'opacity-40' : ''}`}
+                                        >
+                                            <Text style={isActive ? styles.textActive : styles.textInactive} className="text-sm font-black">
+                                                {dist} km
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
                         </View>
 
-                        {/* Radius Selector */}
-                        <View>
-                            <Text className='text-sm font-bold text-slate-900 dark:text-slate-100 mb-4 uppercase tracking-widest'>Select Radius (KM)</Text>
-                            <View className='flex-row justify-between'>
-                                {RADIUS_OPTIONS.map(opt => (
-                                    <TouchableOpacity
-                                        key={opt}
-                                        onPress={() => setRadiusKm(opt)}
-                                        className={`size-12 rounded-2xl items-center justify-center border ${radiusKm === opt ? 'bg-black dark:bg-blue-600 border-black dark:border-blue-600' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}
-                                        style={radiusKm === opt ? {
-                                            elevation: 3,
-                                            shadowColor: isDark ? '#3b82f6' : '#000',
-                                            shadowOffset: { width: 0, height: 2 },
-                                            shadowOpacity: 0.2,
-                                            shadowRadius: 4
-                                        } : null}
-                                    >
-                                        <Text className={`font-bold ${radiusKm === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>
-                                            {opt}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+                        {/* City Wide Switch Row */}
+                        <View className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex-row justify-between items-center mb-6">
+                            <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                Accept city wide requests
+                            </Text>
+                            <Switch
+                                value={cityWide}
+                                onValueChange={setCityWide}
+                                trackColor={{ false: '#E2E8F0', true: '#000000' }}
+                                thumbColor={cityWide ? '#FFFFFF' : '#FFFFFF'}
+                            />
                         </View>
                     </View>
                 </ScrollView>
 
-                <View className='p-4 border-t border-slate-100 dark:border-slate-900'>
+                {/* Footer Save Button */}
+                <View className='p-4 border-t border-slate-100 dark:border-slate-900 items-center gap-2'>
                     <TouchableOpacity
                         onPress={handleFinish}
                         activeOpacity={0.8}
-                        className='bg-black dark:bg-blue-600 py-4 rounded-2xl items-center'
+                        className='w-full bg-[#18181B] dark:bg-blue-600 py-4 rounded-2xl items-center'
                     >
-                        <Text className='text-white text-lg font-bold'>Confirm & Continue</Text>
+                        <Text className='text-white text-base font-black'>Save radius</Text>
                     </TouchableOpacity>
+                    <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                        Service area setup
+                    </Text>
                 </View>
             </SafeAreaView>
         </SafeAreaProvider>
     )
 }
+
+const styles = StyleSheet.create({
+    btnActive: {
+        backgroundColor: '#18181B',
+        borderColor: '#18181B',
+    },
+    btnInactive: {
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E2E8F0',
+    },
+    textActive: {
+        color: '#FFFFFF',
+    },
+    textInactive: {
+        color: '#0F172A',
+    }
+});

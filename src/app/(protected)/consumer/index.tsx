@@ -130,6 +130,41 @@ export default function ConsumerHome() {
                         />
                     </View>
 
+                    {/* Premium Upgrade Banner */}
+                    <View className="px-5 mt-6">
+                        {user?.isPremium ? (
+                            <View className="p-5 bg-gradient-to-r from-amber-500 to-yellow-600 bg-amber-500 rounded-[24px] flex-row items-center justify-between shadow-sm">
+                                <View className="flex-1 pr-2">
+                                    <View className="flex-row items-center gap-1.5 mb-1">
+                                        <MaterialCommunityIcons name="crown" size={18} color="#FFF" />
+                                        <Text className="text-sm font-bold text-white uppercase tracking-wider">Premium Member</Text>
+                                    </View>
+                                    <Text className="text-xs text-amber-50 font-semibold leading-relaxed">
+                                        Rs. 0 platform fees and priority match routing are now active. Thank you!
+                                    </Text>
+                                </View>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                onPress={() => router.push('/(protected)/consumer/premium' as any)}
+                                activeOpacity={0.9}
+                                className="p-5 bg-gradient-to-r from-indigo-600 to-purple-600 bg-indigo-600 rounded-[24px] flex-row items-center justify-between shadow-sm relative overflow-hidden"
+                            >
+                                <View className="flex-1 pr-2">
+                                    <Text className="text-base font-black text-white mb-1">Upgrade to Premium 👑</Text>
+                                    <Text className="text-xs text-indigo-100 font-semibold leading-relaxed">
+                                        Get Rs. 0 platform fees, 3x faster response & verified professionals.
+                                    </Text>
+                                </View>
+                                <View className="bg-white/20 px-3 py-1.5 rounded-xl border border-white/20">
+                                    <Text className="text-[10px] font-black text-white uppercase tracking-wider">
+                                        Upgrade
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
                     {/* Explore Services Header */}
                     <View className="mt-8 px-5 mb-6 flex-row items-center justify-between">
                         <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">Explore Services</Text>
