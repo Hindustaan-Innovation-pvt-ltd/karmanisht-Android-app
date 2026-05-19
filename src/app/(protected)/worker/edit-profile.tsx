@@ -1,29 +1,33 @@
 // @ts-nocheck
 import { useAppStore } from '@/lib/store';
-import { insforge } from '@/lib/insforge';
+import { insforge, uploadToInsForge } from '@/lib/insforge';
 import React, { useState, useEffect } from 'react';
 import { 
     View, Text, TextInput, TouchableOpacity, ScrollView, 
-    ActivityIndicator, Alert, KeyboardAvoidingView, Platform 
+    ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Image 
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import MediaLibraryPicker from '@/components/media-library-picker';
 
 export default function EditProfile() {
     const user = useAppStore(state => state.user);
     const categories = useAppStore(state => state.categories);
     const updateProfile = useAppStore(state => state.updateProfile);
     const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
-
+    const refreshProfile = useAppStore(state => state.refreshProfile);
 
     const router = useRouter();
     
     const [fullName, setFullName] = useState(user?.name || '');
     const [bio, setBio] = useState(user?.bio || '');
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
+    const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [showMediaPicker, setShowMediaPicker] = useState(false);
 
     useEffect(() => {
         async function fetchDetails() {
@@ -54,6 +58,44 @@ export default function EditProfile() {
         fetchDetails();
     }, [user?.id, categories]);
 
+    const takePhoto = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permissionResult.granted) {
+                Alert.alert("Permission Required", "Camera permission is required to take a photo.");
+                return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                setSelectedImage({
+                    uri: asset.uri,
+                    size: asset.fileSize,
+                });
+            }
+        } catch (err: any) {
+            Alert.alert("Error capturing photo", err.message);
+        }
+    };
+
+    const handleSelectPhoto = () => {
+        Alert.alert(
+            "Profile Photo",
+            "Select an option to add your photo",
+            [
+                { text: "Take Photo", onPress: takePhoto },
+                { text: "Choose from Library", onPress: () => setShowMediaPicker(true) },
+                { text: "Cancel", style: "cancel" }
+            ]
+        );
+    };
+
     const handleSave = async () => {
         if (!fullName.trim()) {
             Alert.alert('Error', 'Full name is required.');
@@ -62,9 +104,24 @@ export default function EditProfile() {
 
         setLoading(true);
         try {
+            let uploadedImageUrl = undefined;
+
+            if (selectedImage && user?.id) {
+                try {
+                    const filename = `avatar_${user.id}_${Date.now()}.jpg`;
+                    const uploadRes = await uploadToInsForge('avatars', filename, selectedImage);
+                    if (uploadRes?.url) {
+                        uploadedImageUrl = uploadRes.url;
+                    }
+                } catch (uploadErr) {
+                    console.error('[handleSave] Failed converting/uploading photo:', uploadErr);
+                }
+            }
+
             const profileSuccess = await updateProfile({ 
                 name: fullName,
-                bio: bio
+                bio: bio,
+                profile_image: uploadedImageUrl !== undefined ? uploadedImageUrl : user?.profile_image
             });
 
             let specialtySuccess = true;
@@ -73,6 +130,7 @@ export default function EditProfile() {
             }
 
             if (profileSuccess && specialtySuccess) {
+                await refreshProfile();
                 Alert.alert('Success', 'Profile updated successfully!');
                 router.back();
             } else {
@@ -106,69 +164,92 @@ export default function EditProfile() {
                         </View>
                     ) : (
                         <ScrollView contentContainerStyle={{ padding: 20 }}>
-                        {/* Name */}
-                        <View className="mb-6">
-                            <Text className="text-sm font-bold text-slate-500 uppercase mb-2">Full Name</Text>
-                            <TextInput
-                                className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base"
-                                value={fullName}
-                                onChangeText={setFullName}
-                                placeholder="Enter your full name"
-                            />
-                        </View>
-
-                        {/* Bio */}
-                        <View className="mb-6">
-                            <Text className="text-sm font-bold text-slate-500 uppercase mb-2">Bio / Description</Text>
-                            <TextInput
-                                className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base h-32"
-                                value={bio}
-                                onChangeText={setBio}
-                                placeholder="Describe your skills and experience"
-                                multiline
-                                textAlignVertical="top"
-                            />
-                        </View>
-
-                        {/* Profession */}
-                        <View className="mb-8">
-                            <Text className="text-sm font-bold text-slate-500 uppercase mb-3">Profession</Text>
-                            <View className="flex-row flex-wrap gap-2">
-                                {categories.map((cat) => (
-                                    <TouchableOpacity
-                                        key={cat.id}
-                                        onPress={() => setSelectedCategoryId(cat.id)}
-                                        className={`px-4 py-2 rounded-full border ${
-                                            selectedCategoryId === cat.id 
-                                            ? 'bg-black border-black' 
-                                            : 'bg-white border-slate-200'
-                                        }`}
+                            {/* Profile Photo Section */}
+                            <View className="items-center mb-8">
+                                <View className="relative">
+                                    <Image
+                                        source={{ uri: selectedImage?.uri || user?.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'Worker')}&background=0D8ABC&color=fff` }}
+                                        className="w-32 h-32 rounded-[32px] border-4 border-slate-100 bg-slate-50"
+                                    />
+                                    <TouchableOpacity 
+                                        onPress={handleSelectPhoto}
+                                        activeOpacity={0.8}
+                                        className="absolute bottom-0 right-0 w-10 h-10 bg-black rounded-xl items-center justify-center border-4 border-white"
                                     >
-                                        <Text className={`text-sm font-medium ${
-                                            selectedCategoryId === cat.id ? 'text-white' : 'text-slate-600'
-                                        }`}>
-                                            {cat.name}
-                                        </Text>
+                                        <Feather name="camera" size={18} color="white" />
                                     </TouchableOpacity>
-                                ))}
+                                </View>
                             </View>
-                        </View>
 
-                        {/* Save Button */}
-                        <TouchableOpacity
-                            onPress={handleSave}
-                            disabled={loading}
-                            className={`py-4 rounded-2xl items-center shadow-lg ${loading ? 'bg-slate-400' : 'bg-black'}`}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <Text className="text-white font-bold text-lg">Save Changes</Text>
-                            )}
-                        </TouchableOpacity>
-                    </ScrollView>
+                            {/* Name */}
+                            <View className="mb-6">
+                                <Text className="text-sm font-bold text-slate-500 uppercase mb-2">Full Name</Text>
+                                <TextInput
+                                    className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base"
+                                    value={fullName}
+                                    onChangeText={setFullName}
+                                    placeholder="Enter your full name"
+                                />
+                            </View>
+
+                            {/* Bio */}
+                            <View className="mb-6">
+                                <Text className="text-sm font-bold text-slate-500 uppercase mb-2">Bio / Description</Text>
+                                <TextInput
+                                    className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base h-32"
+                                    value={bio}
+                                    onChangeText={setBio}
+                                    placeholder="Describe your skills and experience"
+                                    multiline
+                                    textAlignVertical="top"
+                                />
+                            </View>
+
+                            {/* Profession */}
+                            <View className="mb-8">
+                                <Text className="text-sm font-bold text-slate-500 uppercase mb-3">Profession</Text>
+                                <View className="flex-row flex-wrap gap-2">
+                                    {categories.map((cat) => (
+                                        <TouchableOpacity
+                                            key={cat.id}
+                                            onPress={() => setSelectedCategoryId(cat.id)}
+                                            className={`px-4 py-2 rounded-full border ${
+                                                selectedCategoryId === cat.id 
+                                                ? 'bg-black border-black' 
+                                                : 'bg-white border-slate-200'
+                                            }`}
+                                        >
+                                            <Text className={`text-sm font-medium ${
+                                                selectedCategoryId === cat.id ? 'text-white' : 'text-slate-600'
+                                            }`}>
+                                                {cat.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+
+                            {/* Save Button */}
+                            <TouchableOpacity
+                                onPress={handleSave}
+                                disabled={loading}
+                                className={`py-4 rounded-2xl items-center shadow-lg ${loading ? 'bg-slate-400' : 'bg-black'}`}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <Text className="text-white font-bold text-lg">Save Changes</Text>
+                                )}
+                            </TouchableOpacity>
+                        </ScrollView>
                     )}
                 </KeyboardAvoidingView>
+
+                <MediaLibraryPicker
+                    visible={showMediaPicker}
+                    onClose={() => setShowMediaPicker(false)}
+                    onSelect={(img) => setSelectedImage(img)}
+                />
             </SafeAreaView>
         </SafeAreaProvider>
     );

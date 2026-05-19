@@ -2,7 +2,7 @@
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import React from 'react';
-import { FlatList, Text, TouchableOpacity, View, Switch, ActivityIndicator } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View, Switch, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StarIcon, MapPinIcon, EditIcon, UploadIcon, ShieldIcon, ClockIcon } from '@/svg/icons';
@@ -81,9 +81,17 @@ export default function WorkerDashboard() {
                 <View className="flex-row items-start gap-4">
                     {/* Avatar */}
                     <View className="relative">
-                        <View className={`size-16 rounded-full ${avatarColor} items-center justify-center border border-white/20 shadow-sm`}>
-                            <Text className="text-2xl font-black text-white">{initials || '??'}</Text>
-                        </View>
+                        {user?.profile_image ? (
+                            <Image
+                                source={{ uri: user.profile_image }}
+                                className="size-16 rounded-full border border-white/20 shadow-sm"
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            <View className={`size-16 rounded-full ${avatarColor} items-center justify-center border border-white/20 shadow-sm`}>
+                                <Text className="text-2xl font-black text-white">{initials || '??'}</Text>
+                            </View>
+                        )}
                         <View className={`absolute -bottom-1 -right-1 size-5 rounded-full border-2 border-white ${isOnline ? 'bg-green-500' : 'bg-slate-300'}`} />
                     </View>
 
