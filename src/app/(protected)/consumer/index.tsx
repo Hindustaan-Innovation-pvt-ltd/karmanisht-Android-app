@@ -1,18 +1,17 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, Dimensions, Linking } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import ConsumerNavbar from '@/components/consumer-navbar';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import SafeIcon from '@/components/safe-icon';
-import { useTheme } from '@/lib/theme';
-import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInRight, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import * as Location from 'expo-location';
 import HomeMap from '@/components/home-map';
+import SafeIcon from '@/components/safe-icon';
 import { insforge } from '@/lib/insforge';
+import { useTheme } from '@/lib/theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, FlatList, Image, Linking, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -193,14 +192,12 @@ export default function ConsumerHome() {
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => <ContactCard provider={item} index={index} />}
                     ListEmptyComponent={
-                        <View className="w-64 h-44 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-[15px] items-center justify-center mr-3">
-                            <Text className="text-slate-400 text-center px-4">No contacts unlocked yet. Find a worker below!</Text>
-                        </View>
+                        <></>
                     }
                     ListFooterComponent={
                         <TouchableOpacity
                             onPress={() => router.push('/(protected)/consumer/services' as any)}
-                            className="w-32 h-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[15px] items-center justify-center ml-2 shadow-sm"
+                            className="w-44 h-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[15px] items-center justify-center ml-2 shadow-sm"
                         >
                             <Ionicons name="add" size={40} color="#D1D5DB" />
                             <Text className="text-sm text-gray-400 dark:text-slate-500 font-medium mt-2">Find more</Text>
@@ -299,7 +296,7 @@ const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
                         pathname: '/(protected)/consumer/services/[id]',
                         params: { id: provider.category_id, providerId: provider.id }
                     } as any)}
-                    className="w-32 h-44 rounded-[15px] overflow-hidden mr-3 relative shadow-sm border border-gray-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900"
+                    className="w-44 h-44 rounded-[15px] overflow-hidden mr-3 relative shadow-sm border border-gray-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900"
                 >
                     <Image
                         source={{ uri: avatar }}
@@ -361,45 +358,25 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
     // Default icons/colors if missing from DB
     const icon = (service.icon as any) || 'lightning-bolt';
     const color = getVibrantColor(service);
-    const scale = useSharedValue(1);
-
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ scale: scale.value }]
-        };
-    });
-
-    const handlePressIn = () => {
-        scale.value = withSpring(0.92, { damping: 20, stiffness: 200 });
-    };
-
-    const handlePressOut = () => {
-        scale.value = withSpring(1, { damping: 20, stiffness: 200 });
-    };
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 30).springify().damping(20).stiffness(150)}
+            entering={FadeInDown.delay(index * 30).springify().damping(12)}
             className="w-[31%] aspect-square mb-4"
         >
-            <Animated.View style={[animatedStyle, { width: '100%', height: '100%' }]}>
-                <TouchableOpacity
-                    activeOpacity={0.9}
-                    onPressIn={handlePressIn}
-                    onPressOut={handlePressOut}
-                    onPress={() => router.push({
-                        pathname: '/(protected)/consumer/services/[id]',
-                        params: { id: service.id, name: service.name, color: color, icon: icon }
-                    } as any)}
-                    className="w-full h-full rounded-[20px] items-center justify-center shadow-sm"
-                    style={{ backgroundColor: color }}
-                >
-                    <SafeIcon name={icon} size={36} color="white" />
-                    <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
-                        {service.name}
-                    </Text>
-                </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity
+                onPress={() => router.push({
+                    pathname: '/(protected)/consumer/services/[id]',
+                    params: { id: service.id, name: service.name, color: color, icon: icon }
+                } as any)}
+                className="w-full h-full rounded-[20px] items-center justify-center shadow-sm"
+                style={{ backgroundColor: color }}
+            >
+                <SafeIcon name={icon} size={36} color="white" />
+                <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
+                    {service.name}
+                </Text>
+            </TouchableOpacity>
         </Animated.View>
     );
 };

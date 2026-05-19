@@ -30,29 +30,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     // ─────────────────────────────────────────────────────────────────────────
     processUserSession: async (userId: string, fallbackName?: string): Promise<UserProfile | null> => {
         try {
-            // 1. Check consumers / admins table first
-            const { data: consumerData } = await insforge.database
-                .from('users')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle();
-
-            if (consumerData && consumerData.role !== 'worker') {
-                const profile: UserProfile = {
-                    id: consumerData.id,
-                    name: consumerData.full_name || fallbackName || 'User',
-                    role: (consumerData.role === 'admin' ? 'admin' : 'consumer') as any,
-                    phone: consumerData.mobile || '',
-                    isOnline: consumerData.is_active ?? true,
-                    searchRadiusKm: consumerData.search_radius_km || 5,
-                    isPremium: consumerData.is_premium ?? false,
-                };
-                set({ user: profile });
-                await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
-                return profile;
-            }
-
-            // 2. Check service providers (workers) table
+            // 1. Check service providers (workers) table first
             const { data: workerData } = await insforge.database
                 .from('service_providers')
                 .select('*')
@@ -100,6 +78,28 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 return profile;
             }
 
+            // 2. Check consumers / admins table second
+            const { data: consumerData } = await insforge.database
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+
+            if (consumerData) {
+                const profile: UserProfile = {
+                    id: consumerData.id,
+                    name: consumerData.full_name || fallbackName || 'User',
+                    role: (consumerData.role === 'admin' ? 'admin' : 'consumer') as any,
+                    phone: consumerData.mobile || '',
+                    isOnline: consumerData.is_active ?? true,
+                    searchRadiusKm: consumerData.search_radius_km || 5,
+                    isPremium: consumerData.is_premium ?? false,
+                };
+                set({ user: profile });
+                await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                return profile;
+            }
+
             // 3. User has no DB record — they are brand new
             return null;
         } catch (err) {
@@ -116,190 +116,198 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
         try {
             const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
             const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+            const cachedUserStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+
             if (token) {
                 insforge.setAccessToken(token);
             }
             if (refreshToken) {
                 insforge.getHttpClient().setRefreshToken(refreshToken);
-                // If no access token, use the refresh token to get a new one
-                if (!token) {
-                    try {
-                        const { data: refreshed } = await insforge.auth.refreshSession({ refreshToken });
-                        if (refreshed?.accessToken) {
-                            insforge.setAccessToken(refreshed.accessToken);
-                            await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, refreshed.accessToken);
-                        }
-                        if (refreshed?.refreshToken) {
-                            insforge.getHttpClient().setRefreshToken(refreshed.refreshToken);
-                            await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshed.refreshToken);
-                        }
-                    } catch {
-                        // Refresh failed — user will need to log in again
-                    }
-                }
             }
 
-            const cachedUserStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-            let currentUserRole = null;
+            let cachedUser = null;
             let currentUserId = null;
+            let currentUserRole = null;
 
             if (cachedUserStr) {
-                const cachedUser = JSON.parse(cachedUserStr);
-                currentUserRole = cachedUser.role;
-                currentUserId = cachedUser.id;
-
-                if (cachedUser.id) {
-                    const tableName = cachedUser.role === 'worker' ? 'service_providers' : 'users';
-                    const { data, error } = await insforge.database
-                        .from(tableName)
-                        .select('*')
-                        .eq('id', cachedUser.id)
-                        .single();
-
-                    if (data && !error) {
-                        const updatedUser: UserProfile = {
-                            ...cachedUser,
-                            name: data.full_name || cachedUser.name,
-                            phone: data.mobile || cachedUser.phone,
-                            isOnline: data.is_active ?? cachedUser.isOnline,
-                            searchRadiusKm: data.search_radius_km || cachedUser.searchRadiusKm,
-                            profile_image: data.profile_image || cachedUser.profile_image,
-                            isPremium: data.is_premium ?? cachedUser.isPremium ?? false,
-                        };
-
-                        if (cachedUser.role === 'worker') {
-                            updatedUser.profession = data.business_name || cachedUser.profession;
-                            updatedUser.bio = data.bio || cachedUser.bio;
-                            updatedUser.experienceYears = data.experience_years || cachedUser.experienceYears;
-
-                            const { data: locData } = await insforge.database
-                                .from('provider_locations')
-                                .select('service_radius_km, area_name')
-                                .eq('provider_id', cachedUser.id)
-                                .single();
-                            if (locData) {
-                                updatedUser.searchRadiusKm = locData.service_radius_km || 5;
-                                updatedUser.location = locData.area_name || cachedUser.location;
-                            }
-
-                            // Query provider_services to check if specialties are set
-                            const { data: servicesData } = await insforge.database
-                                .from('provider_services')
-                                .select('category_id')
-                                .eq('provider_id', cachedUser.id);
-
-                            updatedUser.hasSpecialties = (servicesData && servicesData.length > 0) || false;
-                            if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
-                                updatedUser.professionId = servicesData[0].category_id;
-                            }
-                        } else {
-                            updatedUser.role = data.role || cachedUser.role;
-                        }
-
-                        set({ user: updatedUser });
-                        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
-                    } else {
-                        // Record gone from DB — sign out
-                        await AsyncStorage.removeItem(STORAGE_KEYS.USER);
-                        set({ user: defaultUser });
-                    }
-                } else {
+                cachedUser = JSON.parse(cachedUserStr);
+                if (cachedUser && cachedUser.id) {
+                    currentUserId = cachedUser.id;
+                    currentUserRole = cachedUser.role;
+                    // Immediately set user to enable instant routing and render cached profile UI
                     set({ user: cachedUser });
                 }
-            } else {
-                set({ user: defaultUser });
             }
 
-            // Sync unlocked contacts for consumers
-            if (currentUserId && currentUserRole === 'consumer') {
+            // Immediately fetch categories in parallel
+            const categoriesPromise = get().fetchCategories().catch(() => {});
+
+            // Instantly clear the boot loader spinner so app transitions are lightning-fast
+            set({ isLoading: false, hasCheckedAuth: true });
+
+            // Run database revalidation, token refresh, geocoding and location updates concurrently in the background
+            (async () => {
                 try {
-                    const { data: txs, error: txError } = await insforge.database
-                        .from('unlock_transactions')
-                        .select('provider_id')
-                        .eq('user_id', currentUserId);
-
-                    if (txs && !txError) {
-                        const providerIds = txs.map(t => t.provider_id).filter(Boolean);
-                        set({ unlockedContacts: providerIds });
-
-                        if (providerIds.length > 0) {
-                            const { data: providers, error: providersError } = await insforge.database
-                                .from('service_providers')
-                                .select('*')
-                                .in('id', providerIds);
-
-                            if (providers && !providersError) {
-                                const { data: pServices } = await insforge.database
-                                    .from('provider_services')
-                                    .select('provider_id, category_id')
-                                    .in('provider_id', providerIds);
-
-                                const providersWithCat = providers.map(p => {
-                                    const match = pServices?.find(ps => ps.provider_id === p.id);
-                                    return { ...p, category_id: match ? match.category_id : null };
-                                });
-                                set({ unlockedProviders: providersWithCat });
+                    if (refreshToken && !token) {
+                        try {
+                            const { data: refreshed } = await insforge.auth.refreshSession({ refreshToken });
+                            if (refreshed?.accessToken) {
+                                insforge.setAccessToken(refreshed.accessToken);
+                                await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, refreshed.accessToken);
                             }
-                        } else {
-                            set({ unlockedProviders: [] });
+                            if (refreshed?.refreshToken) {
+                                insforge.getHttpClient().setRefreshToken(refreshed.refreshToken);
+                                await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshed.refreshToken);
+                            }
+                        } catch {
+                            // Refresh failed
                         }
                     }
-                } catch (txErr) {
-                    console.error('Failed to fetch unlocked transactions:', txErr);
-                }
-            } else {
-                set({ unlockedContacts: [], unlockedProviders: [] });
-            }
 
-            await get().fetchCategories();
+                    // A. Revalidate User Profile from DB
+                    const activeUser = get().user;
+                    if (activeUser && activeUser.id && !activeUser.id.startsWith('local_')) {
+                        const tableName = activeUser.role === 'worker' ? 'service_providers' : 'users';
+                        const { data, error } = await insforge.database
+                            .from(tableName)
+                            .select('*')
+                            .eq('id', activeUser.id)
+                            .maybeSingle();
 
-            // Sync GPS location
-            try {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status === 'granted') {
-                    // Prefer cached position (instant, no throw on emulators)
-                    const loc = (await Location.getLastKnownPositionAsync()) ??
-                                await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-                    set({ userLocation: loc });
+                        if (data && !error) {
+                            const updatedUser: UserProfile = {
+                                ...activeUser,
+                                name: data.full_name || activeUser.name,
+                                phone: data.mobile || activeUser.phone,
+                                isOnline: data.is_active ?? activeUser.isOnline,
+                                searchRadiusKm: data.search_radius_km || activeUser.searchRadiusKm,
+                                profile_image: data.profile_image || activeUser.profile_image,
+                                isPremium: data.is_premium ?? activeUser.isPremium ?? false,
+                            };
 
-                    if (loc) {
-                        set({ userLocation: loc });
+                            if (activeUser.role === 'worker') {
+                                updatedUser.profession = data.business_name || activeUser.profession;
+                                updatedUser.bio = data.bio || activeUser.bio;
+                                updatedUser.experienceYears = data.experience_years || activeUser.experienceYears;
 
-                        if (currentUserId) {
-                            if (currentUserRole === 'worker') {
                                 const { data: locData } = await insforge.database
                                     .from('provider_locations')
-                                    .select('id')
-                                    .eq('provider_id', currentUserId)
-                                    .single();
-
+                                    .select('service_radius_km, area_name')
+                                    .eq('provider_id', activeUser.id)
+                                    .maybeSingle();
                                 if (locData) {
-                                    await insforge.database.from('provider_locations').update({
-                                        latitude: loc.coords.latitude,
-                                        longitude: loc.coords.longitude,
-                                    }).eq('provider_id', currentUserId);
-                                } else {
-                                    await insforge.database.from('provider_locations').insert([{
-                                        provider_id: currentUserId,
-                                        latitude: loc.coords.latitude,
-                                        longitude: loc.coords.longitude,
-                                    }]);
+                                    updatedUser.searchRadiusKm = locData.service_radius_km || 5;
+                                    updatedUser.location = locData.area_name || activeUser.location;
                                 }
-                            } else if (currentUserRole === 'consumer') {
-                                await insforge.database.from('users').update({
-                                    current_latitude: loc.coords.latitude,
-                                    current_longitude: loc.coords.longitude,
-                                }).eq('id', currentUserId);
+
+                                const { data: servicesData } = await insforge.database
+                                    .from('provider_services')
+                                    .select('category_id')
+                                    .eq('provider_id', activeUser.id);
+
+                                updatedUser.hasSpecialties = (servicesData && servicesData.length > 0) || false;
+                                if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
+                                    updatedUser.professionId = servicesData[0].category_id;
+                                }
+                            } else {
+                                updatedUser.role = data.role || activeUser.role;
+                            }
+
+                            set({ user: updatedUser });
+                            await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+                        } else if (error || !data) {
+                            // Account no longer exists in DB or call failed with no record
+                            if (!error || (error as any).status === 404 || error.code === 'P0001') {
+                                await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+                                set({ user: defaultUser });
                             }
                         }
                     }
+
+                    // B. Sync Unlocked Contacts for Consumers
+                    const latestUser = get().user;
+                    if (latestUser && latestUser.id && latestUser.role === 'consumer') {
+                        const { data: txs, error: txError } = await insforge.database
+                            .from('unlock_transactions')
+                            .select('provider_id')
+                            .eq('user_id', latestUser.id);
+
+                        if (txs && !txError) {
+                            const providerIds = txs.map(t => t.provider_id).filter(Boolean);
+                            set({ unlockedContacts: providerIds });
+
+                            if (providerIds.length > 0) {
+                                const { data: providers, error: providersError } = await insforge.database
+                                    .from('service_providers')
+                                    .select('*')
+                                    .in('id', providerIds);
+
+                                if (providers && !providersError) {
+                                    const { data: pServices } = await insforge.database
+                                        .from('provider_services')
+                                        .select('provider_id, category_id')
+                                        .in('provider_id', providerIds);
+
+                                    const providersWithCat = providers.map(p => {
+                                        const match = pServices?.find(ps => ps.provider_id === p.id);
+                                        return { ...p, category_id: match ? match.category_id : null };
+                                    });
+                                    set({ unlockedProviders: providersWithCat });
+                                }
+                            } else {
+                                set({ unlockedProviders: [] });
+                            }
+                        }
+                    } else {
+                        set({ unlockedContacts: [], unlockedProviders: [] });
+                    }
+
+                    // C. Await Categories Load
+                    await categoriesPromise;
+
+                    // D. Sync GPS location in background
+                    const { status } = await Location.requestForegroundPermissionsAsync();
+                    if (status === 'granted') {
+                        const loc = (await Location.getLastKnownPositionAsync()) ??
+                                    await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                        if (loc) {
+                            set({ userLocation: loc });
+                            const currentUser = get().user;
+                            if (currentUser && currentUser.id && !currentUser.id.startsWith('local_')) {
+                                if (currentUser.role === 'worker') {
+                                    const { data: locData } = await insforge.database
+                                        .from('provider_locations')
+                                        .select('id')
+                                        .eq('provider_id', currentUser.id)
+                                        .maybeSingle();
+
+                                    if (locData) {
+                                        await insforge.database.from('provider_locations').update({
+                                            latitude: loc.coords.latitude,
+                                            longitude: loc.coords.longitude,
+                                        }).eq('provider_id', currentUser.id);
+                                    } else {
+                                        await insforge.database.from('provider_locations').insert([{
+                                            provider_id: currentUser.id,
+                                            latitude: loc.coords.latitude,
+                                            longitude: loc.coords.longitude,
+                                        }]);
+                                    }
+                                } else if (currentUser.role === 'consumer') {
+                                    await insforge.database.from('users').update({
+                                        current_latitude: loc.coords.latitude,
+                                        current_longitude: loc.coords.longitude,
+                                    }).eq('id', currentUser.id);
+                                }
+                            }
+                        }
+                    }
+                } catch (bgError) {
+                    console.error('[refreshProfile] Background Sync Error:', bgError);
                 }
-            } catch {
-                // Ignore location errors silently
-            }
+            })();
         } catch (err) {
-            console.error('[refreshProfile] Error:', err);
-        } finally {
+            console.error('[refreshProfile] Main Boot Loader Error:', err);
             set({ isLoading: false, hasCheckedAuth: true });
         }
     },
@@ -310,7 +318,36 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     updateDatabaseProfile: async (updates: Partial<UserProfile>) => {
         let newId = updates.id || get().user.id;
         const mobileToUse = updates.phone || get().user.phone;
-        const role = updates.role || get().user.role || 'consumer';
+        
+        let role = updates.role || get().user.role;
+        if (!role && newId && !newId.startsWith('local_')) {
+            try {
+                const { data: providerRec } = await insforge.database
+                    .from('service_providers')
+                    .select('id')
+                    .eq('id', newId)
+                    .maybeSingle();
+
+                if (providerRec) {
+                    role = 'worker';
+                } else {
+                    const { data: userRec } = await insforge.database
+                        .from('users')
+                        .select('role')
+                        .eq('id', newId)
+                        .maybeSingle();
+                    if (userRec) {
+                        role = userRec.role;
+                    }
+                }
+            } catch (err) {
+                console.error('[updateDatabaseProfile] Role resolve error:', err);
+            }
+        }
+        if (!role) {
+            role = 'consumer';
+        }
+
         const tableName = role === 'worker' ? 'service_providers' : 'users';
 
         try {

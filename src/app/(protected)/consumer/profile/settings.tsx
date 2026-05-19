@@ -1,21 +1,21 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal, Platform } from 'react-native';
-import { Ionicons, Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
+import { useAppStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const { user, signOut, updateDatabaseProfile, refreshProfile } = useAppStore();
-    
+
     const [radiusKm, setRadiusKm] = useState(user?.searchRadiusKm || 5);
     const [updatingRadius, setUpdatingRadius] = useState(false);
     const [radiusModalVisible, setRadiusModalVisible] = useState(false);
-    
+
     // Modal states for policies
     const [policyVisible, setPolicyVisible] = useState(false);
     const [policyType, setPolicyType] = useState<'privacy' | 'terms'>('privacy');
@@ -48,8 +48,8 @@ export default function SettingsScreen() {
             "Are you sure you want to permanently delete your consumer account? This action cannot be undone and all active requests, history, and records will be deleted forever.",
             [
                 { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Delete My Account", 
+                {
+                    text: "Delete My Account",
                     style: "destructive",
                     onPress: async () => {
                         try {
@@ -57,7 +57,7 @@ export default function SettingsScreen() {
                                 // 1. Clean up unlocked contact transactions and reviews
                                 await insforge.database.from('reviews').delete().eq('user_id', user.id);
                                 await insforge.database.from('unlock_transactions').delete().eq('user_id', user.id);
-                                
+
                                 // Create account deletion audit requests log
                                 await insforge.database.from('account_deletion_requests').insert([{
                                     user_id: user.id,
@@ -95,7 +95,7 @@ export default function SettingsScreen() {
         <View className="flex-1 bg-white dark:bg-slate-950">
             {/* Header */}
             <View className="pt-14 pb-4 px-6 flex-row items-center border-b border-slate-50 dark:border-slate-800">
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => router.back()}
                     className="w-12 h-12 bg-slate-50 dark:bg-slate-900 rounded-2xl items-center justify-center border border-slate-100 dark:border-slate-800"
                 >
@@ -105,11 +105,11 @@ export default function SettingsScreen() {
             </View>
 
             <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
-                
+
                 {/* SERVICE DISCOVERY SECTION */}
                 <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Service Discovery</Text>
                 <View className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm mb-6 overflow-hidden">
-                    
+
                     {/* Edit Search Location */}
                     <TouchableOpacity
                         onPress={() => router.push('/(location)/locationinfo')}
@@ -174,7 +174,7 @@ export default function SettingsScreen() {
                 {/* ACCOUNT SECTION */}
                 <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Account</Text>
                 <View className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm mb-12 overflow-hidden">
-                    
+
                     {/* Privacy Policy */}
                     <TouchableOpacity
                         onPress={() => {
@@ -280,7 +280,7 @@ export default function SettingsScreen() {
                     <View className="bg-white dark:bg-slate-900 rounded-t-[32px] p-6 pb-10">
                         <View className="flex-row justify-between items-center mb-4">
                             <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">Search Radius</Text>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={() => setRadiusModalVisible(false)}
                                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center"
                             >
@@ -296,15 +296,13 @@ export default function SettingsScreen() {
                                 <TouchableOpacity
                                     key={opt}
                                     onPress={() => handleRadiusChange(opt)}
-                                    className={`w-[30%] py-4.5 rounded-2xl items-center justify-center mb-4 border ${
-                                        radiusKm === opt 
-                                            ? 'bg-black dark:bg-blue-600 border-black dark:border-blue-600' 
+                                    className={`w-[30%] py-4.5 rounded-2xl items-center justify-center mb-4 border ${radiusKm === opt
+                                            ? 'bg-black dark:bg-blue-600 border-black dark:border-blue-600'
                                             : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
-                                    }`}
+                                        }`}
                                 >
-                                    <Text className={`font-black text-sm ${
-                                        radiusKm === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'
-                                    }`}>
+                                    <Text className={`font-black text-sm ${radiusKm === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'
+                                        }`}>
                                         {opt} KM
                                     </Text>
                                 </TouchableOpacity>
@@ -332,7 +330,7 @@ export default function SettingsScreen() {
                         <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                             {policyType === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
                         </Text>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => setPolicyVisible(false)}
                             className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl items-center justify-center border border-slate-100 dark:border-slate-800"
                         >
