@@ -1,9 +1,9 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState } from 'react'
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { ScrollView, Text, TouchableOpacity, View, Alert } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import BackButton from '@/components/back-button'
 import { ShieldIcon, CameraIcon, UploadIcon, CheckCircleIcon, MapPinIcon, StarIcon } from '@/svg/icons'
 
@@ -35,7 +35,9 @@ export default function VerifyIdentity() {
     const signOut = useAppStore(state => state.signOut);
 
     const router = useRouter()
-        const [aadhaarStatus, setAadhaarStatus] = useState<DocStatus>('pending')
+    const params = useLocalSearchParams()
+    const fromDashboard = params?.from === 'dashboard'
+    const [aadhaarStatus, setAadhaarStatus] = useState<DocStatus>('pending')
     const [photoStatus, setPhotoStatus] = useState<DocStatus>('pending')
 
     const statusColor = (s: DocStatus) =>
@@ -160,13 +162,32 @@ export default function VerifyIdentity() {
                 {/* Submit */}
                 <View className='p-4 border-t border-slate-100 dark:border-slate-900 gap-2'>
                     <TouchableOpacity
-                        onPress={() => router.replace('/(onboarding)/all-set')}
+                        onPress={() => {
+                            if (fromDashboard) {
+                                Alert.alert(
+                                    "Submitted",
+                                    "Your documents have been submitted successfully. We will review them within 24 hours.",
+                                    [{ text: "OK", onPress: () => router.replace('/(protected)/worker') }]
+                                );
+                            } else {
+                                router.replace('/(onboarding)/all-set');
+                            }
+                        }}
                         activeOpacity={0.8}
                         className='bg-black dark:bg-blue-600 py-4 rounded-2xl items-center'
                     >
                         <Text className='text-white text-base font-bold'>Submit for review</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => router.replace('/(onboarding)/all-set')} activeOpacity={0.7}>
+                    <TouchableOpacity 
+                        onPress={() => {
+                            if (fromDashboard) {
+                                router.replace('/(protected)/worker');
+                            } else {
+                                router.replace('/(onboarding)/all-set');
+                            }
+                        }} 
+                        activeOpacity={0.7}
+                    >
                         <Text className='text-center text-sm text-slate-400 font-medium'>Skip, I&apos;ll do this later</Text>
                     </TouchableOpacity>
                 </View>

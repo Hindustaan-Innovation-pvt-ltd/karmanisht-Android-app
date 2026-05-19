@@ -18,7 +18,9 @@ export default function Index() {
         if (user?.id) {
             const nextRoute = getOnboardingRoute(user);
             if (nextRoute) {
-                router.replace(nextRoute as any);
+                setTimeout(() => {
+                    router.replace(nextRoute as any);
+                }, 0);
             }
         }
         // If no user, fall through and render the landing page below

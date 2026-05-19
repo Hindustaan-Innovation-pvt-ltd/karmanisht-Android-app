@@ -114,6 +114,29 @@ export default function WorkerSettings() {
         );
     };
 
+    const SettingItem = ({ icon, label, value, onPress, iconColor }: { icon: string, label: string, value?: string, onPress: () => void, iconColor?: string }) => (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.7}
+            className="flex-row items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl mb-2 border border-slate-50 dark:border-slate-800"
+        >
+            <View className="flex-row items-center flex-1 pr-4">
+                <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-950 items-center justify-center">
+                    <Feather name={icon} size={20} color={iconColor || colors.tint} />
+                </View>
+                <View className="ml-4 flex-1">
+                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{label}</Text>
+                    {value && (
+                        <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5" numberOfLines={1}>
+                            {value}
+                        </Text>
+                    )}
+                </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+        </TouchableOpacity>
+    );
+
     return (
         <SafeAreaProvider>
             <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
@@ -143,6 +166,27 @@ export default function WorkerSettings() {
                         />
                     </View>
 
+                    {/* Profile Section */}
+                    <Text className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Profile</Text>
+                    <SettingItem 
+                        icon="user" 
+                        label="Personal Details" 
+                        value={user?.name || "Provider"}
+                        onPress={() => router.push('/(protected)/worker/edit-profile')} 
+                    />
+                    <SettingItem 
+                        icon="map-pin" 
+                        label="Service Area" 
+                        value={user.location}
+                        onPress={() => router.push('/(location)/locationinfo?from=dashboard')} 
+                    />
+                    <SettingItem 
+                        icon="shield" 
+                        label="Identity Verification" 
+                        value="Pending"
+                        iconColor="#D97706"
+                        onPress={() => router.push('/(onboarding)/worker/verify-identity?from=dashboard')} 
+                    />
                     {/* SERVICE CONFIGURATION SECTION */}
                     <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Service Configuration</Text>
                     <View className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm mb-6 overflow-hidden">
@@ -214,7 +258,7 @@ export default function WorkerSettings() {
                         
                         {/* Verification Documents (KYC) */}
                         <TouchableOpacity
-                            onPress={() => router.push('/(onboarding)/worker/verify-identity')}
+                            onPress={() => router.push('/(onboarding)/worker/verify-identity?from=dashboard')}
                             activeOpacity={0.7}
                             className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
                         >

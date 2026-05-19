@@ -2,7 +2,7 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, ScrollView, useColorScheme, TextInput, Alert, ActivityIndicator, Switch, StyleSheet } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useAppStore } from '@/lib/store';
 import * as Location from 'expo-location'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
@@ -22,6 +22,8 @@ export default function LocationInfo() {
     const { user, updateDatabaseProfile } = useAppStore();
     const isDark = useColorScheme() === 'dark'
     const router = useRouter()
+    const params = useLocalSearchParams()
+    const fromDashboard = params?.from === 'dashboard'
 
     const [radiusKm, setRadiusKm] = React.useState(user?.searchRadiusKm || 5)
     const [locationLabel, setLocationLabel] = React.useState(user?.location || 'Shankar Nagar, Raipur')
@@ -53,7 +55,9 @@ export default function LocationInfo() {
             searchRadiusKm: finalRadius
         });
 
-        if (user?.role === 'worker') {
+        if (fromDashboard) {
+            router.back()
+        } else if (user?.role === 'worker') {
             router.push('/(onboarding)/worker/profession')
         } else {
             router.replace('/(onboarding)/all-set')
