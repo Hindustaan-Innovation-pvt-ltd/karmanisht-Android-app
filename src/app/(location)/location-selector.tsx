@@ -22,7 +22,8 @@ export default function LocationSelector() {
 
         if (granted) {
             try {
-                const location = await Location.getCurrentPositionAsync({});
+                const location = (await Location.getLastKnownPositionAsync()) ??
+                                 await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
                 setLocation(location);
                 router.push("/locationinfo")
 
@@ -36,7 +37,8 @@ export default function LocationSelector() {
         // Case 1: Already granted — just get location
         if (permissionStatus === Location.PermissionStatus.GRANTED) {
             try {
-                const location = await Location.getCurrentPositionAsync({});
+                const location = (await Location.getLastKnownPositionAsync()) ??
+                                 await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
                 setLocation(location);
                 router.push("/locationinfo")
             } catch {

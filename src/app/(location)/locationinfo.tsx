@@ -64,7 +64,8 @@ export default function LocationInfo() {
                 Alert.alert('Permission Denied', 'Location permission is required to detect your current area.');
                 return;
             }
-            const loc = await Location.getCurrentPositionAsync({});
+            const loc = (await Location.getLastKnownPositionAsync()) ??
+                        await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
             const reverseGeocode = await Location.reverseGeocodeAsync({
                 latitude: loc.coords.latitude,
                 longitude: loc.coords.longitude

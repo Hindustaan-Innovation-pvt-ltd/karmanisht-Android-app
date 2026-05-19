@@ -65,7 +65,9 @@ export default function SelectLocation() {
                 if (!loc) {
                     const { status } = await Location.requestForegroundPermissionsAsync();
                     if (status === 'granted') {
-                        loc = await Location.getCurrentPositionAsync({});
+                        // Try last known first (instant, no throw); fall back to live fix
+                        loc = await Location.getLastKnownPositionAsync() ??
+                              await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
                     }
                 }
 
@@ -90,10 +92,10 @@ export default function SelectLocation() {
                         setCurrentAddress('Raipur, Chhattisgarh, India');
                     }
                 } else {
-                    setCurrentAddress('Unable to fetch location. Tap to grant permission.');
+                    setCurrentAddress('Raipur, Chhattisgarh, India');
                 }
-            } catch (err) {
-                console.warn(err);
+            } catch {
+                // Location unavailable on this device/emulator — use default
                 setCurrentAddress('Raipur, Chhattisgarh, India');
             }
         };
@@ -122,7 +124,9 @@ export default function SelectLocation() {
                 return;
             }
 
-            const loc = await Location.getCurrentPositionAsync({});
+            // Prefer last-known (instant); fall back to fresh fix with a timeout
+            const loc = (await Location.getLastKnownPositionAsync()) ??
+                        await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
             const lat = loc.coords.latitude;
             const lng = loc.coords.longitude;
 
@@ -500,63 +504,16 @@ export default function SelectLocation() {
                                         >
                                             <Ionicons name="trash-outline" size={18} color="#EF4444" />
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={styles.actionBtn}>
-                                            <Ionicons name="share-social-outline" size={18} color="#64748B" />
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={styles.actionBtn}>
-                                            <Ionicons name="camera-outline" size={18} color="#64748B" />
-                                        </TouchableOpacity>
+                                       
                                     </View>
                                 </View>
                             );
                         })
                     )}
 
-                    {/* RECENT LOCATIONS */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionHeaderText}>RECENT LOCATIONS</Text>
-                    </View>
+                   
 
-                    {/* Recent Item 1 */}
-                    <TouchableOpacity style={styles.recentRow}>
-                        <View style={styles.recentLeft}>
-                            <Ionicons name="time-outline" size={22} color="#64748B" />
-                            <Text style={styles.recentDistance}>266 m</Text>
-                        </View>
-                        <View style={styles.recentDetails}>
-                            <Text style={styles.recentTitle}>Kamal Vihar</Text>
-                            <Text style={styles.recentSubtext} numberOfLines={1}>
-                                Sector 8 A, Dunda, Raipur, Chhattisgarh, India
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Recent Item 2 */}
-                    <TouchableOpacity style={styles.recentRow}>
-                        <View style={styles.recentLeft}>
-                            <Ionicons name="time-outline" size={22} color="#64748B" />
-                            <Text style={styles.recentDistance}>266 m</Text>
-                        </View>
-                        <View style={styles.recentDetails}>
-                            <Text style={styles.recentTitle}>7C3</Text>
-                            <Text style={styles.recentSubtext} numberOfLines={1}>
-                                Kamal Vihar Rd, Raipur
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Google branding */}
-                    <View style={styles.googleBrand}>
-                        <Text style={styles.poweredBy}>powered by</Text>
-                        <Text style={styles.googleText}>
-                            <Text style={{ color: '#4285F4' }}>G</Text>
-                            <Text style={{ color: '#EA4335' }}>o</Text>
-                            <Text style={{ color: '#FBBC05' }}>o</Text>
-                            <Text style={{ color: '#4285F4' }}>g</Text>
-                            <Text style={{ color: '#34A853' }}>l</Text>
-                            <Text style={{ color: '#EA4335' }}>e</Text>
-                        </Text>
-                    </View>
+                   
                 </ScrollView>
             )}
         </SafeAreaView>

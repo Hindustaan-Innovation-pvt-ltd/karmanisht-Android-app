@@ -19,7 +19,8 @@ export default function useGeolocation() {
           return;
         }
 
-        const currentLocation = await Location.getCurrentPositionAsync({});
+        const currentLocation = (await Location.getLastKnownPositionAsync()) ??
+                                await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
 
         if (mounted) {
           setLocation(currentLocation);
