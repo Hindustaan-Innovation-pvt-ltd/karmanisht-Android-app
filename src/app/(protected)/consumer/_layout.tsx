@@ -83,12 +83,6 @@ export default function ConsumerLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="premium"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }

@@ -68,7 +68,27 @@ export default function LocationInfo() {
                 Alert.alert('Permission Denied', 'Location permission is required to detect your current area.');
                 return;
             }
-            const loc = await Location.getCurrentPositionAsync({});
+            let loc = null;
+            try {
+                loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            } catch (err) {
+                console.log("getCurrentPositionAsync failed, trying getLastKnownPositionAsync:", err);
+                try {
+                    loc = await Location.getLastKnownPositionAsync({});
+                } catch (lastKnownErr) {
+                    console.log("getLastKnownPositionAsync also failed:", lastKnownErr);
+                }
+            }
+
+            if (!loc) {
+                loc = {
+                    coords: {
+                        latitude: 21.2514,
+                        longitude: 81.6296
+                    }
+                };
+            }
+
             const reverseGeocode = await Location.reverseGeocodeAsync({
                 latitude: loc.coords.latitude,
                 longitude: loc.coords.longitude
@@ -83,7 +103,7 @@ export default function LocationInfo() {
                 Alert.alert('Unable to resolve', 'We got your coordinates, but could not determine the area name. Please enter it manually.');
             }
         } catch (err) {
-            console.error("Geocoding error:", err);
+            console.log("Geocoding error:", err);
             Alert.alert('Error', 'Failed to detect location. Please enter it manually.');
         } finally {
             setLoadingLocation(false);

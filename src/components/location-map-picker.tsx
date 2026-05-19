@@ -17,27 +17,30 @@ export default function LocationMapPicker({
     onRegionChangeComplete,
     onMarkerDragEnd,
 }: LocationMapPickerProps) {
+    const mapRef = React.useRef<MapView>(null);
+
+    // Animates map viewport to the new region when it changes programmatically
+    React.useEffect(() => {
+        if (region && mapRef.current) {
+            mapRef.current.animateToRegion(region, 350);
+        }
+    }, [region]);
+
     return (
         <MapView
+            ref={mapRef}
             style={StyleSheet.absoluteFillObject}
-            initialRegion={{
+            initialRegion={region || {
                 latitude: coords.latitude,
                 longitude: coords.longitude,
                 latitudeDelta: 0.00922,
                 longitudeDelta: 0.00421,
             }}
-            region={region}
-            onRegionChangeComplete={(r) => {
-                onRegionChangeComplete(r);
-            }}
+            onRegionChangeComplete={onRegionChangeComplete}
         >
             <Marker
                 coordinate={coords}
-                draggable
-                onDragEnd={(e) => {
-                    const c = e.nativeEvent.coordinate;
-                    onMarkerDragEnd(c.latitude, c.longitude);
-                }}
+                draggable={false}
             />
         </MapView>
     );

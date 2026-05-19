@@ -65,7 +65,15 @@ export default function SelectLocation() {
                 if (!loc) {
                     const { status } = await Location.requestForegroundPermissionsAsync();
                     if (status === 'granted') {
-                        loc = await Location.getCurrentPositionAsync({});
+                        try {
+                            loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                        } catch {
+                            try {
+                                loc = await Location.getLastKnownPositionAsync({});
+                            } catch {
+                                // Ignore
+                            }
+                        }
                     }
                 }
 
@@ -90,10 +98,10 @@ export default function SelectLocation() {
                         setCurrentAddress('Raipur, Chhattisgarh, India');
                     }
                 } else {
-                    setCurrentAddress('Unable to fetch location. Tap to grant permission.');
+                    setCurrentAddress('Raipur, Chhattisgarh, India');
                 }
             } catch (err) {
-                console.warn(err);
+                console.log("getGeo address resolving log:", err);
                 setCurrentAddress('Raipur, Chhattisgarh, India');
             }
         };
@@ -122,23 +130,54 @@ export default function SelectLocation() {
                 return;
             }
 
-            const loc = await Location.getCurrentPositionAsync({});
+            let loc = null;
+            try {
+                loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            } catch (err) {
+                console.log("getCurrentPositionAsync failed, trying getLastKnownPositionAsync:", err);
+                try {
+                    loc = await Location.getLastKnownPositionAsync({});
+                } catch (lastKnownErr) {
+                    console.log("getLastKnownPositionAsync also failed:", lastKnownErr);
+                }
+            }
+
+            if (!loc) {
+                // Fallback to Raipur coordinates
+                loc = {
+                    coords: {
+                        latitude: 21.2514,
+                        longitude: 81.6296,
+                        altitude: 0,
+                        accuracy: 5,
+                        altitudeAccuracy: 5,
+                        heading: 0,
+                        speed: 0
+                    },
+                    timestamp: Date.now()
+                };
+            }
+
             const lat = loc.coords.latitude;
             const lng = loc.coords.longitude;
 
             let addr = 'Current Location';
-            const address = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-            if (address && address.length > 0) {
-                const place = address[0];
-                addr = [
-                    place.name,
-                    place.street,
-                    place.district,
-                    place.subregion,
-                    place.city,
-                    place.region,
-                    place.country
-                ].filter(Boolean).join(', ');
+            try {
+                const address = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+                if (address && address.length > 0) {
+                    const place = address[0];
+                    addr = [
+                        place.name,
+                        place.street,
+                        place.district,
+                        place.subregion,
+                        place.city,
+                        place.region,
+                        place.country
+                    ].filter(Boolean).join(', ');
+                }
+            } catch (geocodeErr) {
+                console.log("Geocoding failed inside handleUseCurrentLocation:", geocodeErr);
             }
 
             setFormCoords({ latitude: lat, longitude: lng });
@@ -153,8 +192,19 @@ export default function SelectLocation() {
             setCustomName('');
             setShowAddForm(true);
         } catch (error) {
-            console.error(error);
-            Alert.alert('Error', 'Error getting current location');
+            console.log("Location selection fallback error:", error);
+            // Even if an error happens, open the map form with default Raipur coordinates so the user is not stuck
+            setFormCoords({ latitude: 21.2514, longitude: 81.6296 });
+            setFormRegion({
+                latitude: 21.2514,
+                longitude: 81.6296,
+                latitudeDelta: 0.00922,
+                longitudeDelta: 0.00421,
+            });
+            setAddressLine('Raipur, Chhattisgarh, India');
+            setAddressName('Home');
+            setCustomName('');
+            setShowAddForm(true);
         }
     };
 
@@ -179,7 +229,7 @@ export default function SelectLocation() {
                 setAddressLine(formatted || `${lat.toFixed(6)}, ${lng.toFixed(6)}`);
             }
         } catch (err) {
-            console.warn(err);
+            console.log(err);
         }
     };
 
@@ -321,13 +371,9 @@ export default function SelectLocation() {
                                 });
                                 handleMapDrag(region.latitude, region.longitude);
                             }}
-                            onMarkerDragEnd={(lat, lng) => {
-                                setFormCoords({ latitude: lat, longitude: lng });
-                                handleMapDrag(lat, lng);
-                            }}
                         />
                         <View style={styles.mapPinOverlay}>
-                            <Text style={styles.mapPinText}>Drag map or marker to adjust pin</Text>
+                            <Text style={styles.mapPinText}>Drag map to adjust pin</Text>
                         </View>
                     </View>
 
@@ -478,7 +524,7 @@ export default function SelectLocation() {
 
                             return (
                                 <View key={address.id} style={styles.savedCard}>
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         style={styles.savedCardTop}
                                         onPress={() => handleSelectAddress(address)}
                                     >
@@ -494,7 +540,7 @@ export default function SelectLocation() {
                                         </View>
                                     </TouchableOpacity>
                                     <View style={styles.savedCardActions}>
-                                        <TouchableOpacity 
+                                        <TouchableOpacity
                                             style={styles.deleteBtn}
                                             onPress={() => handleDeleteAddress(address.id)}
                                         >

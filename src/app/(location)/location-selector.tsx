@@ -22,11 +22,32 @@ export default function LocationSelector() {
 
         if (granted) {
             try {
-                const location = await Location.getCurrentPositionAsync({});
+                let location = null;
+                try {
+                    location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                } catch (currentPosErr) {
+                    console.log("getCurrentPositionAsync failed in requestPermissionAndGetLocation:", currentPosErr);
+                    try {
+                        location = await Location.getLastKnownPositionAsync({});
+                    } catch (lastKnownErr) {
+                        console.log("getLastKnownPositionAsync failed in requestPermissionAndGetLocation:", lastKnownErr);
+                    }
+                }
+
+                if (!location) {
+                    location = {
+                        coords: {
+                            latitude: 21.2514,
+                            longitude: 81.6296
+                        }
+                    };
+                }
+
                 setLocation(location);
                 router.push("/locationinfo")
 
-            } catch {
+            } catch (err) {
+                console.log("Failed to get location in requestPermissionAndGetLocation:", err);
                 Alert.alert('Error', 'Failed to get location');
             }
         }
@@ -36,10 +57,31 @@ export default function LocationSelector() {
         // Case 1: Already granted — just get location
         if (permissionStatus === Location.PermissionStatus.GRANTED) {
             try {
-                const location = await Location.getCurrentPositionAsync({});
+                let location = null;
+                try {
+                    location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                } catch (currentPosErr) {
+                    console.log("getCurrentPositionAsync failed in handlePress:", currentPosErr);
+                    try {
+                        location = await Location.getLastKnownPositionAsync({});
+                    } catch (lastKnownErr) {
+                        console.log("getLastKnownPositionAsync failed in handlePress:", lastKnownErr);
+                    }
+                }
+
+                if (!location) {
+                    location = {
+                        coords: {
+                            latitude: 21.2514,
+                            longitude: 81.6296
+                        }
+                    };
+                }
+
                 setLocation(location);
                 router.push("/locationinfo")
-            } catch {
+            } catch (err) {
+                console.log("Failed to get location in handlePress:", err);
                 Alert.alert('Error', 'Failed to get location');
             }
             return;

@@ -37,7 +37,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 .eq('id', userId)
                 .maybeSingle();
 
-            if (consumerData) {
+            if (consumerData && consumerData.role !== 'worker') {
                 const profile: UserProfile = {
                     id: consumerData.id,
                     name: consumerData.full_name || fallbackName || 'User',
@@ -257,34 +257,42 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status === 'granted') {
-                    const loc = await Location.getCurrentPositionAsync({});
-                    set({ userLocation: loc });
+                    let loc = null;
+                    try {
+                        loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                    } catch {
+                        loc = await Location.getLastKnownPositionAsync({});
+                    }
 
-                    if (currentUserId) {
-                        if (currentUserRole === 'worker') {
-                            const { data: locData } = await insforge.database
-                                .from('provider_locations')
-                                .select('id')
-                                .eq('provider_id', currentUserId)
-                                .single();
+                    if (loc) {
+                        set({ userLocation: loc });
 
-                            if (locData) {
-                                await insforge.database.from('provider_locations').update({
-                                    latitude: loc.coords.latitude,
-                                    longitude: loc.coords.longitude,
-                                }).eq('provider_id', currentUserId);
-                            } else {
-                                await insforge.database.from('provider_locations').insert([{
-                                    provider_id: currentUserId,
-                                    latitude: loc.coords.latitude,
-                                    longitude: loc.coords.longitude,
-                                }]);
+                        if (currentUserId) {
+                            if (currentUserRole === 'worker') {
+                                const { data: locData } = await insforge.database
+                                    .from('provider_locations')
+                                    .select('id')
+                                    .eq('provider_id', currentUserId)
+                                    .single();
+
+                                if (locData) {
+                                    await insforge.database.from('provider_locations').update({
+                                        latitude: loc.coords.latitude,
+                                        longitude: loc.coords.longitude,
+                                    }).eq('provider_id', currentUserId);
+                                } else {
+                                    await insforge.database.from('provider_locations').insert([{
+                                        provider_id: currentUserId,
+                                        latitude: loc.coords.latitude,
+                                        longitude: loc.coords.longitude,
+                                    }]);
+                                }
+                            } else if (currentUserRole === 'consumer') {
+                                await insforge.database.from('users').update({
+                                    current_latitude: loc.coords.latitude,
+                                    current_longitude: loc.coords.longitude,
+                                }).eq('id', currentUserId);
                             }
-                        } else if (currentUserRole === 'consumer') {
-                            await insforge.database.from('users').update({
-                                current_latitude: loc.coords.latitude,
-                                current_longitude: loc.coords.longitude,
-                            }).eq('id', currentUserId);
                         }
                     }
                 }

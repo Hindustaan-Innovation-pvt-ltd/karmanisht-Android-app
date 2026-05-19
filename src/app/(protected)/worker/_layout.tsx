@@ -68,7 +68,6 @@ export default function WorkerProtectedLayout() {
                 name="premium-payment"
                 options={{
                     href: null,
-                    tabBarStyle: { display: 'none' },
                 }}
             />
         </Tabs>
