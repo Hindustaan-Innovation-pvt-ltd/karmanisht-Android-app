@@ -6,6 +6,7 @@ import { FlatList, Text, TouchableOpacity, View, Switch, ActivityIndicator, Imag
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StarIcon, MapPinIcon, EditIcon, UploadIcon, ShieldIcon, ClockIcon } from '@/svg/icons';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function WorkerDashboard() {
     const { user, isOnline, toggleOnlineStatus, workerStats } = useAppStore();
@@ -97,7 +98,17 @@ export default function WorkerDashboard() {
 
                     {/* Info */}
                     <View className="flex-1">
-                        <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">{user?.name || 'Anonymous'}</Text>
+                        <View className="flex-row items-center gap-2">
+                            <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                                {user?.name || 'Anonymous'}
+                            </Text>
+                            {user?.isPremium && (
+                                <View className="bg-amber-500 px-1.5 py-0.5 rounded-full flex-row items-center gap-0.5">
+                                    <Ionicons name="star" size={8} color="#fff" />
+                                    <Text className="text-[8px] font-black text-white uppercase">PREMIUM</Text>
+                                </View>
+                            )}
+                        </View>
                         <Text className="text-sm text-slate-500 font-medium">{user?.profession || 'Service Provider'}</Text>
                         <View className="flex-row items-center gap-1 mt-1">
                             <MapPinIcon size={12} color="#94A3B8" />
@@ -150,38 +161,80 @@ export default function WorkerDashboard() {
                     </View>
                     <Text className="text-xs font-black text-amber-900">START</Text>
                 </TouchableOpacity>
+
+                {/* Premium Subscription Nudge */}
+                <TouchableOpacity
+                    onPress={() => router.push('/(protected)/worker/premium-plans')}
+                    className={`flex-row items-center gap-3 mt-3 rounded-2xl p-4 border ${
+                        user?.isPremium 
+                            ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30' 
+                            : 'bg-indigo-50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30'
+                    }`}
+                >
+                    <View className={`size-8 rounded-full items-center justify-center ${
+                        user?.isPremium ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-indigo-100 dark:bg-indigo-900/40'
+                    }`}>
+                        <Ionicons name="ribbon" size={16} color={user?.isPremium ? '#10B981' : '#6366F1'} />
+                    </View>
+                    <View className="flex-1">
+                        <Text className={`text-xs font-bold ${user?.isPremium ? 'text-emerald-900 dark:text-emerald-300' : 'text-indigo-950 dark:text-indigo-300'}`}>
+                            {user?.isPremium ? 'Premium Active' : 'Upgrade to Premium'}
+                        </Text>
+                        <Text className={`text-[10px] ${user?.isPremium ? 'text-emerald-700 dark:text-emerald-400' : 'text-indigo-700 dark:text-indigo-400'}`}>
+                            {user?.isPremium 
+                                ? 'Enjoying top search ranking, verified badge & unlimited leads!' 
+                                : 'Boost ranking, get verified premium badge & unlimited leads'}
+                        </Text>
+                    </View>
+                    <Text className={`text-xs font-black ${user?.isPremium ? 'text-emerald-950 dark:text-emerald-200' : 'text-indigo-950 dark:text-indigo-200'}`}>
+                        {user?.isPremium ? 'ACTIVE' : 'VIEW'}
+                    </Text>
+                </TouchableOpacity>
             </View>
 
             {/* Quick Actions Grid */}
             <View className="px-5 mt-6">
                 <Text className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Settings & Tools</Text>
-                <View className="flex-row gap-3">
-                    <TouchableOpacity
-                        onPress={() => router.push('/(location)/locationinfo')}
-                        className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center gap-2"
-                    >
-                        <View className="size-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 items-center justify-center">
-                            <MapPinIcon size={20} color="#3B82F6" />
-                        </View>
-                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Area</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => router.push('/(onboarding)/worker/verify-identity')}
-                        className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center gap-2"
-                    >
-                        <View className="size-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 items-center justify-center">
-                            <UploadIcon size={20} color="#A855F7" />
-                        </View>
-                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Documents</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center gap-2"
-                    >
-                        <View className="size-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 items-center justify-center">
-                            <StarIcon size={20} color="#F59E0B" filled />
-                        </View>
-                        <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Reviews</Text>
-                    </TouchableOpacity>
+                <View className="flex-col gap-3">
+                    <View className="flex-row gap-3">
+                        <TouchableOpacity
+                            onPress={() => router.push('/(location)/locationinfo')}
+                            className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center gap-2"
+                        >
+                            <View className="size-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 items-center justify-center">
+                                <MapPinIcon size={20} color="#3B82F6" />
+                            </View>
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Area</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => router.push('/(onboarding)/worker/verify-identity')}
+                            className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center gap-2"
+                        >
+                            <View className="size-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 items-center justify-center">
+                                <UploadIcon size={20} color="#A855F7" />
+                            </View>
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Documents</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View className="flex-row gap-3">
+                        <TouchableOpacity
+                            className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center gap-2"
+                        >
+                            <View className="size-10 rounded-xl bg-pink-50 dark:bg-pink-900/20 items-center justify-center">
+                                <StarIcon size={20} color="#EC4899" filled />
+                            </View>
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Reviews</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => router.push('/(protected)/worker/premium-plans')}
+                            className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center gap-2"
+                        >
+                            <View className="size-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 items-center justify-center">
+                                <Ionicons name="ribbon" size={20} color="#F59E0B" />
+                            </View>
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Premium Plans</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
 

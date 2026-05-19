@@ -1,11 +1,12 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import SafeIcon from '@/components/safe-icon';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const VIBRANT_COLORS = [
     '#EF4444', // Red
@@ -37,11 +38,15 @@ const getVibrantColor = (service: any) => {
 };
 
 export default function ServicesScreen() {
-    const { categories } = useAppStore();
+    const { categories, fetchCategories } = useAppStore();
     const router = useRouter();
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const [showSolidBar, setShowSolidBar] = useState(false);
+
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
 
     const renderHeader = () => (
         <View className="px-5 flex-row items-center justify-between mb-8">
@@ -52,8 +57,8 @@ export default function ServicesScreen() {
     return (
         <View className="flex-1 bg-white dark:bg-slate-950">
             {showSolidBar && (
-                <View 
-                    style={{ 
+                <View
+                    style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
@@ -63,7 +68,7 @@ export default function ServicesScreen() {
                         zIndex: 9999,
                         borderBottomWidth: 1,
                         borderBottomColor: isDark ? '#1e293b' : '#f1f5f9',
-                    }} 
+                    }}
                 />
             )}
 
@@ -85,30 +90,35 @@ export default function ServicesScreen() {
                     }
                 }}
                 scrollEventThrottle={16}
-                renderItem={({ item: service }) => {
+                renderItem={({ item: service, index }) => {
                     const cardColor = getVibrantColor(service);
                     return (
-                        <TouchableOpacity
-                            key={service.id}
-                            onPress={() => router.push({
-                                pathname: '/(protected)/consumer/services/[id]',
-                                params: { id: service.id, name: service.name, color: cardColor, icon: service.icon || 'lightning-bolt' }
-                            } as any)}
-                            className="w-[31%] aspect-square rounded-[15px] mb-4 items-center justify-center"
-                            style={{
-                                backgroundColor: cardColor,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.1,
-                                shadowRadius: 3,
-                                elevation: 3
-                            }}
+                        <Animated.View
+                            entering={FadeInDown.delay(index * 25).springify().damping(12)}
+                            className="w-[31%] aspect-square mb-4"
                         >
-                            <SafeIcon name={(service.icon as any) || 'lightning-bolt'} size={40} color="white" />
-                            <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
-                                {service.name}
-                            </Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity
+                                key={service.id}
+                                onPress={() => router.push({
+                                    pathname: '/(protected)/consumer/services/[id]',
+                                    params: { id: service.id, name: service.name, color: cardColor, icon: service.icon || 'lightning-bolt' }
+                                } as any)}
+                                className="w-full h-full rounded-[15px] items-center justify-center"
+                                style={{
+                                    backgroundColor: cardColor,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 3,
+                                    elevation: 3
+                                }}
+                            >
+                                <SafeIcon name={(service.icon as any) || 'lightning-bolt'} size={40} color="white" />
+                                <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
+                                    {service.name}
+                                </Text>
+                            </TouchableOpacity>
+                        </Animated.View>
                     );
                 }}
             />

@@ -15,12 +15,17 @@ import MediaLibraryPicker from '@/components/media-library-picker';
 export default function EditProfile() {
     const user = useAppStore(state => state.user);
     const categories = useAppStore(state => state.categories);
+    const fetchCategories = useAppStore(state => state.fetchCategories);
     const updateProfile = useAppStore(state => state.updateProfile);
     const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
     const refreshProfile = useAppStore(state => state.refreshProfile);
 
     const router = useRouter();
     
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
+
     const [fullName, setFullName] = useState(user?.name || '');
     const [bio, setBio] = useState(user?.bio || '');
     const [selectedCategoryId, setSelectedCategoryId] = useState('');

@@ -1,6 +1,6 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, Dimensions, Linking } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import ConsumerNavbar from '@/components/consumer-navbar';
@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import SafeIcon from '@/components/safe-icon';
 import { useTheme } from '@/lib/theme';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
@@ -44,6 +45,10 @@ export default function ConsumerHome() {
     const [showSolidBar, setShowSolidBar] = useState(false);
 
     const router = useRouter();
+
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
 
     const locationName = user.location || (userLocation ? "Current Location" : "Shankar Nagar, Raipur");
 
@@ -94,7 +99,7 @@ export default function ConsumerHome() {
                             style={{ top: topOffset }}
                             className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
                         >
-                            <Ionicons name="person" size={26} color="white" />
+                            <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
                         </TouchableOpacity>
                     </View>
 
@@ -107,7 +112,7 @@ export default function ConsumerHome() {
                             showsHorizontalScrollIndicator={false}
                             data={unlockedProviders}
                             keyExtractor={(item) => item.id}
-                            renderItem={({ item }) => <ContactCard provider={item} />}
+                            renderItem={({ item, index }) => <ContactCard provider={item} index={index} />}
                             ListEmptyComponent={
                                 <View className="w-64 h-44 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-[15px] items-center justify-center mr-3">
                                     <Text className="text-slate-400 text-center px-4">No contacts unlocked yet. Find a worker below!</Text>
@@ -168,7 +173,7 @@ export default function ConsumerHome() {
                 keyExtractor={(item) => item.id}
                 numColumns={3}
                 columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 20 }}
-                renderItem={({ item }) => <ServiceCard service={item} />}
+                renderItem={({ item, index }) => <ServiceCard service={item} index={index} />}
                 onScroll={(event) => {
                     const offsetY = event.nativeEvent.contentOffset.y;
                     if (offsetY > 16) {
@@ -183,39 +188,41 @@ export default function ConsumerHome() {
     );
 }
 
-const ContactCard = ({ provider }: any) => {
+const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
     const router = useRouter();
     const avatar = provider.profile_image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(provider.full_name);
 
     return (
-        <TouchableOpacity
-            onPress={() => router.push({
-                pathname: '/(protected)/consumer/services/[id]',
-                params: { id: provider.category_id, providerId: provider.id }
-            } as any)}
-            className="w-32 h-44 rounded-[15px] overflow-hidden mr-3 relative shadow-sm border border-gray-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900"
-        >
-            <Image
-                source={{ uri: avatar }}
-                className="w-full h-full"
-                resizeMode="cover"
-            />
-            <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
-                <Text className="text-white text-[10px] font-bold" numberOfLines={1}>{provider.full_name}</Text>
-            </View>
+        <Animated.View entering={FadeInRight.delay(index * 50).springify()}>
             <TouchableOpacity
-                onPress={() => {
-                    if (provider.mobile) {
-                        Linking.openURL(`tel:${provider.mobile}`).catch((err) => {
-                            console.error("Failed to open dialer:", err);
-                        });
-                    }
-                }}
-                className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border border-white bg-green-500 active:scale-90"
+                onPress={() => router.push({
+                    pathname: '/(protected)/consumer/services/[id]',
+                    params: { id: provider.category_id, providerId: provider.id }
+                } as any)}
+                className="w-32 h-44 rounded-[15px] overflow-hidden mr-3 relative shadow-sm border border-gray-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900"
             >
-                <Ionicons name="call" size={16} color="white" />
+                <Image
+                    source={{ uri: avatar }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                />
+                <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
+                    <Text className="text-white text-[10px] font-bold" numberOfLines={1}>{provider.full_name}</Text>
+                </View>
+                <TouchableOpacity
+                    onPress={() => {
+                        if (provider.mobile) {
+                            Linking.openURL(`tel:${provider.mobile}`).catch((err) => {
+                                console.error("Failed to open dialer:", err);
+                            });
+                        }
+                    }}
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border border-white bg-green-500 active:scale-90"
+                >
+                    <Ionicons name="call" size={16} color="white" />
+                </TouchableOpacity>
             </TouchableOpacity>
-        </TouchableOpacity>
+        </Animated.View>
     );
 };
 
@@ -248,26 +255,31 @@ const getVibrantColor = (service: any) => {
     return VIBRANT_COLORS[index];
 };
 
-const ServiceCard = ({ service }: any) => {
+const ServiceCard = ({ service, index }: { service: any; index: number }) => {
     const router = useRouter();
     // Default icons/colors if missing from DB
     const icon = (service.icon as any) || 'lightning-bolt';
     const color = getVibrantColor(service);
 
     return (
-        <TouchableOpacity
-            onPress={() => router.push({
-                pathname: '/(protected)/consumer/services/[id]',
-                params: { id: service.id, name: service.name, color: color, icon: icon }
-            } as any)}
-            className="w-[31%] aspect-square rounded-[20px] mb-4 items-center justify-center shadow-sm"
-            style={{ backgroundColor: color }}
+        <Animated.View 
+            entering={FadeInDown.delay(index * 30).springify().damping(12)}
+            className="w-[31%] aspect-square mb-4"
         >
-            <SafeIcon name={icon} size={36} color="white" />
-            <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
-                {service.name}
-            </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+                onPress={() => router.push({
+                    pathname: '/(protected)/consumer/services/[id]',
+                    params: { id: service.id, name: service.name, color: color, icon: icon }
+                } as any)}
+                className="w-full h-full rounded-[20px] items-center justify-center shadow-sm"
+                style={{ backgroundColor: color }}
+            >
+                <SafeIcon name={icon} size={36} color="white" />
+                <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
+                    {service.name}
+                </Text>
+            </TouchableOpacity>
+        </Animated.View>
     );
 };
 

@@ -6,7 +6,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { 
     UserIcon, ShieldIcon, BellIcon, InfoIcon, 
-    LogOutIcon, ChevronRightIcon, MapPinIcon 
+    LogOutIcon, ChevronRightIcon, MapPinIcon, ZapIcon
 } from '@/svg/icons';
 import { insforge } from '@/lib/insforge';
 import { Feather } from '@expo/vector-icons';
@@ -133,6 +133,13 @@ export default function WorkerSettings() {
                         label="Personal Details" 
                         value={user?.name || "Provider"}
                         onPress={() => router.push('/(protected)/worker/edit-profile')} 
+                    />
+                    <SettingItem 
+                        icon={ZapIcon} 
+                        label="Premium Subscription" 
+                        value={user?.isPremium ? "Premium (Active)" : "Upgrade to Premium"}
+                        color={user?.isPremium ? "#D97706" : "#475569"}
+                        onPress={() => router.push('/(protected)/worker/premium-plans')} 
                     />
                     <SettingItem 
                         icon={MapPinIcon} 

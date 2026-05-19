@@ -4,6 +4,7 @@ import { ActivityIndicator, Image, Text, TouchableOpacity, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppStore } from '@/lib/store'
+import { getOnboardingRoute } from '@/lib/utils'
 
 export default function Index() {
     const router = useRouter()
@@ -15,23 +16,13 @@ export default function Index() {
         if (!hasCheckedAuth || isLoading) return;
 
         if (user?.id) {
-            switch (user.role) {
-                case 'admin':
-                    router.replace('/admin');
-                    break;
-                case 'worker':
-                    router.replace('/(protected)/worker');
-                    break;
-                case 'consumer':
-                    router.replace('/(protected)/consumer');
-                    break;
-                default:
-                    // Authenticated but no role — send to register
-                    router.replace('/(onboarding)/auth/register');
+            const nextRoute = getOnboardingRoute(user);
+            if (nextRoute) {
+                router.replace(nextRoute as any);
             }
         }
         // If no user, fall through and render the landing page below
-    }, [isLoading, hasCheckedAuth, user?.id, user?.role, router])
+    }, [isLoading, hasCheckedAuth, user, router])
 
     // Show a spinner while checking auth on app boot
     if (isLoading) {

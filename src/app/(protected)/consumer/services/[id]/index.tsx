@@ -24,7 +24,7 @@ function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export default function ServiceDetailScreen() {
-        const user = useAppStore(state => state.user);
+    const user = useAppStore(state => state.user);
     const setUser = useAppStore(state => state.setUser);
     const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
     const refreshProfile = useAppStore(state => state.refreshProfile);
@@ -349,8 +349,8 @@ export default function ServiceDetailScreen() {
                                                     } : {})
                                                 }} // 2 columns logic + shadow
                                                 className={`py-3 rounded-2xl border flex-row items-center justify-center px-3 ${isSelected
-                                                        ? 'bg-black border-black'
-                                                        : 'bg-slate-50 border-slate-100'
+                                                    ? 'bg-black border-black'
+                                                    : 'bg-slate-50 border-slate-100'
                                                     }`}
                                             >
                                                 <Ionicons
@@ -493,8 +493,6 @@ export default function ServiceDetailScreen() {
                     </View>
                 )}
             />
-
-            <ConsumerNavbar activeTab="services" />
         </View>
     );
 }

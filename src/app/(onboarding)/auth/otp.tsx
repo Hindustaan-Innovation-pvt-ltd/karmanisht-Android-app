@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/input-otp";
 import { insforge } from '@/lib/insforge';
 import { useAppStore } from '@/lib/store';
+import { getOnboardingRoute } from '@/lib/utils';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
@@ -19,13 +20,6 @@ export default function Otp() {
     const processUserSession = useAppStore(state => state.processUserSession)
     const [otp, setOtp] = useState('')
     const [loading, setLoading] = useState(false)
-
-    // ── Route to the correct dashboard based on role ──────────────────────────
-    const routeByRole = (role: string | null) => {
-        if (role === 'admin') router.replace('/admin')
-        else if (role === 'worker') router.replace('/(protected)/worker')
-        else router.replace('/(protected)/consumer')
-    }
 
     const handleVerifyOtp = async () => {
         if (otp.length < 6) {
@@ -59,8 +53,10 @@ export default function Otp() {
             const profile = await processUserSession(authData.user.id, '');
 
             if (profile) {
-                // Existing user — go straight to their dashboard
-                routeByRole(profile.role);
+                const nextRoute = getOnboardingRoute(profile);
+                if (nextRoute) {
+                    router.replace(nextRoute as any);
+                }
             } else {
                 // No DB record — shouldn't reach OTP without registering
                 await insforge.auth.signOut();

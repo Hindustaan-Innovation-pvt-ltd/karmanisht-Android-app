@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { insforge } from '@/lib/insforge';
 import { Alert, ActivityIndicator, View } from 'react-native';
 import { useAppStore } from '@/lib/store';
+import { getOnboardingRoute } from '@/lib/utils';
 
 export default function AuthCallback() {
     const router = useRouter();
@@ -46,9 +47,10 @@ export default function AuthCallback() {
                 );
 
                 if (profile) {
-                    if (profile.role === 'admin') router.replace('/admin');
-                    else if (profile.role === 'worker') router.replace('/(protected)/worker');
-                    else router.replace('/(protected)/consumer');
+                    const nextRoute = getOnboardingRoute(profile);
+                    if (nextRoute) {
+                        router.replace(nextRoute as any);
+                    }
                 } else {
                     // New user — route to registration with prefilled data
                     router.replace({

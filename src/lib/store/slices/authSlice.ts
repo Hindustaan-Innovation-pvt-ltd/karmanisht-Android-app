@@ -68,7 +68,32 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     bio: workerData.bio || '',
                     experienceYears: workerData.experience_years || 0,
                     isOnline: workerData.is_active ?? true,
+                    isPremium: workerData.is_premium ?? false,
                 };
+
+                // Fetch location for worker
+                const { data: locData } = await insforge.database
+                    .from('provider_locations')
+                    .select('service_radius_km, area_name')
+                    .eq('provider_id', workerData.id)
+                    .maybeSingle();
+                
+                if (locData) {
+                    profile.searchRadiusKm = locData.service_radius_km || 5;
+                    profile.location = locData.area_name || '';
+                }
+
+                // Fetch specialties for worker
+                const { data: servicesData } = await insforge.database
+                    .from('provider_services')
+                    .select('category_id')
+                    .eq('provider_id', workerData.id);
+
+                profile.hasSpecialties = (servicesData && servicesData.length > 0) || false;
+                if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
+                    profile.professionId = servicesData[0].category_id;
+                }
+
                 set({ user: profile });
                 await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
                 return profile;
@@ -113,6 +138,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                             isOnline: data.is_active ?? cachedUser.isOnline,
                             searchRadiusKm: data.search_radius_km || cachedUser.searchRadiusKm,
                             profile_image: data.profile_image || cachedUser.profile_image,
+                            isPremium: data.is_premium ?? cachedUser.isPremium ?? false,
                         };
 
                         if (cachedUser.role === 'worker') {
@@ -128,6 +154,17 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                             if (locData) {
                                 updatedUser.searchRadiusKm = locData.service_radius_km || 5;
                                 updatedUser.location = locData.area_name || cachedUser.location;
+                            }
+
+                            // Query provider_services to check if specialties are set
+                            const { data: servicesData } = await insforge.database
+                                .from('provider_services')
+                                .select('category_id')
+                                .eq('provider_id', cachedUser.id);
+
+                            updatedUser.hasSpecialties = (servicesData && servicesData.length > 0) || false;
+                            if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
+                                updatedUser.professionId = servicesData[0].category_id;
                             }
                         } else {
                             updatedUser.role = data.role || cachedUser.role;

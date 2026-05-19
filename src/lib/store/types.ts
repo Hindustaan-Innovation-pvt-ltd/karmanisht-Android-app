@@ -16,6 +16,8 @@ export interface UserProfile {
     bio?: string;
     searchRadiusKm?: number;
     profile_image?: string;
+    hasSpecialties?: boolean;
+    isPremium?: boolean;
 }
 
 export interface Category {

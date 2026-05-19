@@ -37,7 +37,7 @@ export const createWorkerSlice: StateCreator<AppStoreType, [], [], WorkerSlice> 
                 await insforge.database.from('provider_services').insert(insertData);
             }
 
-            get().setUser({ professionId: categoryIds[0] });
+            get().setUser({ professionId: categoryIds[0], hasSpecialties: true });
             return true;
         } catch (e) {
             console.error("Failed to update specialties:", e);

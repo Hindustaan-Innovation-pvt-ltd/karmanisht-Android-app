@@ -58,6 +58,19 @@ export default function WorkerProtectedLayout() {
                     href: null,
                 }}
             />
+            <Tabs.Screen
+                name="premium-plans"
+                options={{
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="premium-payment"
+                options={{
+                    href: null,
+                    tabBarStyle: { display: 'none' },
+                }}
+            />
         </Tabs>
     );
 }

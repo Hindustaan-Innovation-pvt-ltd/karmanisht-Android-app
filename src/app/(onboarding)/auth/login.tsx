@@ -9,6 +9,7 @@ import * as WebBrowser from 'expo-web-browser'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { insforge } from '@/lib/insforge'
 import { useAppStore } from '@/lib/store'
+import { getOnboardingRoute } from '@/lib/utils'
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -18,12 +19,12 @@ export default function Login() {
     const [mobile, setMobile] = useState('')
     const [loading, setLoading] = useState(false)
 
-    // ── Helper: route a profile to the right dashboard ───────────────────────
-    const routeByRole = (role: string | null) => {
-        if (role === 'admin') router.replace('/admin')
-        else if (role === 'worker') router.replace('/(protected)/worker')
-        else if (role === 'consumer') router.replace('/(protected)/consumer')
-        else router.replace('/(onboarding)/auth/register')
+    // ── Helper: route a profile to the right screen based on onboarding status 
+    const routeProfile = (profile: any) => {
+        const nextRoute = getOnboardingRoute(profile);
+        if (nextRoute) {
+            router.replace(nextRoute as any);
+        }
     }
 
     // ── Mobile OTP: verify account exists then send OTP ──────────────────────
@@ -113,7 +114,7 @@ export default function Login() {
                 );
 
                 if (profile) {
-                    routeByRole(profile.role);
+                    routeProfile(profile);
                 } else {
                     // Brand new Google user — send to register
                     router.replace({
@@ -125,8 +126,10 @@ export default function Login() {
                         }
                     });
                 }
-            } else if (result.type !== 'cancel') {
-                throw new Error('Sign in flow was cancelled or failed.');
+            } else if (result.type === 'cancel' || result.type === 'dismiss') {
+                Alert.alert('Sign-In Cancelled', 'Google sign-in was cancelled.');
+            } else {
+                throw new Error('Sign in flow failed.');
             }
         } catch (error: any) {
             console.error('[Google Auth]', error);
