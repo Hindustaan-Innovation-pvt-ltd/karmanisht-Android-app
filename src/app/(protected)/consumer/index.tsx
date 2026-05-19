@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, Dimensions, Linking } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import ConsumerNavbar from '@/components/consumer-navbar';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import SafeIcon from '@/components/safe-icon';
 import { useTheme } from '@/lib/theme';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import * as Location from 'expo-location';
+import HomeMap from '@/components/home-map';
 
 const { width } = Dimensions.get('window');
 
@@ -45,19 +47,61 @@ export default function ConsumerHome() {
     const [showSolidBar, setShowSolidBar] = useState(false);
 
     const router = useRouter();
+    const params = useLocalSearchParams();
+    const [showLiveMap, setShowLiveMap] = useState(false);
 
     useEffect(() => {
         fetchCategories();
     }, [fetchCategories]);
 
     const locationName = user.location || (userLocation ? "Current Location" : "Shankar Nagar, Raipur");
+    if (params?.showMap === 'true') {
+        setShowLiveMap(true);
+    }
+}, [params?.showMap]);
 
-    const renderHeader = () => (
-        <SafeAreaProvider>
-            <SafeAreaView className='flex-1'>
-                <View className="w-full">
-                    {/* Map Header Area */}
-                    <View className="h-[500px] w-full bg-white dark:bg-slate-900 rounded-b-[40px] overflow-hidden relative shadow-sm dark:shadow-none">
+const [readableAddress, setReadableAddress] = useState<string | null>(null);
+
+useEffect(() => {
+    if (userLocation?.coords) {
+        Location.reverseGeocodeAsync({
+            latitude: userLocation.coords.latitude,
+            longitude: userLocation.coords.longitude
+        }).then(address => {
+            if (address && address.length > 0) {
+                const place = address[0];
+                const name = place.district || place.subregion || place.city || place.name || "";
+                const city = place.city || place.subregion || place.region || "";
+                if (name && city && name !== city) {
+                    setReadableAddress(`${name}, ${city}`);
+                } else {
+                    setReadableAddress(name || city || "Current Location");
+                }
+            }
+        }).catch(err => {
+            console.warn("Reverse geocoding error:", err);
+        });
+    }
+}, [userLocation]);
+
+const locationName = user.location || readableAddress || (userLocation ? "Locating..." : "Shankar Nagar, Raipur");
+
+const renderHeader = () => (
+    <SafeAreaProvider>
+        <SafeAreaView className='flex-1'>
+            <View className="w-full">
+                {/* Map Header Area */}
+                {showLiveMap ? (
+                    <HomeMap
+                        userLocation={userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null}
+                        topOffset={topOffset}
+                        locationName={locationName}
+                        onProfilePress={() => router.push('/(protected)/consumer/profile' as any)}
+                        onLocationPress={() => router.push('/(location)/select-location' as any)}
+                        isDark={isDark}
+                    />
+                ) : (
+                    <View style={{ height: 500 }} className="w-full bg-white dark:bg-slate-900 rounded-b-[40px] overflow-hidden relative shadow-sm dark:shadow-none">
                         <Image
                             source={require('../../../../assets/images/map.png')}
                             className="w-full h-full"
@@ -86,12 +130,17 @@ export default function ConsumerHome() {
                         />
 
                         {/* Centered Location Bar */}
-                        <View style={{ top: topOffset }} className="absolute left-[10%] w-[70%] h-14 bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none">
+                        <TouchableOpacity
+                            onPress={() => router.push('/(location)/select-location' as any)}
+                            style={{ top: topOffset }}
+                            className="absolute left-[10%] w-[70%] h-14 bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none"
+                            activeOpacity={0.8}
+                        >
                             <MaterialCommunityIcons name="target" size={32} color="#3B82F6" />
                             <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-xl" numberOfLines={1}>
                                 {locationName}
                             </Text>
-                        </View>
+                        </TouchableOpacity>
 
                         {/* Profile Icon */}
                         <TouchableOpacity
@@ -99,128 +148,139 @@ export default function ConsumerHome() {
                             style={{ top: topOffset }}
                             className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
                         >
-                            <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
+                            <Ionicons name="person" size={26} color="white" />
                         </TouchableOpacity>
                     </View>
 
+                        {/* Profile Icon */}
+                <TouchableOpacity
+                    onPress={() => router.push('/(protected)/consumer/profile' as any)}
+                    style={{ top: topOffset }}
+                    className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
+                >
+                    <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
+                </TouchableOpacity>
+            </View>
+                    )}
 
-                    {/* Your Contacts Section */}
-                    <View className="mt-8 px-5">
-                        <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">Your Contacts</Text>
-                        <FlatList
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            data={unlockedProviders}
-                            keyExtractor={(item) => item.id}
-                            renderItem={({ item, index }) => <ContactCard provider={item} index={index} />}
-                            ListEmptyComponent={
-                                <View className="w-64 h-44 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-[15px] items-center justify-center mr-3">
-                                    <Text className="text-slate-400 text-center px-4">No contacts unlocked yet. Find a worker below!</Text>
-                                </View>
-                            }
-                            ListFooterComponent={
-                                <TouchableOpacity
-                                    onPress={() => router.push('/(protected)/consumer/services' as any)}
-                                    className="w-32 h-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[15px] items-center justify-center ml-2 shadow-sm"
-                                >
-                                    <Ionicons name="add" size={40} color="#D1D5DB" />
-                                    <Text className="text-sm text-gray-400 dark:text-slate-500 font-medium mt-2">Find more</Text>
-                                </TouchableOpacity>
-                            }
-                        />
-                    </View>
 
-                    {/* Premium Upgrade Banner */}
-                    <View className="px-5 mt-6">
-                        {user?.isPremium ? (
-                            <View className="p-5 bg-gradient-to-r from-amber-500 to-yellow-600 bg-amber-500 rounded-[24px] flex-row items-center justify-between shadow-sm">
-                                <View className="flex-1 pr-2">
-                                    <View className="flex-row items-center gap-1.5 mb-1">
-                                        <MaterialCommunityIcons name="crown" size={18} color="#FFF" />
-                                        <Text className="text-sm font-bold text-white uppercase tracking-wider">Premium Member</Text>
-                                    </View>
-                                    <Text className="text-xs text-amber-50 font-semibold leading-relaxed">
-                                        Rs. 0 platform fees and priority match routing are now active. Thank you!
-                                    </Text>
-                                </View>
-                            </View>
-                        ) : (
-                            <TouchableOpacity
-                                onPress={() => router.push('/(protected)/consumer/premium' as any)}
-                                activeOpacity={0.9}
-                                className="p-5 bg-gradient-to-r from-indigo-600 to-purple-600 bg-indigo-600 rounded-[24px] flex-row items-center justify-between shadow-sm relative overflow-hidden"
-                            >
-                                <View className="flex-1 pr-2">
-                                    <Text className="text-base font-black text-white mb-1">Upgrade to Premium 👑</Text>
-                                    <Text className="text-xs text-indigo-100 font-semibold leading-relaxed">
-                                        Get Rs. 0 platform fees, 3x faster response & verified professionals.
-                                    </Text>
-                                </View>
-                                <View className="bg-white/20 px-3 py-1.5 rounded-xl border border-white/20">
-                                    <Text className="text-[10px] font-black text-white uppercase tracking-wider">
-                                        Upgrade
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-
-                    {/* Explore Services Header */}
-                    <View className="mt-8 px-5 mb-6 flex-row items-center justify-between">
-                        <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">Explore Services</Text>
+            {/* Your Contacts Section */}
+            <View className="mt-8 px-5">
+                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">Your Contacts</Text>
+                <FlatList
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    data={unlockedProviders}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item, index }) => <ContactCard provider={item} index={index} />}
+                    ListEmptyComponent={
+                        <View className="w-64 h-44 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-[15px] items-center justify-center mr-3">
+                            <Text className="text-slate-400 text-center px-4">No contacts unlocked yet. Find a worker below!</Text>
+                        </View>
+                    }
+                    ListFooterComponent={
                         <TouchableOpacity
                             onPress={() => router.push('/(protected)/consumer/services' as any)}
-                            className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
+                            className="w-32 h-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[15px] items-center justify-center ml-2 shadow-sm"
                         >
-                            <Ionicons name="search" size={18} color="#9CA3AF" />
-                            <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+                            <Ionicons name="add" size={40} color="#D1D5DB" />
+                            <Text className="text-sm text-gray-400 dark:text-slate-500 font-medium mt-2">Find more</Text>
                         </TouchableOpacity>
-                    </View>
-                </View>
-            </SafeAreaView>
-        </SafeAreaProvider>
-    );
-
-    return (
-        <View className="flex-1 bg-white dark:bg-slate-950">
-            {showSolidBar && (
-                <View
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: insets.top + 6,
-                        backgroundColor: isDark ? '#090d16' : '#ffffff',
-                        zIndex: 9999,
-                        borderBottomWidth: 1,
-                        borderBottomColor: isDark ? '#1e293b' : '#f1f5f9',
-                    }}
-                />
-            )}
-
-            <FlatList
-                className="flex-1"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 150 }}
-                ListHeaderComponent={renderHeader}
-                data={categories}
-                keyExtractor={(item) => item.id}
-                numColumns={3}
-                columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 20 }}
-                renderItem={({ item, index }) => <ServiceCard service={item} index={index} />}
-                onScroll={(event) => {
-                    const offsetY = event.nativeEvent.contentOffset.y;
-                    if (offsetY > 16) {
-                        setShowSolidBar(true);
-                    } else {
-                        setShowSolidBar(false);
                     }
-                }}
-                scrollEventThrottle={16}
-            />
+                />
+            </View>
+
+            {/* Premium Upgrade Banner */}
+            <View className="px-5 mt-6">
+                {user?.isPremium ? (
+                    <View className="p-5 bg-gradient-to-r from-amber-500 to-yellow-600 bg-amber-500 rounded-[24px] flex-row items-center justify-between shadow-sm">
+                        <View className="flex-1 pr-2">
+                            <View className="flex-row items-center gap-1.5 mb-1">
+                                <MaterialCommunityIcons name="crown" size={18} color="#FFF" />
+                                <Text className="text-sm font-bold text-white uppercase tracking-wider">Premium Member</Text>
+                            </View>
+                            <Text className="text-xs text-amber-50 font-semibold leading-relaxed">
+                                Rs. 0 platform fees and priority match routing are now active. Thank you!
+                            </Text>
+                        </View>
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        onPress={() => router.push('/(protected)/consumer/premium' as any)}
+                        activeOpacity={0.9}
+                        className="p-5 bg-gradient-to-r from-indigo-600 to-purple-600 bg-indigo-600 rounded-[24px] flex-row items-center justify-between shadow-sm relative overflow-hidden"
+                    >
+                        <View className="flex-1 pr-2">
+                            <Text className="text-base font-black text-white mb-1">Upgrade to Premium 👑</Text>
+                            <Text className="text-xs text-indigo-100 font-semibold leading-relaxed">
+                                Get Rs. 0 platform fees, 3x faster response & verified professionals.
+                            </Text>
+                        </View>
+                        <View className="bg-white/20 px-3 py-1.5 rounded-xl border border-white/20">
+                            <Text className="text-[10px] font-black text-white uppercase tracking-wider">
+                                Upgrade
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            {/* Explore Services Header */}
+            <View className="mt-8 px-5 mb-6 flex-row items-center justify-between">
+                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">Explore Services</Text>
+                <TouchableOpacity
+                    onPress={() => router.push('/(protected)/consumer/services' as any)}
+                    className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
+                >
+                    <Ionicons name="search" size={18} color="#9CA3AF" />
+                    <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+                </TouchableOpacity>
+            </View>
         </View>
+    </SafeAreaView>
+        </SafeAreaProvider >
     );
+
+return (
+    <View className="flex-1 bg-white dark:bg-slate-950">
+        {showSolidBar && (
+            <View
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: insets.top + 6,
+                    backgroundColor: isDark ? '#090d16' : '#ffffff',
+                    zIndex: 9999,
+                    borderBottomWidth: 1,
+                    borderBottomColor: isDark ? '#1e293b' : '#f1f5f9',
+                }}
+            />
+        )}
+
+        <FlatList
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 150 }}
+            ListHeaderComponent={renderHeader}
+            data={categories}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 20 }}
+            renderItem={({ item, index }) => <ServiceCard service={item} index={index} />}
+            onScroll={(event) => {
+                const offsetY = event.nativeEvent.contentOffset.y;
+                if (offsetY > 16) {
+                    setShowSolidBar(true);
+                } else {
+                    setShowSolidBar(false);
+                }
+            }}
+            scrollEventThrottle={16}
+        />
+    </View>
+);
 }
 
 const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
@@ -297,7 +357,7 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
     const color = getVibrantColor(service);
 
     return (
-        <Animated.View 
+        <Animated.View
             entering={FadeInDown.delay(index * 30).springify().damping(12)}
             className="w-[31%] aspect-square mb-4"
         >

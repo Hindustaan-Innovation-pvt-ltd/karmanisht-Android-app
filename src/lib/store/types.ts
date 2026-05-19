@@ -83,4 +83,6 @@ export const defaultUser: UserProfile = {
 export const STORAGE_KEYS = {
     USER: '@@app_user',
     ONLINE: '@@app_online',
+    TOKEN: '@@app_token',
+    REFRESH_TOKEN: '@@app_refresh_token',
 };

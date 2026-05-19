@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { insforge, uploadToInsForge } from '@/lib/insforge';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme, Modal, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -99,6 +100,12 @@ export default function Register() {
                 });
                 if (authError || !authData?.user) {
                     throw new Error(authError?.message || 'Could not establish auth session.');
+                }
+                if (authData.accessToken) {
+                    await AsyncStorage.setItem('@@app_token', authData.accessToken);
+                }
+                if (authData.refreshToken) {
+                    await AsyncStorage.setItem('@@app_refresh_token', authData.refreshToken);
                 }
                 finalUserId = authData.user.id;
             }
