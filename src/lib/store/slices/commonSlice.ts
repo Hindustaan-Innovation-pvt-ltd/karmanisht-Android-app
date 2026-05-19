@@ -15,8 +15,8 @@ export const createCommonSlice: StateCreator<AppStoreType, [], [], CommonSlice> 
                 set({ categories: data });
             } else {
                 set({ categories: [
-                    { id: '1', name: 'Electrician', icon: 'zap', color: '#fbbf24' },
-                    { id: '2', name: 'Plumber', icon: 'droplets', color: '#3b82f6' },
+                    { id: '3489b160-1ea8-42cb-808f-7279e35cc717', name: 'Electrician', icon: 'zap', color: '#fbbf24' },
+                    { id: '7e1f79f0-1820-4241-8ebb-a6595f1988b0', name: 'Plumber', icon: 'droplets', color: '#3b82f6' },
                 ] });
             }
         } catch (err) {

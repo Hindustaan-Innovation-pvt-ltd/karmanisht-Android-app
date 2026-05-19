@@ -29,6 +29,11 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     // Returns null if the user has no DB record (brand new user needs to register).
     // ─────────────────────────────────────────────────────────────────────────
     processUserSession: async (userId: string, fallbackName?: string): Promise<UserProfile | null> => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(userId)) {
+            console.warn('[processUserSession] Invalid user ID format:', userId);
+            return null;
+        }
         try {
             // 1. Check service providers (workers) table first
             const { data: workerData } = await insforge.database
@@ -166,7 +171,8 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
 
                     // A. Revalidate User Profile from DB
                     const activeUser = get().user;
-                    if (activeUser && activeUser.id && !activeUser.id.startsWith('local_')) {
+                    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                    if (activeUser && activeUser.id && !activeUser.id.startsWith('local_') && uuidRegex.test(activeUser.id)) {
                         const tableName = activeUser.role === 'worker' ? 'service_providers' : 'users';
                         const { data, error } = await insforge.database
                             .from(tableName)
@@ -226,14 +232,14 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
 
                     // B. Sync Unlocked Contacts for Consumers
                     const latestUser = get().user;
-                    if (latestUser && latestUser.id && latestUser.role === 'consumer') {
+                    if (latestUser && latestUser.id && latestUser.role === 'consumer' && uuidRegex.test(latestUser.id)) {
                         const { data: txs, error: txError } = await insforge.database
                             .from('unlock_transactions')
                             .select('provider_id')
                             .eq('user_id', latestUser.id);
 
                         if (txs && !txError) {
-                            const providerIds = txs.map(t => t.provider_id).filter(Boolean);
+                            const providerIds = txs.map(t => t.provider_id).filter(id => id && uuidRegex.test(id));
                             set({ unlockedContacts: providerIds });
 
                             if (providerIds.length > 0) {
@@ -318,9 +324,10 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     updateDatabaseProfile: async (updates: Partial<UserProfile>) => {
         let newId = updates.id || get().user.id;
         const mobileToUse = updates.phone || get().user.phone;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         
         let role = updates.role || get().user.role;
-        if (!role && newId && !newId.startsWith('local_')) {
+        if (!role && newId && !newId.startsWith('local_') && uuidRegex.test(newId)) {
             try {
                 const { data: providerRec } = await insforge.database
                     .from('service_providers')
@@ -353,12 +360,12 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
         try {
             let existingRecord = null;
 
-            if (newId && !newId.startsWith('local_')) {
+            if (newId && !newId.startsWith('local_') && uuidRegex.test(newId)) {
                 const { data } = await insforge.database
                     .from(tableName)
                     .select('*')
                     .eq('id', newId)
-                    .single();
+                    .maybeSingle();
                 existingRecord = data;
             }
 
@@ -367,7 +374,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     .from(tableName)
                     .select('*')
                     .eq('mobile', mobileToUse)
-                    .single();
+                    .maybeSingle();
                 existingRecord = data;
             }
 
@@ -402,7 +409,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 newId = existingRecord.id;
                 await insforge.database.from(tableName).update(payload).eq('id', newId);
             } else {
-                if (newId && !newId.startsWith('local_')) {
+                if (newId && !newId.startsWith('local_') && uuidRegex.test(newId)) {
                     payload.id = newId;
                 }
                 const { data, error } = await insforge.database
@@ -418,7 +425,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             }
 
             // For workers, also sync the users table (for unified login lookup)
-            if (role === 'worker' && newId && !newId.startsWith('local_')) {
+            if (role === 'worker' && newId && !newId.startsWith('local_') && uuidRegex.test(newId)) {
                 await insforge.database.from('users').upsert([{
                     id: newId,
                     full_name: updates.name || payload.full_name,
@@ -433,7 +440,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         .from('provider_locations')
                         .select('id')
                         .eq('provider_id', newId)
-                        .single();
+                        .maybeSingle();
 
                     const locPayload: any = {};
                     if (updates.location !== undefined) locPayload.area_name = updates.location;

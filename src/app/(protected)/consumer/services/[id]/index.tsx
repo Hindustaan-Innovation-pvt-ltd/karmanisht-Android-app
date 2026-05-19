@@ -66,6 +66,17 @@ export default function ServiceDetailScreen() {
 
     const fetchSubCategories = async () => {
         setLoadingTags(true);
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(id)) {
+            console.warn(`fetchSubCategories: invalid category id format: "${id}". Using fallbacks.`);
+            setSubCategories([
+                { id: '1', name: 'Emergency Repair' },
+                { id: '2', name: 'New Installation' },
+                { id: '3', name: 'Maintenance' },
+            ]);
+            setLoadingTags(false);
+            return;
+        }
         try {
             const { data, error } = await insforge.database
                 .from('service_tags')
@@ -91,6 +102,13 @@ export default function ServiceDetailScreen() {
 
     const fetchProviders = async () => {
         setLoading(true);
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(id)) {
+            console.warn(`fetchProviders: invalid category id format: "${id}". Skipping DB fetch.`);
+            setProviders([]);
+            setLoading(false);
+            return;
+        }
         try {
             const { data: provSvcData, error: provSvcError } = await insforge.database
                 .from('provider_services')
