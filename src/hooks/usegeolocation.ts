@@ -20,7 +20,7 @@ export default function useGeolocation() {
         }
 
         const currentLocation = (await Location.getLastKnownPositionAsync()) ??
-                                await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
+                                await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
 
         if (mounted) {
           setLocation(currentLocation);

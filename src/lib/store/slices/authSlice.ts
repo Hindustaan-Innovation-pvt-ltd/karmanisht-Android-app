@@ -259,7 +259,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 if (status === 'granted') {
                     // Prefer cached position (instant, no throw on emulators)
                     const loc = (await Location.getLastKnownPositionAsync()) ??
-                                await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
+                                await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                     set({ userLocation: loc });
 
                     if (loc) {

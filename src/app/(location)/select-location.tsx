@@ -65,9 +65,8 @@ export default function SelectLocation() {
                 if (!loc) {
                     const { status } = await Location.requestForegroundPermissionsAsync();
                     if (status === 'granted') {
-                        // Try last known first (instant, no throw); fall back to live fix
                         loc = await Location.getLastKnownPositionAsync() ??
-                              await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
+                              await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                     }
                 }
 
@@ -124,9 +123,8 @@ export default function SelectLocation() {
                 return;
             }
 
-            // Prefer last-known (instant); fall back to fresh fix with a timeout
             const loc = (await Location.getLastKnownPositionAsync()) ??
-                        await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
+                        await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
             const lat = loc.coords.latitude;
             const lng = loc.coords.longitude;
 

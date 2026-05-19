@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useRef, useState, useCallback } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import MapView from 'react-native-maps';
+import MapView, { UrlTile } from 'react-native-maps';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -76,6 +76,7 @@ export default function HomeMap({
             <MapView
                 ref={mapRef}
                 style={StyleSheet.absoluteFillObject}
+                mapType="standard"
                 initialRegion={region}
                 onRegionChangeComplete={setRegion}
                 showsUserLocation      // native blue dot — live GPS
@@ -86,7 +87,14 @@ export default function HomeMap({
                 zoomEnabled
                 rotateEnabled
                 pitchEnabled
-            />
+            >
+                <UrlTile
+                    urlTemplate="https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                    maximumZ={19}
+                    flipY={false}
+                    zIndex={1}
+                />
+            </MapView>
 
             {/* ── Top gradient overlay ──────────────────────────────────────── */}
             <LinearGradient

@@ -39,7 +39,12 @@
         "android.permission.READ_MEDIA_AUDIO",
         "android.permission.READ_MEDIA_IMAGES"
       ],
-      "package": "com.developershre.mobileapp"
+      "package": "com.developershre.mobileapp",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAn-PlaceholderKeyForDevelopment-UpdateThis"
+        }
+      }
     },
     "web": {
       "bundler": "metro",

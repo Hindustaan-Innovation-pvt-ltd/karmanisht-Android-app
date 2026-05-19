@@ -23,7 +23,7 @@ export default function LocationSelector() {
         if (granted) {
             try {
                 const location = (await Location.getLastKnownPositionAsync()) ??
-                                 await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
+                                 await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                 setLocation(location);
                 router.push("/locationinfo")
 
@@ -39,7 +39,7 @@ export default function LocationSelector() {
         if (permissionStatus === Location.PermissionStatus.GRANTED) {
             try {
                 const location = (await Location.getLastKnownPositionAsync()) ??
-                                 await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
+                                 await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                 setLocation(location);
                 router.push("/locationinfo")
             } catch (err) {

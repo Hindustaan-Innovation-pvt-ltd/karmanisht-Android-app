@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Native implementation — uses react-native-maps
 import React from 'react';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { StyleSheet } from 'react-native';
 
 interface LocationMapPickerProps {
@@ -30,6 +30,7 @@ export default function LocationMapPicker({
         <MapView
             ref={mapRef}
             style={StyleSheet.absoluteFillObject}
+            mapType="standard"
             initialRegion={region || {
                 latitude: coords.latitude,
                 longitude: coords.longitude,
@@ -38,9 +39,16 @@ export default function LocationMapPicker({
             }}
             onRegionChangeComplete={onRegionChangeComplete}
         >
+            <UrlTile
+                urlTemplate="https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                maximumZ={19}
+                flipY={false}
+                zIndex={1}
+            />
             <Marker
                 coordinate={coords}
                 draggable={false}
+                zIndex={2}
             />
         </MapView>
     );
