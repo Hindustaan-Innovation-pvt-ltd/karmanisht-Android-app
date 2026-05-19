@@ -26,12 +26,12 @@ export default function LocationInfo() {
     const [radiusKm, setRadiusKm] = React.useState(user?.searchRadiusKm || 5)
     const [locationLabel, setLocationLabel] = React.useState(user?.location || 'Shankar Nagar, Raipur')
     const [loadingLocation, setLoadingLocation] = React.useState(false)
-    const [cityWide, setCityWide] = React.useState(user?.searchRadiusKm >= 30 ? true : false)
+    const [cityWide, setCityWide] = React.useState(user?.role === 'worker' && user?.searchRadiusKm >= 30 ? true : false)
 
     React.useEffect(() => {
         if (user?.searchRadiusKm) {
             setRadiusKm(user.searchRadiusKm)
-            if (user.searchRadiusKm >= 30) {
+            if (user.role === 'worker' && user.searchRadiusKm >= 30) {
                 setCityWide(true)
             }
         }
@@ -46,7 +46,7 @@ export default function LocationInfo() {
             return;
         }
 
-        const finalRadius = cityWide ? 50 : radiusKm;
+        const finalRadius = (user?.role === 'worker' && cityWide) ? 50 : radiusKm;
 
         await updateDatabaseProfile({
             location: locationLabel.trim(),
@@ -173,7 +173,7 @@ export default function LocationInfo() {
                                         backgroundColor: isDark ? 'rgba(71, 85, 105, 0.15)' : '#E2E8F0',
                                         transform: [{ scale: getScale() }]
                                     }}
-                                    className="items-center justify-center transition-all duration-300"
+                                    className="items-center justify-center"
                                 >
                                     {/* Inner Location Pin Badge */}
                                     <View className="size-10 rounded-full bg-slate-900 dark:bg-slate-100 items-center justify-center border-2 border-white dark:border-slate-950 shadow-md">
@@ -213,17 +213,19 @@ export default function LocationInfo() {
                         </View>
 
                         {/* City Wide Switch Row */}
-                        <View className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex-row justify-between items-center mb-6">
-                            <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                Accept city wide requests
-                            </Text>
-                            <Switch
-                                value={cityWide}
-                                onValueChange={setCityWide}
-                                trackColor={{ false: '#E2E8F0', true: '#000000' }}
-                                thumbColor={cityWide ? '#FFFFFF' : '#FFFFFF'}
-                            />
-                        </View>
+                        {user?.role === 'worker' && (
+                            <View className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex-row justify-between items-center mb-6">
+                                <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                    Accept city wide requests
+                                </Text>
+                                <Switch
+                                    value={cityWide}
+                                    onValueChange={setCityWide}
+                                    trackColor={{ false: '#E2E8F0', true: '#000000' }}
+                                    thumbColor={cityWide ? '#FFFFFF' : '#FFFFFF'}
+                                />
+                            </View>
+                        )}
                     </View>
                 </ScrollView>
 

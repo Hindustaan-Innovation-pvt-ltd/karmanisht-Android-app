@@ -78,24 +78,6 @@ export default function ProfileScreen() {
                     </View>
                 </View>
 
-                {/* Quick Stats Grid */}
-                <View className="px-6 mt-6 flex-row justify-between">
-                    <View className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl mr-3 items-center shadow-sm">
-                        <View className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 items-center justify-center mb-2">
-                            <Feather name="unlock" size={18} color={colors.tint} />
-                        </View>
-                        <Text className="text-2xl font-black text-slate-900 dark:text-slate-100">{unlockedContacts.length}</Text>
-                        <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Unlocked</Text>
-                    </View>
-
-                    <View className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl ml-3 items-center shadow-sm">
-                        <View className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-900/30 items-center justify-center mb-2">
-                            <Feather name="shield" size={18} color="#10B981" />
-                        </View>
-                        <Text className="text-2xl font-black text-green-600 dark:text-green-400">Verified</Text>
-                        <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Security</Text>
-                    </View>
-                </View>
 
                 {/* Menu List Card */}
                 <View className="px-6 mt-8">

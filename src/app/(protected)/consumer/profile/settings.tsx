@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal, Image, Platform } from 'react-native';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal, Platform } from 'react-native';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
@@ -11,10 +11,10 @@ export default function SettingsScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const { user, signOut, updateDatabaseProfile, refreshProfile } = useAppStore();
-    const [notifications, setNotifications] = useState(true);
-    const [location, setLocation] = useState(true);
+    
     const [radiusKm, setRadiusKm] = useState(user?.searchRadiusKm || 5);
     const [updatingRadius, setUpdatingRadius] = useState(false);
+    const [radiusModalVisible, setRadiusModalVisible] = useState(false);
     
     // Modal states for policies
     const [policyVisible, setPolicyVisible] = useState(false);
@@ -33,6 +33,7 @@ export default function SettingsScreen() {
         try {
             await updateDatabaseProfile({ searchRadiusKm: opt });
             await refreshProfile();
+            setRadiusModalVisible(false);
         } catch (error) {
             console.error("Error updating radius:", error);
             Alert.alert("Update Failed", "Could not sync your distance settings.");
@@ -90,25 +91,10 @@ export default function SettingsScreen() {
         );
     };
 
-    const handleItemPress = (itemId: string) => {
-        if (itemId === 'delete') {
-            handleDeleteAccount();
-        } else if (itemId === 'privacy') {
-            setPolicyType('privacy');
-            setPolicyVisible(true);
-        } else if (itemId === 'terms') {
-            setPolicyType('terms');
-            setPolicyVisible(true);
-        }
-    };
-
-    // Customer profile image (Unsplash portrait or uploaded user picture)
-    const profileImage = user?.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400";
-
     return (
         <View className="flex-1 bg-white dark:bg-slate-950">
             {/* Header */}
-            <View className="pt-14 pb-6 px-6 flex-row items-center border-b border-slate-50 dark:border-slate-800">
+            <View className="pt-14 pb-4 px-6 flex-row items-center border-b border-slate-50 dark:border-slate-800">
                 <TouchableOpacity 
                     onPress={() => router.back()}
                     className="w-12 h-12 bg-slate-50 dark:bg-slate-900 rounded-2xl items-center justify-center border border-slate-100 dark:border-slate-800"
@@ -119,143 +105,220 @@ export default function SettingsScreen() {
             </View>
 
             <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
-                {/* Consumer Account Profile Box */}
-                <View className="bg-slate-50 dark:bg-slate-900 p-5 rounded-[28px] flex-row items-center border border-slate-100 dark:border-slate-800 mb-8 shadow-sm">
-                    <Image
-                        source={{ uri: profileImage }}
-                        className="w-16 h-16 rounded-[20px] bg-slate-200 dark:bg-slate-800 border-2 border-white dark:border-slate-700"
-                        resizeMode="cover"
-                    />
-                    <View className="ml-4 flex-1">
-                        <Text className="text-xl font-bold text-slate-900 dark:text-slate-100" numberOfLines={1}>
-                            {user?.name || 'Consumer Profile'}
-                        </Text>
-                        <Text className="text-slate-400 dark:text-slate-500 font-bold text-sm mt-0.5">
-                            {user?.phone || 'Linked via Mobile'}
-                        </Text>
-                    </View>
-                    <View className="bg-green-100 dark:bg-green-900/30 px-3.5 py-1.5 rounded-full border border-green-200/50 dark:border-green-800/30">
-                        <Text className="text-[10px] font-black text-green-700 dark:text-green-400 uppercase tracking-widest">Active</Text>
-                    </View>
+                
+                {/* SERVICE DISCOVERY SECTION */}
+                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Service Discovery</Text>
+                <View className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm mb-6 overflow-hidden">
+                    
+                    {/* Edit Search Location */}
+                    <TouchableOpacity
+                        onPress={() => router.push('/(location)/locationinfo')}
+                        activeOpacity={0.7}
+                        className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
+                                <Feather name="map-pin" size={20} color={colors.tint} />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Edit search location</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5" numberOfLines={1}>
+                                    Currently: {user?.location || 'Not configured'}
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                    </TouchableOpacity>
+
+                    {/* Edit Search Radius */}
+                    <TouchableOpacity
+                        onPress={() => setRadiusModalVisible(true)}
+                        activeOpacity={0.7}
+                        className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
+                                <Feather name="compass" size={20} color={colors.tint} />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Edit search radius</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                    Currently: {radiusKm} km
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                    </TouchableOpacity>
+
+                    {/* Edit Profile Details */}
+                    <TouchableOpacity
+                        onPress={() => router.push('/(protected)/consumer/profile/info')}
+                        activeOpacity={0.7}
+                        className="flex-row items-center justify-between p-4"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
+                                <Feather name="user" size={20} color={colors.tint} />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Edit profile details</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                    Name, photo, phone
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                    </TouchableOpacity>
                 </View>
 
-                {/* Service Discovery Radius Setting */}
-                <View className="mb-8">
-                    <View className="flex-row justify-between items-center mb-3">
-                        <Text className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Search Distance Range</Text>
-                        {updatingRadius && <ActivityIndicator size="small" color={colors.tint} />}
-                    </View>
+                {/* ACCOUNT SECTION */}
+                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Account</Text>
+                <View className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm mb-12 overflow-hidden">
                     
-                    <View className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm">
-                        <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-4">
-                            Select the maximum radius (in kilometers) within which you wish to discover local service providers.
+                    {/* Privacy Policy */}
+                    <TouchableOpacity
+                        onPress={() => {
+                            setPolicyType('privacy');
+                            setPolicyVisible(true);
+                        }}
+                        activeOpacity={0.7}
+                        className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
+                                <Feather name="lock" size={20} color={colors.tint} />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Privacy policy</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                    How we use your data
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                    </TouchableOpacity>
+
+                    {/* Help and Support */}
+                    <TouchableOpacity
+                        onPress={() => {
+                            Alert.alert("Support Team", "Reach out to us at: support@hindustaninnovations.com\nPhone: +91 98765 43210");
+                        }}
+                        activeOpacity={0.7}
+                        className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
+                                <Feather name="help-circle" size={20} color={colors.tint} />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Help and support</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                    Contact the team
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                    </TouchableOpacity>
+
+                    {/* Logout */}
+                    <TouchableOpacity
+                        onPress={async () => {
+                            await signOut();
+                            router.replace('/');
+                        }}
+                        activeOpacity={0.7}
+                        className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
+                                <Feather name="log-out" size={20} color="#64748B" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-700 dark:text-slate-300">Logout</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                    Sign out of your session
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                    </TouchableOpacity>
+
+                    {/* Delete Account */}
+                    <TouchableOpacity
+                        onPress={handleDeleteAccount}
+                        activeOpacity={0.7}
+                        className="flex-row items-center justify-between p-4"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-950/30 items-center justify-center">
+                                <Feather name="trash-2" size={20} color="#EF4444" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-red-500">Delete Account</Text>
+                                <Text className="text-xs text-red-400 dark:text-red-600/70 font-medium mt-0.5">
+                                    Permanently delete account
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#EF4444" />
+                    </TouchableOpacity>
+                </View>
+
+                <Text className="text-center text-slate-300 text-[10px] font-bold mt-2 mb-12 tracking-widest">
+                    HINDUSTAN INNOVATIONS • V1.0.4
+                </Text>
+            </ScrollView>
+
+            {/* Service Radius Selector Modal */}
+            <Modal
+                visible={radiusModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setRadiusModalVisible(false)}
+            >
+                <View className="flex-1 justify-end bg-black/50">
+                    <View className="bg-white dark:bg-slate-900 rounded-t-[32px] p-6 pb-10">
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">Search Radius</Text>
+                            <TouchableOpacity 
+                                onPress={() => setRadiusModalVisible(false)}
+                                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center"
+                            >
+                                <Ionicons name="close" size={20} color={colors.text} />
+                            </TouchableOpacity>
+                        </View>
+                        <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-6">
+                            Choose the maximum distance (in kilometers) within which you wish to discover local service providers.
                         </Text>
-                        <View className="flex-row justify-between items-center bg-white dark:bg-slate-950 p-2 rounded-2xl border border-slate-150 dark:border-slate-800">
-                            {[2, 5, 10, 20].map((opt) => (
+
+                        <View className="flex-row flex-wrap justify-between">
+                            {[2, 5, 10, 15, 20, 30, 50].map((opt) => (
                                 <TouchableOpacity
                                     key={opt}
                                     onPress={() => handleRadiusChange(opt)}
-                                    className={`px-4 py-3.5 rounded-xl flex-1 items-center justify-center ${radiusKm === opt ? 'bg-black dark:bg-blue-600' : 'bg-transparent'}`}
+                                    className={`w-[30%] py-4.5 rounded-2xl items-center justify-center mb-4 border ${
+                                        radiusKm === opt 
+                                            ? 'bg-black dark:bg-blue-600 border-black dark:border-blue-600' 
+                                            : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
+                                    }`}
                                 >
-                                    <Text className={`font-black text-sm ${radiusKm === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                                    <Text className={`font-black text-sm ${
+                                        radiusKm === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'
+                                    }`}>
                                         {opt} KM
                                     </Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
+                        {updatingRadius && (
+                            <View className="flex-row items-center justify-center mt-4 gap-2">
+                                <ActivityIndicator size="small" color={colors.tint} />
+                                <Text className="text-xs text-slate-400">Updating radius...</Text>
+                            </View>
+                        )}
                     </View>
                 </View>
-
-                {/* Preferences */}
-                <View className="mb-8">
-                    <Text className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4 ml-1">Preferences</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[28px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
-                        {/* Notifications toggle */}
-                        <View className="flex-row items-center justify-between p-5 border-b border-slate-150 dark:border-slate-800/80">
-                            <View className="flex-row items-center">
-                                <Feather name="bell" size={20} color={colors.tint} />
-                                <Text className="ml-4 text-base font-bold text-slate-800 dark:text-slate-200">Push Notifications</Text>
-                            </View>
-                            <Switch 
-                                value={notifications} 
-                                onValueChange={setNotifications}
-                                trackColor={{ false: isDark ? '#1e293b' : '#E2E8F0', true: colors.tint }}
-                                thumbColor="#FFF"
-                            />
-                        </View>
-
-                        {/* Location access toggle */}
-                        <View className="flex-row items-center justify-between p-5">
-                            <View className="flex-row items-center">
-                                <Feather name="map-pin" size={20} color={colors.tint} />
-                                <Text className="ml-4 text-base font-bold text-slate-800 dark:text-slate-200">Location Services</Text>
-                            </View>
-                            <Switch 
-                                value={location} 
-                                onValueChange={setLocation}
-                                trackColor={{ false: isDark ? '#1e293b' : '#E2E8F0', true: colors.tint }}
-                                thumbColor="#FFF"
-                            />
-                        </View>
-                    </View>
-                </View>
-
-                {/* Account & Policies */}
-                <View className="mb-8">
-                    <Text className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4 ml-1">Legal & Account</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[28px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
-                        {/* Privacy Policy */}
-                        <TouchableOpacity 
-                            onPress={() => handleItemPress('privacy')}
-                            className="flex-row items-center justify-between p-5 border-b border-slate-150 dark:border-slate-800/80"
-                        >
-                            <View className="flex-row items-center">
-                                <Feather name="shield" size={20} color={colors.tint} />
-                                <Text className="ml-4 text-base font-bold text-slate-800 dark:text-slate-200">Privacy Policy</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color={colors.inactive} />
-                        </TouchableOpacity>
-
-                        {/* Terms */}
-                        <TouchableOpacity 
-                            onPress={() => handleItemPress('terms')}
-                            className="flex-row items-center justify-between p-5 border-b border-slate-150 dark:border-slate-800/80"
-                        >
-                            <View className="flex-row items-center">
-                                <Feather name="file-text" size={20} color={colors.tint} />
-                                <Text className="ml-4 text-base font-bold text-slate-800 dark:text-slate-200">Terms of Service</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color={colors.inactive} />
-                        </TouchableOpacity>
-
-                        {/* Delete Permanent */}
-                        <TouchableOpacity 
-                            onPress={() => handleItemPress('delete')}
-                            className="flex-row items-center justify-between p-5"
-                        >
-                            <View className="flex-row items-center">
-                                <Feather name="trash-2" size={20} color="#EF4444" />
-                                <Text className="ml-4 text-base font-bold text-red-500">Delete Account</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color="#EF4444" />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Styled Sign Out Button */}
-                <TouchableOpacity
-                    onPress={async () => {
-                        await signOut();
-                        router.replace('/');
-                    }}
-                    className="flex-row items-center justify-center py-4 bg-slate-100 dark:bg-slate-900 rounded-2xl mb-12 border border-slate-200/50 dark:border-slate-800"
-                >
-                    <Feather name="log-out" size={20} color={colors.textMuted} />
-                    <Text className="ml-2 font-bold text-slate-600 dark:text-slate-300">Sign Out of Account</Text>
-                </TouchableOpacity>
-
-                <View className="h-10" />
-            </ScrollView>
+            </Modal>
 
             {/* Privacy and Terms Modal View */}
             <Modal
@@ -277,37 +340,20 @@ export default function SettingsScreen() {
                         </TouchableOpacity>
                     </View>
                     <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
-                        {policyType === 'privacy' ? (
-                            <View className="space-y-4">
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">1. Data We Collect</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    We collect basic registration information such as your name, mobile phone number, location details, and distance search radius to successfully match you with nearby service workers.
-                                </Text>
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">2. Sharing with Providers</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    When you choose to unlock a contact card, your basic contact and search coordinates are shared with the respective service provider to enable direct communication and localized service delivery.
-                                </Text>
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">3. Security Practices</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8">
-                                    Your information is encrypted and stored securely using our advanced backend platform. We do not sell or lease consumer telemetry or personal files to third-party marketing companies.
-                                </Text>
-                            </View>
-                        ) : (
-                            <View className="space-y-4">
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">1. Usage License</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    Our platform acts as a neutral marketplace facilitator that connects customers looking for help with independent localized professionals. We are not responsible for direct outcomes.
-                                </Text>
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">2. Transaction Policies</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    Unlocking contact cards is governed by credit quotas or local payment gateways. Completed unlocks are final and grant immediate, unrestricted access to the provider&apos;s coordinates.
-                                </Text>
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">3. Termination Rules</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8">
-                                    Users violating standard communication decencies or fabricating locations are subject to instant termination and permanent mobile ban from the platform.
-                                </Text>
-                            </View>
-                        )}
+                        <View className="space-y-4">
+                            <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">1. Data We Collect</Text>
+                            <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                                We collect basic registration information such as your name, mobile phone number, location details, and distance search radius to successfully match you with nearby service workers.
+                            </Text>
+                            <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">2. Sharing with Providers</Text>
+                            <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
+                                When you choose to unlock a contact card, your basic contact and search coordinates are shared with the respective service provider to enable direct communication and localized service delivery.
+                            </Text>
+                            <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">3. Security Practices</Text>
+                            <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8">
+                                Your information is encrypted and stored securely using our advanced backend platform. We do not sell or lease consumer telemetry or personal files to third-party marketing companies.
+                            </Text>
+                        </View>
                         <View className="h-20" />
                     </ScrollView>
                 </View>
