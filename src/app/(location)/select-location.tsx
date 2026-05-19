@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import MapView, { Marker } from 'react-native-maps';
+import LocationMapPicker from '@/components/location-map-picker';
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 
@@ -311,14 +311,8 @@ export default function SelectLocation() {
                 <View style={styles.formContainer}>
                     <Text style={styles.formSectionTitle}>Confirm your location</Text>
                     <View style={styles.mapWrapper}>
-                        <MapView
-                            style={styles.formMap}
-                            initialRegion={{
-                                latitude: formCoords.latitude,
-                                longitude: formCoords.longitude,
-                                latitudeDelta: 0.00922,
-                                longitudeDelta: 0.00421,
-                            }}
+                        <LocationMapPicker
+                            coords={formCoords}
                             region={formRegion}
                             onRegionChangeComplete={(region) => {
                                 setFormCoords({
@@ -327,17 +321,11 @@ export default function SelectLocation() {
                                 });
                                 handleMapDrag(region.latitude, region.longitude);
                             }}
-                        >
-                            <Marker
-                                coordinate={formCoords}
-                                draggable
-                                onDragEnd={(e) => {
-                                    const newCoords = e.nativeEvent.coordinate;
-                                    setFormCoords(newCoords);
-                                    handleMapDrag(newCoords.latitude, newCoords.longitude);
-                                }}
-                            />
-                        </MapView>
+                            onMarkerDragEnd={(lat, lng) => {
+                                setFormCoords({ latitude: lat, longitude: lng });
+                                handleMapDrag(lat, lng);
+                            }}
+                        />
                         <View style={styles.mapPinOverlay}>
                             <Text style={styles.mapPinText}>Drag map or marker to adjust pin</Text>
                         </View>

@@ -88,6 +88,31 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     // ─────────────────────────────────────────────────────────────────────────
     refreshProfile: async () => {
         try {
+            const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+            const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+            if (token) {
+                insforge.setAccessToken(token);
+            }
+            if (refreshToken) {
+                insforge.getHttpClient().setRefreshToken(refreshToken);
+                // If no access token, use the refresh token to get a new one
+                if (!token) {
+                    try {
+                        const { data: refreshed } = await insforge.auth.refreshSession({ refreshToken });
+                        if (refreshed?.accessToken) {
+                            insforge.setAccessToken(refreshed.accessToken);
+                            await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, refreshed.accessToken);
+                        }
+                        if (refreshed?.refreshToken) {
+                            insforge.getHttpClient().setRefreshToken(refreshed.refreshToken);
+                            await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshed.refreshToken);
+                        }
+                    } catch {
+                        // Refresh failed — user will need to log in again
+                    }
+                }
+            }
+
             const cachedUserStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
             let currentUserRole = null;
             let currentUserId = null;
@@ -379,6 +404,8 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
         } catch {
             // best-effort
         }
+        insforge.setAccessToken(null);
+        insforge.getHttpClient().setRefreshToken(null);
         await AsyncStorage.clear();
         set({
             user: defaultUser,

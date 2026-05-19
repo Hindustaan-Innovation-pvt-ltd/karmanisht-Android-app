@@ -98,8 +98,15 @@ export default function Login() {
                 if (!code) throw new Error('Authorization code not found in callback URL.');
 
                 // Exchange the code for a session
-                const { error: sessionError } = await insforge.auth.exchangeOAuthCode(code, data.codeVerifier);
+                const { data: sessionData, error: sessionError } = await insforge.auth.exchangeOAuthCode(code, data.codeVerifier);
                 if (sessionError) throw sessionError;
+
+                if (sessionData?.accessToken) {
+                    await AsyncStorage.setItem('@@app_token', sessionData.accessToken);
+                }
+                if (sessionData?.refreshToken) {
+                    await AsyncStorage.setItem('@@app_refresh_token', sessionData.refreshToken);
+                }
 
                 // Get the authenticated user
                 const { data: userData, error: userError } = await insforge.auth.getCurrentUser();

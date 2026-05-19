@@ -7,6 +7,7 @@ import {
     InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { insforge } from '@/lib/insforge';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -53,6 +54,13 @@ export default function Otp() {
 
             if (authError || !authData?.user) {
                 throw new Error(authError?.message || 'Could not establish auth session.');
+            }
+
+            if (authData.accessToken) {
+                await AsyncStorage.setItem('@@app_token', authData.accessToken);
+            }
+            if (authData.refreshToken) {
+                await AsyncStorage.setItem('@@app_refresh_token', authData.refreshToken);
             }
 
             // 3. Central DB lookup — builds and syncs the user profile
