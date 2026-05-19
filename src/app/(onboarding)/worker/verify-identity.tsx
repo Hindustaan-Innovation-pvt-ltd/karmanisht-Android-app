@@ -1,38 +1,21 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState } from 'react'
-import { ScrollView, Text, TouchableOpacity, View, Alert } from 'react-native'
+import { ScrollView, Text, TouchableOpacity, View, Alert, ActivityIndicator, Image, Platform } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import BackButton from '@/components/back-button'
 import { ShieldIcon, CameraIcon, UploadIcon, CheckCircleIcon, MapPinIcon, StarIcon } from '@/svg/icons'
+import * as ImagePicker from 'expo-image-picker'
+import MediaLibraryPicker from '@/components/media-library-picker'
+import { insforge, uploadToInsForge } from '@/lib/insforge'
 
 type DocStatus = 'pending' | 'uploaded' | 'verified'
 
 export default function VerifyIdentity() {
-        const user = useAppStore(state => state.user);
+    const user = useAppStore(state => state.user);
     const setUser = useAppStore(state => state.setUser);
-    const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
     const refreshProfile = useAppStore(state => state.refreshProfile);
-    const unlockedContacts = useAppStore(state => state.unlockedContacts);
-    const unlockedProviders = useAppStore(state => state.unlockedProviders);
-    const isUnlocked = useAppStore(state => state.isUnlocked);
-    const unlockWorker = useAppStore(state => state.unlockWorker);
-    const isOnline = useAppStore(state => state.isOnline);
-    const setOnline = useAppStore(state => state.setOnline);
-    const toggleOnlineStatus = useAppStore(state => state.toggleOnlineStatus);
-    const isLoading = useAppStore(state => state.isLoading);
-    const hasCheckedAuth = useAppStore(state => state.hasCheckedAuth);
-    const isSessionExpired = useAppStore(state => state.isSessionExpired);
-    const categories = useAppStore(state => state.categories);
-    const userLocation = useAppStore(state => state.userLocation);
-    const fetchCategories = useAppStore(state => state.fetchCategories);
-    const sessionToken = useAppStore(state => state.sessionToken);
-    const workerStats = useAppStore(state => state.workerStats);
-    const handleRazorpayPayment = useAppStore(state => state.handleRazorpayPayment);
-    const updateProfile = useAppStore(state => state.updateProfile);
-    const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
-    const signOut = useAppStore(state => state.signOut);
 
     const router = useRouter()
     const params = useLocalSearchParams()
@@ -40,16 +23,186 @@ export default function VerifyIdentity() {
     const [aadhaarStatus, setAadhaarStatus] = useState<DocStatus>('pending')
     const [photoStatus, setPhotoStatus] = useState<DocStatus>('pending')
 
+    const [selectedAadhaar, setSelectedAadhaar] = useState<{ uri: string; size?: number } | null>(null)
+    const [selectedPhoto, setSelectedPhoto] = useState<{ uri: string; size?: number } | null>(null)
+    const [showMediaPicker, setShowMediaPicker] = useState(false)
+    const [activeUploadType, setActiveUploadType] = useState<'aadhaar' | 'photo' | null>(null)
+    const [uploading, setUploading] = useState(false)
+
     const statusColor = (s: DocStatus) =>
         s === 'verified' ? 'text-green-600' : s === 'uploaded' ? 'text-amber-500' : 'text-slate-400'
 
     const statusLabel = (s: DocStatus) =>
         s === 'verified' ? 'Verified' : s === 'uploaded' ? 'Under review' : 'Not uploaded'
 
-    const handleUpload = (type: 'aadhaar' | 'photo') => {
-        if (type === 'aadhaar') setAadhaarStatus('uploaded')
-        else setPhotoStatus('uploaded')
-    }
+    const takePhoto = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permissionResult.granted) {
+                Alert.alert("Permission Required", "Camera permission is required to take a photo.");
+                return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: activeUploadType === 'photo' ? [1, 1] : [1.6, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                const imagePayload = {
+                    uri: asset.uri,
+                    size: asset.fileSize,
+                };
+                if (activeUploadType === 'aadhaar') {
+                    setSelectedAadhaar(imagePayload);
+                    setAadhaarStatus('uploaded');
+                } else if (activeUploadType === 'photo') {
+                    setSelectedPhoto(imagePayload);
+                    setPhotoStatus('uploaded');
+                }
+            }
+        } catch (err: any) {
+            Alert.alert("Error capturing photo", err.message);
+        }
+    };
+
+    const chooseFromLibrary = async () => {
+        if (Platform.OS === 'web') {
+            try {
+                const result = await ImagePicker.launchImageLibraryAsync({
+                    allowsEditing: true,
+                    aspect: activeUploadType === 'photo' ? [1, 1] : [1.6, 1],
+                    quality: 0.8,
+                });
+                if (!result.canceled && result.assets && result.assets.length > 0) {
+                    const asset = result.assets[0];
+                    const imagePayload = {
+                        uri: asset.uri,
+                        size: asset.fileSize,
+                    };
+                    if (activeUploadType === 'aadhaar') {
+                        setSelectedAadhaar(imagePayload);
+                        setAadhaarStatus('uploaded');
+                    } else if (activeUploadType === 'photo') {
+                        setSelectedPhoto(imagePayload);
+                        setPhotoStatus('uploaded');
+                    }
+                }
+            } catch (err: any) {
+                Alert.alert("Error picking photo", err.message);
+            }
+        } else {
+            setShowMediaPicker(true);
+        }
+    };
+
+    const handleSelectPhoto = (type: 'aadhaar' | 'photo') => {
+        setActiveUploadType(type);
+        Alert.alert(
+            type === 'aadhaar' ? "Aadhaar Card" : "Profile Photo",
+            "Select an option to add your image",
+            [
+                { text: "Take Photo", onPress: takePhoto },
+                { text: "Choose from Library", onPress: chooseFromLibrary },
+                { text: "Cancel", style: "cancel", onPress: () => setActiveUploadType(null) }
+            ]
+        );
+    };
+
+    const handleSubmit = async () => {
+        if (!selectedAadhaar) {
+            Alert.alert('Error', 'Please upload your Aadhaar Card.');
+            return;
+        }
+        if (!selectedPhoto) {
+            Alert.alert('Error', 'Please upload your Profile Photo.');
+            return;
+        }
+
+        setUploading(true);
+        try {
+            let uploadedAadhaarUrl = '';
+            let uploadedPhotoUrl = '';
+
+            if (user?.id) {
+                // Upload Aadhaar Card to 'aadhaar' bucket
+                const aadhaarFilename = `aadhaar_${user.id}_${Date.now()}.jpg`;
+                const aadhaarUpload = await uploadToInsForge('aadhaar', aadhaarFilename, selectedAadhaar);
+                if (aadhaarUpload?.url) {
+                    uploadedAadhaarUrl = aadhaarUpload.url;
+                }
+
+                // Upload Profile Photo to 'avatars' bucket
+                const photoFilename = `avatar_${user.id}_${Date.now()}.jpg`;
+                const photoUpload = await uploadToInsForge('avatars', photoFilename, selectedPhoto);
+                if (photoUpload?.url) {
+                    uploadedPhotoUrl = photoUpload.url;
+                }
+            }
+
+            if (!uploadedAadhaarUrl || !uploadedPhotoUrl) {
+                throw new Error('Image upload failed.');
+            }
+
+            // Update database profile
+            const { error: providerError } = await insforge.database
+                .from('service_providers')
+                .update({
+                    aadhaar_url: uploadedAadhaarUrl,
+                    profile_image: uploadedPhotoUrl,
+                    is_kyc_verified: false,
+                    is_verified: false
+                })
+                .eq('id', user.id);
+
+            if (providerError) {
+                console.error('[VerifyIdentity] DB update provider error:', providerError);
+                throw new Error(providerError.message || 'Failed updating provider profile.');
+            }
+
+            const { error: userError } = await insforge.database
+                .from('users')
+                .update({
+                    profile_image: uploadedPhotoUrl
+                })
+                .eq('id', user.id);
+
+            if (userError) {
+                console.error('[VerifyIdentity] DB update user error:', userError);
+                throw new Error(userError.message || 'Failed updating user profile.');
+            }
+
+            // Sync Zustand store
+            setUser({
+                profile_image: uploadedPhotoUrl,
+                hasSpecialties: true
+            });
+
+            await refreshProfile();
+
+            Alert.alert(
+                "Submitted",
+                "Your documents have been submitted successfully. We will review them within 24 hours.",
+                [{
+                    text: "OK",
+                    onPress: () => {
+                        if (fromDashboard) {
+                            router.replace('/(protected)/worker');
+                        } else {
+                            router.replace('/(onboarding)/all-set');
+                        }
+                    }
+                }]
+            );
+        } catch (err: any) {
+            console.error('[VerifyIdentity] Submission error:', err);
+            Alert.alert('Submission Failed', err.message || 'An unexpected error occurred.');
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const initials = (user.name ?? '')
         .split(' ')
@@ -75,8 +228,14 @@ export default function VerifyIdentity() {
                     {/* Profile preview card */}
                     <View className='bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 mb-6 border border-slate-100 dark:border-slate-800'>
                         <View className='flex-row items-center gap-3'>
-                            <View className='size-14 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center'>
-                                <Text className='text-xl font-bold text-slate-600 dark:text-slate-400'>{initials || '??'}</Text>
+                            <View className='size-14 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center overflow-hidden'>
+                                {selectedPhoto ? (
+                                    <Image source={{ uri: selectedPhoto.uri }} className='w-full h-full' />
+                                ) : user.profile_image ? (
+                                    <Image source={{ uri: user.profile_image }} className='w-full h-full' />
+                                ) : (
+                                    <Text className='text-xl font-bold text-slate-600 dark:text-slate-400'>{initials || '??'}</Text>
+                                )}
                             </View>
                             <View className='flex-1'>
                                 <Text className='text-base font-bold text-slate-900 dark:text-slate-100'>{user.name || 'Anonymous'}</Text>
@@ -102,7 +261,7 @@ export default function VerifyIdentity() {
                     <View className='mb-4'>
                         <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2'>Aadhaar Card</Text>
                         <TouchableOpacity
-                            onPress={() => handleUpload('aadhaar')}
+                            onPress={() => handleSelectPhoto('aadhaar')}
                             activeOpacity={0.8}
                             className={`border-2 border-dashed rounded-2xl p-5 items-center gap-2 ${aadhaarStatus === 'pending' ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900' : 'border-green-200 dark:border-green-950/40 bg-green-50 dark:bg-green-950/20'}`}
                         >
@@ -114,7 +273,11 @@ export default function VerifyIdentity() {
                                 </>
                             ) : (
                                 <>
-                                    <CheckCircleIcon size={28} color="#16A34A" />
+                                    {selectedAadhaar ? (
+                                        <Image source={{ uri: selectedAadhaar.uri }} className='w-full h-40 rounded-xl mb-1' resizeMode='cover' />
+                                    ) : (
+                                        <CheckCircleIcon size={28} color="#16A34A" />
+                                    )}
                                     <Text className='text-sm font-semibold text-green-700 dark:text-green-400'>aadhaar_card.jpg</Text>
                                     <Text className={`text-xs font-medium ${statusColor(aadhaarStatus)}`}>
                                         {statusLabel(aadhaarStatus)}
@@ -128,7 +291,7 @@ export default function VerifyIdentity() {
                     <View className='mb-6'>
                         <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2'>Profile Photo</Text>
                         <TouchableOpacity
-                            onPress={() => handleUpload('photo')}
+                            onPress={() => handleSelectPhoto('photo')}
                             activeOpacity={0.8}
                             className={`border-2 border-dashed rounded-2xl p-5 items-center gap-2 ${photoStatus === 'pending' ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900' : 'border-green-200 dark:border-green-950/40 bg-green-50 dark:bg-green-950/20'}`}
                         >
@@ -140,7 +303,11 @@ export default function VerifyIdentity() {
                                 </>
                             ) : (
                                 <>
-                                    <CheckCircleIcon size={28} color="#16A34A" />
+                                    {selectedPhoto ? (
+                                        <Image source={{ uri: selectedPhoto.uri }} className='w-full h-40 rounded-xl mb-1' resizeMode='cover' />
+                                    ) : (
+                                        <CheckCircleIcon size={28} color="#16A34A" />
+                                    )}
                                     <Text className='text-sm font-semibold text-green-700 dark:text-green-400'>profile_photo.jpg</Text>
                                     <Text className={`text-xs font-medium ${statusColor(photoStatus)}`}>
                                         {statusLabel(photoStatus)}
@@ -162,21 +329,16 @@ export default function VerifyIdentity() {
                 {/* Submit */}
                 <View className='p-4 border-t border-slate-100 dark:border-slate-900 gap-2'>
                     <TouchableOpacity
-                        onPress={() => {
-                            if (fromDashboard) {
-                                Alert.alert(
-                                    "Submitted",
-                                    "Your documents have been submitted successfully. We will review them within 24 hours.",
-                                    [{ text: "OK", onPress: () => router.replace('/(protected)/worker') }]
-                                );
-                            } else {
-                                router.replace('/(onboarding)/all-set');
-                            }
-                        }}
+                        onPress={handleSubmit}
+                        disabled={uploading}
                         activeOpacity={0.8}
-                        className='bg-black dark:bg-blue-600 py-4 rounded-2xl items-center'
+                        className={`py-4 rounded-2xl items-center ${uploading ? 'bg-slate-400' : 'bg-black dark:bg-blue-600'}`}
                     >
-                        <Text className='text-white text-base font-bold'>Submit for review</Text>
+                        {uploading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text className='text-white text-base font-bold'>Submit for review</Text>
+                        )}
                     </TouchableOpacity>
                     <TouchableOpacity 
                         onPress={() => {
@@ -191,6 +353,25 @@ export default function VerifyIdentity() {
                         <Text className='text-center text-sm text-slate-400 font-medium'>Skip, I&apos;ll do this later</Text>
                     </TouchableOpacity>
                 </View>
+
+                <MediaLibraryPicker
+                    visible={showMediaPicker}
+                    onClose={() => {
+                        setShowMediaPicker(false);
+                        setActiveUploadType(null);
+                    }}
+                    onSelect={(img) => {
+                        if (activeUploadType === 'aadhaar') {
+                            setSelectedAadhaar(img);
+                            setAadhaarStatus('uploaded');
+                        } else if (activeUploadType === 'photo') {
+                            setSelectedPhoto(img);
+                            setPhotoStatus('uploaded');
+                        }
+                        setShowMediaPicker(false);
+                        setActiveUploadType(null);
+                    }}
+                />
             </SafeAreaView>
         </SafeAreaProvider>
     )

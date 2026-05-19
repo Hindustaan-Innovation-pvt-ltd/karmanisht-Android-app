@@ -11,9 +11,27 @@ import { insforge } from '@/lib/insforge'
 
 export default function Services() {
     const router = useRouter()
-    const { professionId, professionName } = useLocalSearchParams<{ professionId: string, professionName: string }>()
+    const { professionId: paramProfessionId, professionName: paramProfessionName } = useLocalSearchParams<{ professionId: string, professionName: string }>()
     
     const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties)
+    const storeUser = useAppStore(state => state.user)
+    const categories = useAppStore(state => state.categories)
+    const fetchCategories = useAppStore(state => state.fetchCategories)
+
+    // Ensure categories are loaded in the background
+    useEffect(() => {
+        if (!categories || categories.length === 0) {
+            fetchCategories();
+        }
+    }, [categories]);
+
+    // Resolve professionName
+    const rawProfessionName = paramProfessionName || storeUser?.profession;
+    const professionName = Array.isArray(rawProfessionName) ? rawProfessionName[0] : rawProfessionName;
+
+    // Resolve professionId (either param, store, or categories list lookup by name)
+    const rawProfessionId = paramProfessionId || storeUser?.professionId || (professionName ? categories.find(c => c.name === professionName)?.id : null);
+    const professionId = Array.isArray(rawProfessionId) ? rawProfessionId[0] : rawProfessionId;
     
     const [selected, setSelected] = useState<Set<string>>(new Set())
     const [tags, setTags] = useState<any[]>([])
@@ -23,18 +41,35 @@ export default function Services() {
     // Fetch subcategories (service tags) directly from InsForge matching category ID
     useEffect(() => {
         async function fetchTags() {
-            if (!professionId) return
+            console.log('[Services] fetchTags started. Raw parameters:', { paramProfessionId, paramProfessionName });
+            console.log('[Services] Zustand store state:', { storeProfessionId: storeUser?.professionId, storeProfessionName: storeUser?.profession });
+            console.log('[Services] Resolved values:', { professionId, professionName });
+
+            if (!professionId || professionId === 'undefined' || professionId === 'null') {
+                console.warn('[Services] Invalid or missing professionId. Cannot fetch tags.');
+                setLoading(false);
+                return;
+            }
+
             try {
                 setLoading(true)
+                console.log('[Services] Fetching service_tags from database for category_id:', professionId);
                 const { data, error } = await insforge.database
                     .from('service_tags')
                     .select('*')
                     .eq('category_id', professionId)
 
+                if (error) {
+                    console.error('[Services] Database error while fetching service tags:', error);
+                }
+
                 if (data && !error) {
+                    console.log(`[Services] Successfully fetched ${data.length} service tags.`);
                     // Sort alphabetically
                     const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
                     setTags(sorted)
+                } else {
+                    console.warn('[Services] No data returned or error occurred. Tags list is empty.');
                 }
             } catch (err) {
                 console.error('[Services] Failed to fetch service tags:', err)
@@ -43,7 +78,7 @@ export default function Services() {
             }
         }
         fetchTags()
-    }, [professionId])
+    }, [professionId, categories])
 
     const toggle = (tagId: string) => {
         setSelected(prev => {
