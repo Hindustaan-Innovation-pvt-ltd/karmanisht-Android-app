@@ -68,27 +68,7 @@ export default function LocationInfo() {
                 Alert.alert('Permission Denied', 'Location permission is required to detect your current area.');
                 return;
             }
-            let loc = null;
-            try {
-                loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-            } catch (err) {
-                console.log("getCurrentPositionAsync failed, trying getLastKnownPositionAsync:", err);
-                try {
-                    loc = await Location.getLastKnownPositionAsync({});
-                } catch (lastKnownErr) {
-                    console.log("getLastKnownPositionAsync also failed:", lastKnownErr);
-                }
-            }
-
-            if (!loc) {
-                loc = {
-                    coords: {
-                        latitude: 21.2514,
-                        longitude: 81.6296
-                    }
-                };
-            }
-
+            const loc = await Location.getCurrentPositionAsync({});
             const reverseGeocode = await Location.reverseGeocodeAsync({
                 latitude: loc.coords.latitude,
                 longitude: loc.coords.longitude

@@ -19,21 +19,8 @@ export default function useGeolocation() {
           return;
         }
 
-        let currentLocation = null;
-        try {
-          currentLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        } catch {
-          currentLocation = await Location.getLastKnownPositionAsync({});
-        }
-
-        if (!currentLocation) {
-          currentLocation = {
-            coords: {
-              latitude: 21.2514,
-              longitude: 81.6296
-            }
-          };
-        }
+        const currentLocation = (await Location.getLastKnownPositionAsync()) ??
+                                await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
 
         if (mounted) {
           setLocation(currentLocation);

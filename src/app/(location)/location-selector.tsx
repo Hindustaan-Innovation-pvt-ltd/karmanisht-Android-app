@@ -22,27 +22,8 @@ export default function LocationSelector() {
 
         if (granted) {
             try {
-                let location = null;
-                try {
-                    location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-                } catch (currentPosErr) {
-                    console.log("getCurrentPositionAsync failed in requestPermissionAndGetLocation:", currentPosErr);
-                    try {
-                        location = await Location.getLastKnownPositionAsync({});
-                    } catch (lastKnownErr) {
-                        console.log("getLastKnownPositionAsync failed in requestPermissionAndGetLocation:", lastKnownErr);
-                    }
-                }
-
-                if (!location) {
-                    location = {
-                        coords: {
-                            latitude: 21.2514,
-                            longitude: 81.6296
-                        }
-                    };
-                }
-
+                const location = (await Location.getLastKnownPositionAsync()) ??
+                                 await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
                 setLocation(location);
                 router.push("/locationinfo")
 
@@ -57,27 +38,8 @@ export default function LocationSelector() {
         // Case 1: Already granted — just get location
         if (permissionStatus === Location.PermissionStatus.GRANTED) {
             try {
-                let location = null;
-                try {
-                    location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-                } catch (currentPosErr) {
-                    console.log("getCurrentPositionAsync failed in handlePress:", currentPosErr);
-                    try {
-                        location = await Location.getLastKnownPositionAsync({});
-                    } catch (lastKnownErr) {
-                        console.log("getLastKnownPositionAsync failed in handlePress:", lastKnownErr);
-                    }
-                }
-
-                if (!location) {
-                    location = {
-                        coords: {
-                            latitude: 21.2514,
-                            longitude: 81.6296
-                        }
-                    };
-                }
-
+                const location = (await Location.getLastKnownPositionAsync()) ??
+                                 await Location.getCurrentPositionAsync({ maximumAge: 60000, timeout: 10000 });
                 setLocation(location);
                 router.push("/locationinfo")
             } catch (err) {
