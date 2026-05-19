@@ -145,7 +145,7 @@ export default function WorkerSettings() {
                         label="Identity Verification" 
                         value="Pending"
                         color="#D97706"
-                        onPress={() => router.push('/(onboarding)/worker/verify-identity')} 
+                        onPress={() => router.push('/(onboarding)/worker/verify-identity?from=dashboard')} 
                     />
 
                     {/* App Settings */}

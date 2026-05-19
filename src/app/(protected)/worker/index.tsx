@@ -149,7 +149,7 @@ export default function WorkerDashboard() {
 
                 {/* Verification Nudge */}
                 <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/worker/verify-identity')}
+                    onPress={() => router.push('/(onboarding)/worker/verify-identity?from=dashboard')}
                     className="flex-row items-center gap-3 mt-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-4 border border-amber-100 dark:border-amber-900/30"
                 >
                     <View className="size-8 rounded-full bg-amber-100 items-center justify-center">
@@ -207,7 +207,7 @@ export default function WorkerDashboard() {
                             <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Area</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={() => router.push('/(onboarding)/worker/verify-identity')}
+                            onPress={() => router.push('/(onboarding)/worker/verify-identity?from=dashboard')}
                             className="flex-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 items-center gap-2"
                         >
                             <View className="size-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 items-center justify-center">
