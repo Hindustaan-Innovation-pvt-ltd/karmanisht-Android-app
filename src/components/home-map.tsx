@@ -6,8 +6,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Default fallback: Raipur, Chhattisgarh
-const DEFAULT_LAT   = 21.2514;
-const DEFAULT_LNG   = 81.6296;
+const DEFAULT_LAT = 21.2514;
+const DEFAULT_LNG = 81.6296;
 const DEFAULT_DELTA = 0.04;
 
 interface HomeMapProps {
@@ -30,9 +30,9 @@ export default function HomeMap({
     const mapRef = useRef<MapView>(null);
 
     const [region, setRegion] = useState({
-        latitude:       userLocation?.latitude  ?? DEFAULT_LAT,
-        longitude:      userLocation?.longitude ?? DEFAULT_LNG,
-        latitudeDelta:  DEFAULT_DELTA,
+        latitude: userLocation?.latitude ?? DEFAULT_LAT,
+        longitude: userLocation?.longitude ?? DEFAULT_LNG,
+        latitudeDelta: DEFAULT_DELTA,
         longitudeDelta: DEFAULT_DELTA,
     });
 
@@ -40,7 +40,7 @@ export default function HomeMap({
     const zoomIn = useCallback(() => {
         const next = {
             ...region,
-            latitudeDelta:  Math.max(region.latitudeDelta  / 2, 0.002),
+            latitudeDelta: Math.max(region.latitudeDelta / 2, 0.002),
             longitudeDelta: Math.max(region.longitudeDelta / 2, 0.002),
         };
         setRegion(next);
@@ -51,7 +51,7 @@ export default function HomeMap({
     const zoomOut = useCallback(() => {
         const next = {
             ...region,
-            latitudeDelta:  Math.min(region.latitudeDelta  * 2, 60),
+            latitudeDelta: Math.min(region.latitudeDelta * 2, 60),
             longitudeDelta: Math.min(region.longitudeDelta * 2, 60),
         };
         setRegion(next);
@@ -61,9 +61,9 @@ export default function HomeMap({
     // Re-center on user
     const reCenter = useCallback(() => {
         const next = {
-            latitude:       userLocation?.latitude  ?? DEFAULT_LAT,
-            longitude:      userLocation?.longitude ?? DEFAULT_LNG,
-            latitudeDelta:  DEFAULT_DELTA,
+            latitude: userLocation?.latitude ?? DEFAULT_LAT,
+            longitude: userLocation?.longitude ?? DEFAULT_LNG,
+            latitudeDelta: DEFAULT_DELTA,
             longitudeDelta: DEFAULT_DELTA,
         };
         setRegion(next);

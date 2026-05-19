@@ -129,10 +129,10 @@ export default function ConsumerHome() {
                     isDark={isDark}
                 />
             ) : (
-                <View style={{ height: 500 }} className="w-full bg-white dark:bg-slate-900 rounded-b-[40px] overflow-hidden relative shadow-sm dark:shadow-none">
+                <View className="w-full bg-white dark:bg-slate-900 overflow-hidden relative shadow-sm dark:shadow-none">
                     <Image
                         source={require('../../../../assets/images/map.png')}
-                        className="w-full h-full"
+                        className="w-full h-96"
                         resizeMode="cover"
                     />
 
@@ -157,33 +157,34 @@ export default function ConsumerHome() {
                         className="absolute top-0 left-0 right-0 h-full z-10 opacity-100 dark:opacity-80"
                     />
 
-                    {/* Centered Location Bar */}
-                    <TouchableOpacity
-                        onPress={() => router.push('/(location)/select-location' as any)}
-                        style={{ top: topOffset }}
-                        className="absolute left-[10%] w-[70%] h-14 bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none"
-                        activeOpacity={0.8}
-                    >
-                        <MaterialCommunityIcons name="target" size={32} color="#3B82F6" />
-                        <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-xl" numberOfLines={1}>
-                            {locationName}
-                        </Text>
-                    </TouchableOpacity>
+                    <View className="absolute left-0 top-0 w-full bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center justify-between px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none">
+                        {/* Centered Location Bar */}
+                        <TouchableOpacity
+                            onPress={() => router.push('/(location)/select-location' as any)}
+                            style={{ top: topOffset }}
+                            className='w-[40%] flex-row items-center bg-white shadow-md rounded-lg p-2 '
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="location" size={24} color="#3B82F6" />
+                            <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-sm" numberOfLines={1}>
+                                {locationName}
+                            </Text>
+                        </TouchableOpacity>
 
-                    {/* Profile Icon */}
-                    <TouchableOpacity
-                        onPress={() => router.push('/(protected)/consumer/profile' as any)}
-                        style={{ top: topOffset }}
-                        className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
-                    >
-                        <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
-                    </TouchableOpacity>
-                </View>
-            )}
+                        {/* Profile Icon */}
+                        <TouchableOpacity
+                            onPress={() => router.push('/(protected)/consumer/profile' as any)}
+                            style={{ top: topOffset }}
+                            className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
+                        >
+                            <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
+                        </TouchableOpacity>
+                    </View>
+                </View>)}
 
 
             {/* Your Contacts Section */}
-            <View className="mt-8 px-5">
+            <View className="py-5 px-5">
                 <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">Your Contacts</Text>
                 <FlatList
                     horizontal
@@ -314,9 +315,9 @@ const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
                                 });
                             }
                         }}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border border-white bg-green-500 active:scale-90"
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border border-white bg-slate-200 active:scale-90"
                     >
-                        <Ionicons name="call" size={16} color="white" />
+                        <Ionicons name="call" size={16} color="black" />
                     </TouchableOpacity>
                 </TouchableOpacity>
             </Animated.View>
