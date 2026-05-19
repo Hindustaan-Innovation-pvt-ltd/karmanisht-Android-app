@@ -2,7 +2,6 @@ import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
-import ConsumerNavbar from '@/components/consumer-navbar';
 import SafeIcon from '@/components/safe-icon';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
@@ -113,8 +112,6 @@ export default function ServicesScreen() {
                     );
                 }}
             />
-
-            <ConsumerNavbar activeTab="services" />
         </View>
     );
 }

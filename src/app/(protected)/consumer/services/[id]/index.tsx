@@ -118,6 +118,7 @@ export default function ServiceDetailScreen() {
                     id,
                     full_name,
                     mobile,
+                    profile_image,
                     experience_years,
                     bio,
                     average_rating,
@@ -166,7 +167,7 @@ export default function ServiceDetailScreen() {
                 return {
                     provider_id: p.id,
                     full_name: p.full_name,
-                    profile_image: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=400',
+                    profile_image: p.profile_image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.full_name),
                     average_rating: p.average_rating || 0.0,
                     total_reviews: p.total_jobs_completed || 0,
                     distance_km: distance_km || 1.5,

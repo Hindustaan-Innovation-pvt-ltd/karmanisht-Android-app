@@ -1,7 +1,7 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, Dimensions, Linking } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import ConsumerNavbar from '@/components/consumer-navbar';
 import { useRouter } from 'expo-router';
@@ -14,7 +14,7 @@ const { width } = Dimensions.get('window');
 
 
 export default function ConsumerHome() {
-        const user = useAppStore(state => state.user);
+    const user = useAppStore(state => state.user);
     const setUser = useAppStore(state => state.setUser);
     const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
     const refreshProfile = useAppStore(state => state.refreshProfile);
@@ -179,15 +179,13 @@ export default function ConsumerHome() {
                 }}
                 scrollEventThrottle={16}
             />
-
-            <ConsumerNavbar activeTab="home" />
         </View>
     );
 }
 
 const ContactCard = ({ provider }: any) => {
     const router = useRouter();
-    const avatar = provider.avatar_url || "https://ui-avatars.com/api/?name=" + provider.full_name;
+    const avatar = provider.profile_image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(provider.full_name);
 
     return (
         <TouchableOpacity
@@ -202,14 +200,21 @@ const ContactCard = ({ provider }: any) => {
                 className="w-full h-full"
                 resizeMode="cover"
             />
-            <View className="absolute bottom-0 left-0 right-0 bg-black/40 p-2">
+            <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
                 <Text className="text-white text-[10px] font-bold" numberOfLines={1}>{provider.full_name}</Text>
             </View>
-            <View
-                className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border-2 border-white bg-green-500"
+            <TouchableOpacity
+                onPress={() => {
+                    if (provider.mobile) {
+                        Linking.openURL(`tel:${provider.mobile}`).catch((err) => {
+                            console.error("Failed to open dialer:", err);
+                        });
+                    }
+                }}
+                className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border border-white bg-green-500 active:scale-90"
             >
                 <Ionicons name="call" size={16} color="white" />
-            </View>
+            </TouchableOpacity>
         </TouchableOpacity>
     );
 };

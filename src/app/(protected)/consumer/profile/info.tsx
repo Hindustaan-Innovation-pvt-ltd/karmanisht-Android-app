@@ -4,16 +4,23 @@ import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Alert, Acti
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
+import { useTheme } from '@/lib/theme';
+import * as ImagePicker from 'expo-image-picker';
+import { insforge, uploadToInsForge } from '@/lib/insforge';
+import MediaLibraryPicker from '@/components/media-library-picker';
 
 export default function ProfileInfoScreen() {
     const router = useRouter();
+    const { colors } = useTheme();
     const { user, updateDatabaseProfile, refreshProfile } = useAppStore();
 
     const [name, setName] = useState(user.name || '');
     const [phone, setPhone] = useState(user.phone || '');
     const [email, setEmail] = useState(user.email || '');
     const [location, setLocation] = useState(user.location || '');
+    const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null);
     const [saving, setSaving] = useState(false);
+    const [showMediaPicker, setShowMediaPicker] = useState(false);
 
     // Sync input fields when context user changes
     useEffect(() => {
@@ -24,6 +31,45 @@ export default function ProfileInfoScreen() {
             setLocation(user.location || '');
         }
     }, [user]);
+
+    // Photo selection helpers
+    const takePhoto = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permissionResult.granted) {
+                Alert.alert("Permission Required", "Camera permission is required to take a photo.");
+                return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                setSelectedImage({
+                    uri: asset.uri,
+                    size: asset.fileSize,
+                });
+            }
+        } catch (err: any) {
+            Alert.alert("Error capturing photo", err.message);
+        }
+    };
+
+    const handleSelectPhoto = () => {
+        Alert.alert(
+            "Profile Photo",
+            "Select an option to add your photo",
+            [
+                { text: "Take Photo", onPress: takePhoto },
+                { text: "Choose from Library", onPress: () => setShowMediaPicker(true) },
+                { text: "Cancel", style: "cancel" }
+            ]
+        );
+    };
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -37,11 +83,26 @@ export default function ProfileInfoScreen() {
 
         setSaving(true);
         try {
+            let uploadedImageUrl = undefined;
+
+            if (selectedImage && user.id) {
+                try {
+                    const filename = `avatar_${user.id}_${Date.now()}.jpg`;
+                    const uploadRes = await uploadToInsForge('avatars', filename, selectedImage);
+                    if (uploadRes?.url) {
+                        uploadedImageUrl = uploadRes.url;
+                    }
+                } catch (uploadErr) {
+                    console.error('[handleSave] Failed converting/uploading photo:', uploadErr);
+                }
+            }
+
             await updateDatabaseProfile({
                 name: name.trim(),
                 phone: phone.trim(),
                 email: email.trim(),
                 location: location.trim(),
+                profile_image: uploadedImageUrl !== undefined ? uploadedImageUrl : user.profile_image,
             });
             await refreshProfile();
             Alert.alert('Success', 'Profile updated successfully!', [
@@ -63,7 +124,7 @@ export default function ProfileInfoScreen() {
                     onPress={() => router.back()}
                     className="w-12 h-12 bg-gray-50 dark:bg-slate-900 rounded-2xl items-center justify-center"
                 >
-                    <Ionicons name="chevron-back" size={24} color="black" />
+                    <Ionicons name="chevron-back" size={24} color={colors.text} />
                 </TouchableOpacity>
                 <Text className="ml-4 text-2xl font-bold text-gray-900 dark:text-slate-100">Profile Info</Text>
             </View>
@@ -73,10 +134,14 @@ export default function ProfileInfoScreen() {
                 <View className="items-center mb-10">
                     <View className="relative">
                         <Image
-                            source={{ uri: user.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=0D8ABC&color=fff` }}
+                            source={{ uri: selectedImage?.uri || user.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=0D8ABC&color=fff` }}
                             className="w-32 h-32 rounded-[32px] border-4 border-gray-50 dark:border-slate-800 bg-slate-100"
                         />
-                        <TouchableOpacity className="absolute bottom-0 right-0 w-10 h-10 bg-black dark:bg-slate-800 rounded-xl items-center justify-center border-4 border-white dark:border-slate-950">
+                        <TouchableOpacity 
+                            onPress={handleSelectPhoto}
+                            activeOpacity={0.8}
+                            className="absolute bottom-0 right-0 w-10 h-10 bg-black dark:bg-slate-800 rounded-xl items-center justify-center border-4 border-white dark:border-slate-950"
+                        >
                             <Feather name="camera" size={18} color="white" />
                         </TouchableOpacity>
                     </View>
@@ -154,6 +219,12 @@ export default function ProfileInfoScreen() {
                     )}
                 </TouchableOpacity>
             </ScrollView>
+
+            <MediaLibraryPicker
+                visible={showMediaPicker}
+                onClose={() => setShowMediaPicker(false)}
+                onSelect={(img) => setSelectedImage(img)}
+            />
         </View>
     );
 }

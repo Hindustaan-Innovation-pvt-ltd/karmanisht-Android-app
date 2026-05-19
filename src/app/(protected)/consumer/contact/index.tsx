@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, TextInput } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import ConsumerNavbar from '@/components/consumer-navbar';
 import { useAppStore } from '@/lib/store';
 import SafeIcon from '@/components/safe-icon';
 import { Linking } from 'react-native';
@@ -131,7 +130,6 @@ export default function ContactScreen() {
                 }}
             />
 
-            <ConsumerNavbar activeTab="contact" />
         </View>
     );
 }

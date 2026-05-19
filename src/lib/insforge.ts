@@ -58,3 +58,101 @@ export const insforge = createClient({
   anonKey: insforgeAnonKey
 });
 
+export async function uploadToInsForge(bucketName: string, path: string, selectedImage: { uri: string, size?: number }) {
+  const httpClient = insforge.getHttpClient();
+  const size = Math.max(selectedImage.size || 0, 10 * 1024 * 1024);
+  const filename = path;
+  const contentType = 'image/jpeg';
+  
+  console.log('[uploadToInsForge] Fetching strategy for:', filename, 'size:', size);
+  
+  let strategyResponse: any;
+  try {
+    strategyResponse = await httpClient.post(
+      `/api/storage/buckets/${bucketName}/upload-strategy`,
+      {
+        filename,
+        contentType,
+        size
+      }
+    );
+  } catch (strategyError: any) {
+    console.error('[uploadToInsForge] Failed getting upload strategy:', strategyError);
+    throw new Error(`Failed getting upload strategy: ${strategyError.message || strategyError}`);
+  }
+
+  console.log('[uploadToInsForge] Strategy response method:', strategyResponse.method);
+
+  if (strategyResponse.method !== 'presigned') {
+    throw new Error(`Unsupported upload method: ${strategyResponse.method}`);
+  }
+
+  // Build FormData
+  const formData = new FormData();
+  if (strategyResponse.fields) {
+    Object.entries(strategyResponse.fields).forEach(([key, value]) => {
+      formData.append(key, value as string);
+    });
+  }
+
+  // React Native format file payload
+  const filePayload = {
+    uri: selectedImage.uri,
+    name: filename,
+    type: contentType,
+  } as any;
+
+  formData.append('file', filePayload);
+
+  console.log('[uploadToInsForge] Fetching S3 presigned URL:', strategyResponse.uploadUrl);
+
+  let uploadResponse: Response;
+  try {
+    uploadResponse = await fetch(strategyResponse.uploadUrl, {
+      method: 'POST',
+      body: formData,
+    });
+  } catch (fetchError: any) {
+    console.error('[uploadToInsForge] Network fetch error during S3 upload:', fetchError);
+    throw new Error(`Network fetch to S3 failed: ${fetchError.message || fetchError}`);
+  }
+
+  console.log('[uploadToInsForge] S3 upload status:', uploadResponse.status, uploadResponse.statusText);
+
+  if (!uploadResponse.ok) {
+    let responseText = '';
+    try {
+      responseText = await uploadResponse.text();
+    } catch (readError) {
+      responseText = '(could not read response text)';
+    }
+    console.error('[uploadToInsForge] S3 upload rejected. Status:', uploadResponse.status, 'Response:', responseText);
+    throw new Error(`S3 upload rejected (${uploadResponse.status}): ${responseText}`);
+  }
+
+  if (strategyResponse.confirmRequired && strategyResponse.confirmUrl) {
+    console.log('[uploadToInsForge] Confirming upload at:', strategyResponse.confirmUrl);
+    try {
+      const confirmResponse = await httpClient.post(
+        strategyResponse.confirmUrl,
+        {
+          size,
+          contentType
+        }
+      );
+      console.log('[uploadToInsForge] Confirm success');
+      return {
+        url: `${httpClient.baseUrl}/api/storage/buckets/${bucketName}/objects/${encodeURIComponent(strategyResponse.key)}`
+      };
+    } catch (confirmError: any) {
+      console.error('[uploadToInsForge] Confirmation failed:', confirmError);
+      throw new Error(`Upload confirmation failed: ${confirmError.message || confirmError}`);
+    }
+  }
+
+  return {
+    url: `${httpClient.baseUrl}/api/storage/buckets/${bucketName}/objects/${encodeURIComponent(strategyResponse.key)}`
+  };
+}
+
+

@@ -1,47 +1,78 @@
 // @ts-nocheck
-import React, { useState } from 'react'
-import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import BackButton from '@/components/back-button'
 import Progress from '@/components/progress'
 import ServiceTag from '@/components/service-tag'
-
+import { useAppStore } from '@/lib/store'
+import { insforge } from '@/lib/insforge'
 
 export default function Services() {
     const router = useRouter()
     const { professionId, professionName } = useLocalSearchParams<{ professionId: string, professionName: string }>()
+    
+    const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties)
+    
     const [selected, setSelected] = useState<Set<string>>(new Set())
     const [tags, setTags] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
 
-    React.useEffect(() => {
+    // Fetch subcategories (service tags) directly from InsForge matching category ID
+    useEffect(() => {
         async function fetchTags() {
             if (!professionId) return
-            setLoading(true)
-            // Mock tags for clean env
-            const mockTags = [
-                { id: '1', name: 'Wiring' },
-                { id: '2', name: 'Repair' },
-                { id: '3', name: 'Installation' },
-                { id: '4', name: 'Maintenance' },
-            ];
-            setTags(mockTags);
-            setLoading(false)
+            try {
+                setLoading(true)
+                const { data, error } = await insforge.database
+                    .from('service_tags')
+                    .select('*')
+                    .eq('category_id', professionId)
+
+                if (data && !error) {
+                    // Sort alphabetically
+                    const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
+                    setTags(sorted)
+                }
+            } catch (err) {
+                console.error('[Services] Failed to fetch service tags:', err)
+            } finally {
+                setLoading(false)
+            }
         }
         fetchTags()
     }, [professionId])
 
-    const toggle = (svc: string) => {
+    const toggle = (tagId: string) => {
         setSelected(prev => {
             const next = new Set(prev)
-            next.has(svc) ? next.delete(svc) : next.add(svc)
+            if (next.has(tagId)) {
+                next.delete(tagId)
+            } else {
+                next.add(tagId)
+            }
             return next
         })
     }
 
+    // Save mapping between provider and chosen category + service tags to database
     const handleContinue = async () => {
-        router.push('/(onboarding)/worker/verify-identity')
+        if (selected.size === 0) return
+        setSaving(true)
+        try {
+            const success = await updateWorkerSpecialties([professionId], Array.from(selected))
+            if (success) {
+                router.push('/(onboarding)/worker/verify-identity')
+            } else {
+                Alert.alert('Error', 'Failed to save your selections.')
+            }
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'An error occurred.')
+        } finally {
+            setSaving(false)
+        }
     }
 
     return (
@@ -51,7 +82,7 @@ export default function Services() {
                 <Progress currentStep={4} totalSteps={5} />
 
                 <View className='px-5 pt-4 pb-3'>
-                    <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Your profession</Text>
+                    <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Your services</Text>
                     <View className='mt-1.5 flex-row items-center gap-2'>
                         <View className='bg-slate-100 dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800'>
                             <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300'>{professionName || 'Service Provider'}</Text>
@@ -77,8 +108,8 @@ export default function Services() {
                                 <ServiceTag
                                     key={svc.id}
                                     label={svc.name}
-                                    selected={selected.has(svc.name)}
-                                    onPress={() => toggle(svc.name)}
+                                    selected={selected.has(svc.id)}
+                                    onPress={() => toggle(svc.id)}
                                 />
                             ))}
                         </View>
@@ -99,12 +130,16 @@ export default function Services() {
                     <TouchableOpacity
                         onPress={handleContinue}
                         activeOpacity={0.8}
-                        disabled={selected.size === 0}
+                        disabled={selected.size === 0 || saving}
                         className={`py-4 rounded-2xl items-center ${selected.size > 0 ? 'bg-black dark:bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`}
                     >
-                        <Text className={`text-base font-bold ${selected.size > 0 ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>
-                            Continue
-                        </Text>
+                        {saving ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text className={`text-base font-bold ${selected.size > 0 ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>
+                                Continue
+                            </Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>

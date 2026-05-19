@@ -112,6 +112,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                             phone: data.mobile || cachedUser.phone,
                             isOnline: data.is_active ?? cachedUser.isOnline,
                             searchRadiusKm: data.search_radius_km || cachedUser.searchRadiusKm,
+                            profile_image: data.profile_image || cachedUser.profile_image,
                         };
 
                         if (cachedUser.role === 'worker') {
@@ -270,6 +271,12 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 is_active: updates.isOnline ?? existingRecord?.is_active ?? get().user.isOnline ?? true,
             };
 
+            if (updates.profile_image !== undefined) {
+                payload.profile_image = updates.profile_image;
+            } else if (existingRecord?.profile_image !== undefined) {
+                payload.profile_image = existingRecord.profile_image;
+            }
+
             if (role === 'worker') {
                 if (updates.bio !== undefined) payload.bio = updates.bio;
                 else if (existingRecord?.bio !== undefined) payload.bio = existingRecord.bio;
@@ -312,6 +319,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     mobile: mobileToUse || payload.mobile,
                     role: 'worker',
                     is_active: payload.is_active,
+                    profile_image: payload.profile_image,
                 }]);
 
                 if (updates.location !== undefined || updates.searchRadiusKm !== undefined) {

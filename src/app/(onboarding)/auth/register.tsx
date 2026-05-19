@@ -1,13 +1,16 @@
 // @ts-nocheck
 import React, { useState } from 'react'
-import { insforge } from '@/lib/insforge';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme, Modal } from 'react-native'
+import { insforge, uploadToInsForge } from '@/lib/insforge';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme, Modal, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import BackButton from '@/components/back-button'
 import Progress from '@/components/progress'
 import { UserIcon, BriefcaseIcon, PhoneIcon, ClockIcon } from '@/svg/icons'
 import { useAppStore } from '@/lib/store'
+import { Feather } from '@expo/vector-icons'
+import * as ImagePicker from 'expo-image-picker'
+import MediaLibraryPicker from '@/components/media-library-picker'
 import {
     InputOTP,
     InputOTPGroup,
@@ -20,6 +23,7 @@ type Role = 'worker' | 'consumer'
 export default function Register() {
     const router = useRouter()
     const { updateDatabaseProfile, refreshProfile } = useAppStore()
+    const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null)
 
     const {
         mobile: paramMobile,
@@ -42,6 +46,7 @@ export default function Register() {
     const [showOtpModal, setShowOtpModal] = useState(false)
     const [otp, setOtp] = useState('')
     const [verifyingOtp, setVerifyingOtp] = useState(false)
+    const [showMediaPicker, setShowMediaPicker] = useState(false)
 
     const canContinue =
         fullName.trim().length > 1 &&
@@ -107,10 +112,62 @@ export default function Register() {
         }
     }
 
+    const takePhoto = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permissionResult.granted) {
+                Alert.alert("Permission Required", "Camera permission is required to take a photo.");
+                return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                setSelectedImage({
+                    uri: asset.uri,
+                    size: asset.fileSize,
+                });
+            }
+        } catch (err: any) {
+            Alert.alert("Error capturing photo", err.message);
+        }
+    };
+
+    const handleSelectPhoto = () => {
+        Alert.alert(
+            "Profile Photo",
+            "Select an option to add your photo",
+            [
+                { text: "Take Photo", onPress: takePhoto },
+                { text: "Choose from Library", onPress: () => setShowMediaPicker(true) },
+                { text: "Cancel", style: "cancel" }
+            ]
+        );
+    };
+
     // ── Step 3: Write profile to DB via store ─────────────────────────────────
     const finalizeRegistration = async (userId: string) => {
         setLoading(true);
         try {
+            let uploadedImageUrl = undefined;
+
+            if (selectedImage) {
+                try {
+                    const filename = `avatar_${userId}_${Date.now()}.jpg`;
+                    const uploadRes = await uploadToInsForge('avatars', filename, selectedImage);
+                    if (uploadRes?.url) {
+                        uploadedImageUrl = uploadRes.url;
+                    }
+                } catch (uploadErr) {
+                    console.error('[finalizeRegistration] Failed converting/uploading photo:', uploadErr);
+                }
+            }
+
             await updateDatabaseProfile({
                 id: userId,
                 name: fullName,
@@ -118,6 +175,7 @@ export default function Register() {
                 role: role!,
                 experienceYears: role === 'worker' ? parseInt(experience) || 0 : undefined,
                 experience: role === 'worker' ? `${experience} yrs` : undefined,
+                profile_image: uploadedImageUrl,
             });
 
             await refreshProfile();
@@ -153,6 +211,24 @@ export default function Register() {
                         <Text className='text-sm text-slate-500 mt-1'>
                             Tell us a little about yourself so we can personalise your profile.
                         </Text>
+                    </View>
+
+                    {/* Profile Photo Selection */}
+                    <View className="items-center my-2">
+                        <TouchableOpacity 
+                            onPress={handleSelectPhoto}
+                            activeOpacity={0.8}
+                            className="relative w-28 h-28 rounded-[28px] border-4 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shadow-md items-center justify-center overflow-hidden"
+                        >
+                            {selectedImage?.uri ? (
+                                <Image source={{ uri: selectedImage.uri }} className="w-full h-full" resizeMode="cover" />
+                            ) : (
+                                <View className="items-center justify-center">
+                                    <Feather name="camera" size={28} color="#94A3B8" />
+                                    <Text className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">Add Photo</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
                     </View>
 
                     {/* Full name */}
@@ -304,6 +380,12 @@ export default function Register() {
                     </View>
                 </View>
             </Modal>
+
+            <MediaLibraryPicker
+                visible={showMediaPicker}
+                onClose={() => setShowMediaPicker(false)}
+                onSelect={(img) => setSelectedImage(img)}
+            />
         </View>
     )
 }

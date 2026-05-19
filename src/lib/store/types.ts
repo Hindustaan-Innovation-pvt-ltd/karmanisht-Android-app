@@ -15,6 +15,7 @@ export interface UserProfile {
     isOnline?: boolean;
     bio?: string;
     searchRadiusKm?: number;
+    profile_image?: string;
 }
 
 export interface Category {

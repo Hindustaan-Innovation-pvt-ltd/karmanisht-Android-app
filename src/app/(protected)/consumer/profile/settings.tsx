@@ -1,13 +1,15 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal, Image, Platform } from 'react-native';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
+import { useTheme } from '@/lib/theme';
 
 export default function SettingsScreen() {
     const router = useRouter();
+    const { colors, isDark } = useTheme();
     const { user, signOut, updateDatabaseProfile, refreshProfile } = useAppStore();
     const [notifications, setNotifications] = useState(true);
     const [location, setLocation] = useState(true);
@@ -100,35 +102,40 @@ export default function SettingsScreen() {
         }
     };
 
-    const initials = user?.name 
-        ? user.name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()
-        : 'U';
+    // Customer profile image (Unsplash portrait or uploaded user picture)
+    const profileImage = user?.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400";
 
     return (
         <View className="flex-1 bg-white dark:bg-slate-950">
             {/* Header */}
-            <View className="pt-14 pb-6 px-6 flex-row items-center border-b border-gray-50 dark:border-slate-800">
+            <View className="pt-14 pb-6 px-6 flex-row items-center border-b border-slate-50 dark:border-slate-800">
                 <TouchableOpacity 
                     onPress={() => router.back()}
-                    className="w-12 h-12 bg-gray-50 dark:bg-slate-900 rounded-2xl items-center justify-center"
+                    className="w-12 h-12 bg-slate-50 dark:bg-slate-900 rounded-2xl items-center justify-center border border-slate-100 dark:border-slate-800"
                 >
-                    <Ionicons name="chevron-back" size={24} color="black" />
+                    <Ionicons name="chevron-back" size={24} color={colors.text} />
                 </TouchableOpacity>
                 <Text className="ml-4 text-2xl font-bold text-gray-900 dark:text-slate-100">Settings</Text>
             </View>
 
             <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
                 {/* Consumer Account Profile Box */}
-                <View className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[28px] flex-row items-center border border-slate-100 dark:border-slate-800 mb-8">
-                    <View className="w-16 h-16 rounded-2xl bg-black dark:bg-blue-600 items-center justify-center">
-                        <Text className="text-xl font-bold text-white">{initials}</Text>
-                    </View>
+                <View className="bg-slate-50 dark:bg-slate-900 p-5 rounded-[28px] flex-row items-center border border-slate-100 dark:border-slate-800 mb-8 shadow-sm">
+                    <Image
+                        source={{ uri: profileImage }}
+                        className="w-16 h-16 rounded-[20px] bg-slate-200 dark:bg-slate-800 border-2 border-white dark:border-slate-700"
+                        resizeMode="cover"
+                    />
                     <View className="ml-4 flex-1">
-                        <Text className="text-xl font-bold text-slate-900 dark:text-slate-100" numberOfLines={1}>{user?.name || 'Consumer Profile'}</Text>
-                        <Text className="text-slate-400 dark:text-slate-500 font-medium text-sm mt-0.5">{user?.phone || 'Linked via Mobile'}</Text>
+                        <Text className="text-xl font-bold text-slate-900 dark:text-slate-100" numberOfLines={1}>
+                            {user?.name || 'Consumer Profile'}
+                        </Text>
+                        <Text className="text-slate-400 dark:text-slate-500 font-bold text-sm mt-0.5">
+                            {user?.phone || 'Linked via Mobile'}
+                        </Text>
                     </View>
-                    <View className="bg-green-100 dark:bg-green-900/30 px-3 py-1.5 rounded-full">
-                        <Text className="text-[10px] font-black text-green-700 dark:text-green-400 uppercase tracking-wider">Active</Text>
+                    <View className="bg-green-100 dark:bg-green-900/30 px-3.5 py-1.5 rounded-full border border-green-200/50 dark:border-green-800/30">
+                        <Text className="text-[10px] font-black text-green-700 dark:text-green-400 uppercase tracking-widest">Active</Text>
                     </View>
                 </View>
 
@@ -136,14 +143,14 @@ export default function SettingsScreen() {
                 <View className="mb-8">
                     <View className="flex-row justify-between items-center mb-3">
                         <Text className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest ml-1">Search Distance Range</Text>
-                        {updatingRadius && <ActivityIndicator size="small" color="#3B82F6" />}
+                        {updatingRadius && <ActivityIndicator size="small" color={colors.tint} />}
                     </View>
                     
-                    <View className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800">
+                    <View className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm">
                         <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-4">
                             Select the maximum radius (in kilometers) within which you wish to discover local service providers.
                         </Text>
-                        <View className="flex-row justify-between items-center bg-white dark:bg-slate-950 p-2 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <View className="flex-row justify-between items-center bg-white dark:bg-slate-950 p-2 rounded-2xl border border-slate-150 dark:border-slate-800">
                             {[2, 5, 10, 20].map((opt) => (
                                 <TouchableOpacity
                                     key={opt}
@@ -162,17 +169,17 @@ export default function SettingsScreen() {
                 {/* Preferences */}
                 <View className="mb-8">
                     <Text className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4 ml-1">Preferences</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[28px] overflow-hidden border border-slate-100 dark:border-slate-800">
+                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[28px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
                         {/* Notifications toggle */}
-                        <View className="flex-row items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+                        <View className="flex-row items-center justify-between p-5 border-b border-slate-150 dark:border-slate-800/80">
                             <View className="flex-row items-center">
-                                <Feather name="bell" size={20} color="black" />
+                                <Feather name="bell" size={20} color={colors.tint} />
                                 <Text className="ml-4 text-base font-bold text-slate-800 dark:text-slate-200">Push Notifications</Text>
                             </View>
                             <Switch 
                                 value={notifications} 
                                 onValueChange={setNotifications}
-                                trackColor={{ false: '#E5E7EB', true: '#000' }}
+                                trackColor={{ false: isDark ? '#1e293b' : '#E2E8F0', true: colors.tint }}
                                 thumbColor="#FFF"
                             />
                         </View>
@@ -180,13 +187,13 @@ export default function SettingsScreen() {
                         {/* Location access toggle */}
                         <View className="flex-row items-center justify-between p-5">
                             <View className="flex-row items-center">
-                                <Feather name="map-pin" size={20} color="black" />
+                                <Feather name="map-pin" size={20} color={colors.tint} />
                                 <Text className="ml-4 text-base font-bold text-slate-800 dark:text-slate-200">Location Services</Text>
                             </View>
                             <Switch 
                                 value={location} 
                                 onValueChange={setLocation}
-                                trackColor={{ false: '#E5E7EB', true: '#000' }}
+                                trackColor={{ false: isDark ? '#1e293b' : '#E2E8F0', true: colors.tint }}
                                 thumbColor="#FFF"
                             />
                         </View>
@@ -196,29 +203,29 @@ export default function SettingsScreen() {
                 {/* Account & Policies */}
                 <View className="mb-8">
                     <Text className="text-sm font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4 ml-1">Legal & Account</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[28px] overflow-hidden border border-slate-100 dark:border-slate-800">
+                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[28px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm">
                         {/* Privacy Policy */}
                         <TouchableOpacity 
                             onPress={() => handleItemPress('privacy')}
-                            className="flex-row items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800"
+                            className="flex-row items-center justify-between p-5 border-b border-slate-150 dark:border-slate-800/80"
                         >
                             <View className="flex-row items-center">
-                                <Feather name="shield" size={20} color="black" />
+                                <Feather name="shield" size={20} color={colors.tint} />
                                 <Text className="ml-4 text-base font-bold text-slate-800 dark:text-slate-200">Privacy Policy</Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                            <Ionicons name="chevron-forward" size={18} color={colors.inactive} />
                         </TouchableOpacity>
 
                         {/* Terms */}
                         <TouchableOpacity 
                             onPress={() => handleItemPress('terms')}
-                            className="flex-row items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800"
+                            className="flex-row items-center justify-between p-5 border-b border-slate-150 dark:border-slate-800/80"
                         >
                             <View className="flex-row items-center">
-                                <Feather name="file-text" size={20} color="black" />
+                                <Feather name="file-text" size={20} color={colors.tint} />
                                 <Text className="ml-4 text-base font-bold text-slate-800 dark:text-slate-200">Terms of Service</Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                            <Ionicons name="chevron-forward" size={18} color={colors.inactive} />
                         </TouchableOpacity>
 
                         {/* Delete Permanent */}
@@ -241,9 +248,9 @@ export default function SettingsScreen() {
                         await signOut();
                         router.replace('/');
                     }}
-                    className="flex-row items-center justify-center py-4 bg-slate-100 dark:bg-slate-900 rounded-2xl mb-12"
+                    className="flex-row items-center justify-center py-4 bg-slate-100 dark:bg-slate-900 rounded-2xl mb-12 border border-slate-200/50 dark:border-slate-800"
                 >
-                    <Feather name="log-out" size={20} color="#64748B" />
+                    <Feather name="log-out" size={20} color={colors.textMuted} />
                     <Text className="ml-2 font-bold text-slate-600 dark:text-slate-300">Sign Out of Account</Text>
                 </TouchableOpacity>
 
@@ -258,18 +265,18 @@ export default function SettingsScreen() {
                 onRequestClose={() => setPolicyVisible(false)}
             >
                 <View className="flex-1 bg-white dark:bg-slate-950">
-                    <View className="pt-14 pb-6 px-6 flex-row items-center justify-between border-b border-gray-50 dark:border-slate-800">
+                    <View className="pt-14 pb-6 px-6 flex-row items-center justify-between border-b border-slate-50 dark:border-slate-800">
                         <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                             {policyType === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
                         </Text>
                         <TouchableOpacity 
                             onPress={() => setPolicyVisible(false)}
-                            className="w-10 h-10 bg-gray-50 dark:bg-slate-900 rounded-xl items-center justify-center"
+                            className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl items-center justify-center border border-slate-100 dark:border-slate-800"
                         >
-                            <Ionicons name="close" size={24} color="black" />
+                            <Ionicons name="close" size={24} color={colors.text} />
                         </TouchableOpacity>
                     </View>
-                    <ScrollView className="flex-1 p-6">
+                    <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
                         {policyType === 'privacy' ? (
                             <View className="space-y-4">
                                 <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">1. Data We Collect</Text>
