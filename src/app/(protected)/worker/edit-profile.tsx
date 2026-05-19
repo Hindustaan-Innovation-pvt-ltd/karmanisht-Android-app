@@ -123,10 +123,12 @@ export default function EditProfile() {
                 }
             }
 
+            const selectedCategory = categories.find(c => c.id === selectedCategoryId);
             const profileSuccess = await updateProfile({ 
                 name: fullName,
                 bio: bio,
-                profile_image: uploadedImageUrl !== undefined ? uploadedImageUrl : user?.profile_image
+                profile_image: uploadedImageUrl !== undefined ? uploadedImageUrl : user?.profile_image,
+                profession: selectedCategory ? selectedCategory.name : undefined
             });
 
             let specialtySuccess = true;
@@ -135,9 +137,17 @@ export default function EditProfile() {
             }
 
             if (profileSuccess && specialtySuccess) {
-                await refreshProfile();
-                Alert.alert('Success', 'Profile updated successfully!');
-                router.back();
+                Alert.alert(
+                    'Success',
+                    'Profile updated successfully!',
+                    [{
+                        text: 'OK',
+                        onPress: async () => {
+                            await refreshProfile();
+                            router.back();
+                        }
+                    }]
+                );
             } else {
                 Alert.alert('Error', 'Failed to update some details.');
             }

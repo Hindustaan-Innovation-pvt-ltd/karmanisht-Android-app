@@ -15,7 +15,9 @@ export default function ProtectedLayout() {
 
         const nextRoute = getOnboardingRoute(user);
         if (nextRoute && !nextRoute.startsWith('/(protected)')) {
-            router.replace(nextRoute as any);
+            setTimeout(() => {
+                router.replace(nextRoute as any);
+            }, 0);
         }
     }, [user, hasCheckedAuth, isLoading, router])
 

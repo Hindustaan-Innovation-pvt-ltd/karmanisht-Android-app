@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import SafeIcon from '@/components/safe-icon';
 import { useTheme } from '@/lib/theme';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInRight, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Location from 'expo-location';
 import HomeMap from '@/components/home-map';
 import { insforge } from '@/lib/insforge';
@@ -118,115 +118,111 @@ export default function ConsumerHome() {
     const locationName = savedAddressName || user.location || readableAddress || (userLocation ? "Locating..." : "Shankar Nagar, Raipur");
 
     const renderHeader = () => (
-        <SafeAreaProvider>
-            <SafeAreaView className='flex-1'>
-                <View className="w-full">
-                    {/* Map Header Area */}
-                    {showLiveMap ? (
-                        <HomeMap
-                            userLocation={userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null}
-                            topOffset={topOffset}
-                            locationName={locationName}
-                            onProfilePress={() => router.push('/(protected)/consumer/profile' as any)}
-                            onLocationPress={() => router.push('/(location)/select-location' as any)}
-                            isDark={isDark}
-                        />
-                    ) : (
-                        <View style={{ height: 500 }} className="w-full bg-white dark:bg-slate-900 rounded-b-[40px] overflow-hidden relative shadow-sm dark:shadow-none">
-                            <Image
-                                source={require('../../../../assets/images/map.png')}
-                                className="w-full h-full"
-                                resizeMode="cover"
-                            />
+        <View className="w-full">
+            {/* Map Header Area */}
+            {showLiveMap ? (
+                <HomeMap
+                    userLocation={userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null}
+                    topOffset={topOffset}
+                    locationName={locationName}
+                    onProfilePress={() => router.push('/(protected)/consumer/profile' as any)}
+                    onLocationPress={() => router.push('/(location)/select-location' as any)}
+                    isDark={isDark}
+                />
+            ) : (
+                <View style={{ height: 500 }} className="w-full bg-white dark:bg-slate-900 rounded-b-[40px] overflow-hidden relative shadow-sm dark:shadow-none">
+                    <Image
+                        source={require('../../../../assets/images/map.png')}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                    />
 
-                            {/* Gradient Overlay */}
-                            <LinearGradient
-                                colors={
-                                    isDark ? [
-                                        'rgba(9,13,22,1)',
-                                        'rgba(9,13,22,0.9)',
-                                        'rgba(9,13,22,0.7)',
-                                        'rgba(9,13,22,0.3)',
-                                        'transparent',
-                                    ] : [
-                                        'rgba(255,255,255,1)',
-                                        'rgba(255,255,255,0.9)',
-                                        'rgba(255,255,255,0.7)',
-                                        'rgba(255,255,255,0.3)',
-                                        'transparent',
-                                    ]
-                                }
-                                locations={[0, 0.1, 0.2, 0.5, 1]}
-                                className="absolute top-0 left-0 right-0 h-full z-10 opacity-100 dark:opacity-80"
-                            />
+                    {/* Gradient Overlay */}
+                    <LinearGradient
+                        colors={
+                            isDark ? [
+                                'rgba(9,13,22,1)',
+                                'rgba(9,13,22,0.9)',
+                                'rgba(9,13,22,0.7)',
+                                'rgba(9,13,22,0.3)',
+                                'transparent',
+                            ] : [
+                                'rgba(255,255,255,1)',
+                                'rgba(255,255,255,0.9)',
+                                'rgba(255,255,255,0.7)',
+                                'rgba(255,255,255,0.3)',
+                                'transparent',
+                            ]
+                        }
+                        locations={[0, 0.1, 0.2, 0.5, 1]}
+                        className="absolute top-0 left-0 right-0 h-full z-10 opacity-100 dark:opacity-80"
+                    />
 
-                            {/* Centered Location Bar */}
-                            <TouchableOpacity
-                                onPress={() => router.push('/(location)/select-location' as any)}
-                                style={{ top: topOffset }}
-                                className="absolute left-[10%] w-[70%] h-14 bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none"
-                                activeOpacity={0.8}
-                            >
-                                <MaterialCommunityIcons name="target" size={32} color="#3B82F6" />
-                                <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-xl" numberOfLines={1}>
-                                    {locationName}
-                                </Text>
-                            </TouchableOpacity>
+                    {/* Centered Location Bar */}
+                    <TouchableOpacity
+                        onPress={() => router.push('/(location)/select-location' as any)}
+                        style={{ top: topOffset }}
+                        className="absolute left-[10%] w-[70%] h-14 bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none"
+                        activeOpacity={0.8}
+                    >
+                        <MaterialCommunityIcons name="target" size={32} color="#3B82F6" />
+                        <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-xl" numberOfLines={1}>
+                            {locationName}
+                        </Text>
+                    </TouchableOpacity>
 
-                            {/* Profile Icon */}
-                            <TouchableOpacity
-                                onPress={() => router.push('/(protected)/consumer/profile' as any)}
-                                style={{ top: topOffset }}
-                                className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
-                            >
-                                <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
-                            </TouchableOpacity>
+                    {/* Profile Icon */}
+                    <TouchableOpacity
+                        onPress={() => router.push('/(protected)/consumer/profile' as any)}
+                        style={{ top: topOffset }}
+                        className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
+                    >
+                        <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
+                    </TouchableOpacity>
+                </View>
+            )}
+
+
+            {/* Your Contacts Section */}
+            <View className="mt-8 px-5">
+                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">Your Contacts</Text>
+                <FlatList
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    data={unlockedProviders}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item, index }) => <ContactCard provider={item} index={index} />}
+                    ListEmptyComponent={
+                        <View className="w-64 h-44 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-[15px] items-center justify-center mr-3">
+                            <Text className="text-slate-400 text-center px-4">No contacts unlocked yet. Find a worker below!</Text>
                         </View>
-                    )}
-
-
-                    {/* Your Contacts Section */}
-                    <View className="mt-8 px-5">
-                        <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">Your Contacts</Text>
-                        <FlatList
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            data={unlockedProviders}
-                            keyExtractor={(item) => item.id}
-                            renderItem={({ item, index }) => <ContactCard provider={item} index={index} />}
-                            ListEmptyComponent={
-                                <View className="w-64 h-44 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-[15px] items-center justify-center mr-3">
-                                    <Text className="text-slate-400 text-center px-4">No contacts unlocked yet. Find a worker below!</Text>
-                                </View>
-                            }
-                            ListFooterComponent={
-                                <TouchableOpacity
-                                    onPress={() => router.push('/(protected)/consumer/services' as any)}
-                                    className="w-32 h-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[15px] items-center justify-center ml-2 shadow-sm"
-                                >
-                                    <Ionicons name="add" size={40} color="#D1D5DB" />
-                                    <Text className="text-sm text-gray-400 dark:text-slate-500 font-medium mt-2">Find more</Text>
-                                </TouchableOpacity>
-                            }
-                        />
-                    </View>
-
-
-
-                    {/* Explore Services Header */}
-                    <View className="mt-8 px-5 mb-6 flex-row items-center justify-between">
-                        <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">Explore Services</Text>
+                    }
+                    ListFooterComponent={
                         <TouchableOpacity
                             onPress={() => router.push('/(protected)/consumer/services' as any)}
-                            className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
+                            className="w-32 h-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[15px] items-center justify-center ml-2 shadow-sm"
                         >
-                            <Ionicons name="search" size={18} color="#9CA3AF" />
-                            <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+                            <Ionicons name="add" size={40} color="#D1D5DB" />
+                            <Text className="text-sm text-gray-400 dark:text-slate-500 font-medium mt-2">Find more</Text>
                         </TouchableOpacity>
-                    </View>
-                </View>
-            </SafeAreaView>
-        </SafeAreaProvider >
+                    }
+                />
+            </View>
+
+
+
+            {/* Explore Services Header */}
+            <View className="mt-8 px-5 mb-6 flex-row items-center justify-between">
+                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">Explore Services</Text>
+                <TouchableOpacity
+                    onPress={() => router.push('/(protected)/consumer/services' as any)}
+                    className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
+                >
+                    <Ionicons name="search" size={18} color="#9CA3AF" />
+                    <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
     );
 
     return (
@@ -274,37 +270,59 @@ export default function ConsumerHome() {
 const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
     const router = useRouter();
     const avatar = provider.profile_image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(provider.full_name);
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: scale.value }]
+        };
+    });
+
+    const handlePressIn = () => {
+        scale.value = withSpring(0.95, { damping: 20, stiffness: 200 });
+    };
+
+    const handlePressOut = () => {
+        scale.value = withSpring(1, { damping: 20, stiffness: 200 });
+    };
 
     return (
-        <Animated.View entering={FadeInRight.delay(index * 50).springify()}>
-            <TouchableOpacity
-                onPress={() => router.push({
-                    pathname: '/(protected)/consumer/services/[id]',
-                    params: { id: provider.category_id, providerId: provider.id }
-                } as any)}
-                className="w-32 h-44 rounded-[15px] overflow-hidden mr-3 relative shadow-sm border border-gray-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900"
-            >
-                <Image
-                    source={{ uri: avatar }}
-                    className="w-full h-full"
-                    resizeMode="cover"
-                />
-                <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
-                    <Text className="text-white text-[10px] font-bold" numberOfLines={1}>{provider.full_name}</Text>
-                </View>
+        <Animated.View
+            entering={FadeInRight.delay(index * 50).springify().damping(20).stiffness(150)}
+        >
+            <Animated.View style={[animatedStyle]}>
                 <TouchableOpacity
-                    onPress={() => {
-                        if (provider.mobile) {
-                            Linking.openURL(`tel:${provider.mobile}`).catch((err) => {
-                                console.error("Failed to open dialer:", err);
-                            });
-                        }
-                    }}
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border border-white bg-green-500 active:scale-90"
+                    activeOpacity={0.9}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    onPress={() => router.push({
+                        pathname: '/(protected)/consumer/services/[id]',
+                        params: { id: provider.category_id, providerId: provider.id }
+                    } as any)}
+                    className="w-32 h-44 rounded-[15px] overflow-hidden mr-3 relative shadow-sm border border-gray-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900"
                 >
-                    <Ionicons name="call" size={16} color="white" />
+                    <Image
+                        source={{ uri: avatar }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                    />
+                    <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
+                        <Text className="text-white text-[10px] font-bold" numberOfLines={1}>{provider.full_name}</Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => {
+                            if (provider.mobile) {
+                                Linking.openURL(`tel:${provider.mobile}`).catch((err) => {
+                                    console.error("Failed to open dialer:", err);
+                                });
+                            }
+                        }}
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border border-white bg-green-500 active:scale-90"
+                    >
+                        <Ionicons name="call" size={16} color="white" />
+                    </TouchableOpacity>
                 </TouchableOpacity>
-            </TouchableOpacity>
+            </Animated.View>
         </Animated.View>
     );
 };
@@ -343,25 +361,45 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
     // Default icons/colors if missing from DB
     const icon = (service.icon as any) || 'lightning-bolt';
     const color = getVibrantColor(service);
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: scale.value }]
+        };
+    });
+
+    const handlePressIn = () => {
+        scale.value = withSpring(0.92, { damping: 20, stiffness: 200 });
+    };
+
+    const handlePressOut = () => {
+        scale.value = withSpring(1, { damping: 20, stiffness: 200 });
+    };
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 30).springify().damping(12)}
+            entering={FadeInDown.delay(index * 30).springify().damping(20).stiffness(150)}
             className="w-[31%] aspect-square mb-4"
         >
-            <TouchableOpacity
-                onPress={() => router.push({
-                    pathname: '/(protected)/consumer/services/[id]',
-                    params: { id: service.id, name: service.name, color: color, icon: icon }
-                } as any)}
-                className="w-full h-full rounded-[20px] items-center justify-center shadow-sm"
-                style={{ backgroundColor: color }}
-            >
-                <SafeIcon name={icon} size={36} color="white" />
-                <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
-                    {service.name}
-                </Text>
-            </TouchableOpacity>
+            <Animated.View style={[animatedStyle, { width: '100%', height: '100%' }]}>
+                <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    onPress={() => router.push({
+                        pathname: '/(protected)/consumer/services/[id]',
+                        params: { id: service.id, name: service.name, color: color, icon: icon }
+                    } as any)}
+                    className="w-full h-full rounded-[20px] items-center justify-center shadow-sm"
+                    style={{ backgroundColor: color }}
+                >
+                    <SafeIcon name={icon} size={36} color="white" />
+                    <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
+                        {service.name}
+                    </Text>
+                </TouchableOpacity>
+            </Animated.View>
         </Animated.View>
     );
 };
