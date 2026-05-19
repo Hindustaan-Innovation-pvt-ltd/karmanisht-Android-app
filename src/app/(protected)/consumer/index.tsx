@@ -11,6 +11,7 @@ import { useTheme } from '@/lib/theme';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import HomeMap from '@/components/home-map';
+import { insforge } from '@/lib/insforge';
 
 const { width } = Dimensions.get('window');
 
@@ -53,9 +54,34 @@ export default function ConsumerHome() {
         if (params?.showMap === 'true') {
             setShowLiveMap(true);
         }
-    }, [params?.showMap]);
+        // Instantly apply the address label passed back from select-location
+        if (params?.addressLabel) {
+            setSavedAddressName(params.addressLabel as string);
+        }
+    }, [params?.showMap, params?.addressLabel]);
 
     const [readableAddress, setReadableAddress] = useState<string | null>(null);
+    const [savedAddressName, setSavedAddressName] = useState<string | null>(null);
+
+    // Fetch the user's most recent saved address from DB to show in the location pill
+    useEffect(() => {
+        if (!user?.id) return;
+        insforge.database
+            .from('user_addresses')
+            .select('name, address_line')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+            .then(({ data }) => {
+                if (data) {
+                    // Strip leading Google Plus Codes like "6M28+PPC, " and show address_line only
+                    const clean = data.address_line.replace(/^[A-Z0-9]{4,}\+[A-Z0-9]+,\s*/i, '');
+                    setSavedAddressName(clean);
+                }
+            })
+            .catch(() => {});
+    }, [user?.id]);
 
     useEffect(() => {
         if (userLocation?.coords) {
@@ -79,7 +105,8 @@ export default function ConsumerHome() {
         }
     }, [userLocation]);
 
-    const locationName = user.location || readableAddress || (userLocation ? "Locating..." : "Shankar Nagar, Raipur");
+    // Priority: saved DB address > profile location > GPS address > fallback
+    const locationName = savedAddressName || user.location || readableAddress || (userLocation ? "Locating..." : "Shankar Nagar, Raipur");
 
     const renderHeader = () => (
         <SafeAreaProvider>

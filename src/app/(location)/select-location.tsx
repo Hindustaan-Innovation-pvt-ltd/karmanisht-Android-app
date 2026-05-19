@@ -231,7 +231,7 @@ export default function SelectLocation() {
     // Select address and go back
     const handleSelectAddress = async (address) => {
         try {
-            // Set Zustand userLocation
+            // Set Zustand userLocation with the address coordinates
             useAppStore.setState({
                 userLocation: {
                     coords: {
@@ -247,16 +247,16 @@ export default function SelectLocation() {
                 }
             });
 
-            // Update user profile location string
+            // Strip Google Plus Codes (e.g. "6M28+PPC, ") and show address_line only
+            const cleanLine = address.address_line.replace(/^[A-Z0-9]{4,}\+[A-Z0-9]+,\s*/i, '');
             await updateDatabaseProfile({
-                location: address.name
+                location: cleanLine
             });
-            await refreshProfile();
 
-            // Go to home and show map
+            // Go to home — pass the clean label so the pill updates instantly
             router.replace({
                 pathname: '/(protected)/consumer',
-                params: { showMap: 'true' }
+                params: { showMap: 'true', addressLabel: cleanLine }
             });
         } catch (err) {
             console.error('Select address error:', err);
