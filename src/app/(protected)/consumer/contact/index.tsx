@@ -1,14 +1,36 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, useColorScheme, Linking } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, FadeInDown } from 'react-native-reanimated';
 import { useAppStore } from '@/lib/store';
 import SafeIcon from '@/components/safe-icon';
-import { Linking } from 'react-native';
 
-export default function ContactScreen() {
-    const { unlockedProviders, categories } = useAppStore();
-    const [searchQuery, setSearchQuery] = useState('');
+const ContactListItem = ({ provider, categories, index, isDark }) => {
+    const router = useRouter();
+    const category = categories.find(c => c.id === provider.category_id);
+    const categoryName = category ? category.name : 'Professional';
+    const categoryIcon = category ? category.icon : 'briefcase';
+    const color = category ? category.color : '#3B82F6';
+    const avatar = provider.profile_image || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(provider.full_name));
+
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: scale.value }]
+        };
+    });
+
+    const handlePressIn = () => {
+        scale.value = withSpring(0.97, { damping: 20, stiffness: 200 });
+    };
+
+    const handlePressOut = () => {
+        scale.value = withSpring(1, { damping: 20, stiffness: 200 });
+    };
 
     const handleCall = (phone: string) => {
         if (phone) {
@@ -17,6 +39,110 @@ export default function ContactScreen() {
             });
         }
     };
+
+    return (
+        <Animated.View
+            entering={FadeInDown.delay(index * 50).springify().damping(20).stiffness(150)}
+        >
+            <Animated.View style={[animatedStyle]}>
+                <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    className="mx-4 mb-4 rounded-[24px] overflow-hidden flex-row border shadow-sm dark:shadow-none"
+                    style={{
+                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.45)' : 'rgba(248, 250, 252, 0.95)',
+                        borderColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)',
+                    }}
+                >
+                    {/* Left Accent Color bar */}
+                    <View style={{ width: 6, backgroundColor: color }} />
+
+                    <View className="flex-row flex-1 p-4 items-center">
+                        {/* Profile Image with Ring border */}
+                        <View className="rounded-[20px] p-[2px] shadow-sm bg-white dark:bg-slate-800">
+                            <Image
+                                source={{ uri: avatar }}
+                                className="w-20 h-20 rounded-[18px]"
+                                resizeMode="cover"
+                            />
+                        </View>
+
+                        {/* Info details */}
+                        <View className="ml-4 flex-1 justify-between py-1">
+                            <View>
+                                <View className="flex-row items-center justify-between">
+                                    <Text className="text-base font-extrabold text-slate-800 dark:text-slate-100 flex-1 mr-2" numberOfLines={1}>
+                                        {provider.full_name}
+                                    </Text>
+
+                                    {/* Category tag */}
+                                    <View
+                                        className="px-2 py-0.5 rounded-full flex-row items-center"
+                                        style={{ backgroundColor: color + '15' }}
+                                    >
+                                        <SafeIcon name={categoryIcon} size={10} color={color} />
+                                        <Text
+                                            className="text-[9px] font-black ml-1 uppercase tracking-wider"
+                                            style={{ color: color }}
+                                        >
+                                            {categoryName}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                {/* Rating & Experience Row */}
+                                <View className="flex-row items-center mt-2">
+                                    <View className="flex-row items-center bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-lg">
+                                        <Ionicons name="star" size={12} color="#F59E0B" />
+                                        <Text className="text-amber-700 dark:text-amber-400 text-xs ml-1 font-bold">
+                                            {(provider.average_rating || 4.5).toFixed(1)}
+                                        </Text>
+                                    </View>
+
+                                    <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg ml-2">
+                                        <Feather name="clock" size={12} className="text-slate-500 dark:text-slate-400" />
+                                        <Text className="text-slate-600 dark:text-slate-300 text-xs ml-1 font-semibold">
+                                            {provider.experience_years || 0} yrs exp
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+
+                            {/* Contact Action Row */}
+                            <View className="flex-row items-center justify-between mt-3">
+                                <View className="flex-row items-center">
+                                    <Feather name="phone" size={12} className="text-slate-400 dark:text-slate-500" />
+                                    <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold ml-1.5">
+                                        {provider.mobile}
+                                    </Text>
+                                </View>
+
+                                <TouchableOpacity
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        handleCall(provider.mobile);
+                                    }}
+                                    className="w-10 h-10 rounded-full items-center justify-center shadow-sm"
+                                    style={{ backgroundColor: color }}
+                                    activeOpacity={0.8}
+                                >
+                                    <Ionicons name="call" size={18} color="black" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            </Animated.View>
+        </Animated.View>
+    );
+};
+
+export default function ContactScreen() {
+    const { unlockedProviders, categories } = useAppStore();
+    const [searchQuery, setSearchQuery] = useState('');
+    const insets = useSafeAreaInsets();
+    const isDark = useColorScheme() === 'dark';
 
     const filteredProviders = unlockedProviders.filter(provider => {
         const matchesName = provider.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -28,16 +154,16 @@ export default function ContactScreen() {
     const renderHeader = () => (
         <View className="w-full">
             {/* Header */}
-            <View className="px-5 flex-row items-center justify-between mb-8">
-                <Text className="text-3xl font-bold text-gray-900 dark:text-slate-100">Your Contacts</Text>
+            <View className="px-5 flex-row items-center justify-between mb-6">
+                <Text className="text-3xl font-black text-slate-800 dark:text-slate-100">Your Contacts</Text>
             </View>
 
             {/* Search Bar */}
             <View className="px-5 mb-6">
-                <View className="bg-slate-50 dark:bg-slate-900 border border-gray-150 dark:border-slate-800 rounded-2xl px-4 h-12 flex-row items-center">
-                    <Ionicons name="search" size={20} color="#94A3B8" />
+                <View className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl px-4 h-12 flex-row items-center">
+                    <Feather name="search" size={18} color="#94A3B8" />
                     <TextInput
-                        className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-semibold text-base"
+                        className="ml-3 flex-1 text-slate-800 dark:text-slate-100 font-semibold text-sm"
                         placeholder="Search contacts..."
                         placeholderTextColor="#94A3B8"
                         value={searchQuery}
@@ -45,7 +171,7 @@ export default function ContactScreen() {
                     />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                            <Ionicons name="close-circle" size={18} color="#2363bdff" />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -55,9 +181,14 @@ export default function ContactScreen() {
 
     const renderEmpty = () => (
         <View className="py-20 items-center justify-center px-6">
-            <Ionicons name="people-outline" size={60} color="#D1D5DB" />
-            <Text className="text-slate-400 text-center font-medium mt-4 text-base">
-                {searchQuery.length > 0 ? "No matching contacts found." : "No unlocked contacts yet. Find skilled workers in the Explore tab!"}
+            <View className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-full items-center justify-center mb-4">
+                <Ionicons name="people-outline" size={40} color="#94A3B8" />
+            </View>
+            <Text className="text-slate-500 dark:text-slate-400 text-center font-bold text-base">
+                {searchQuery.length > 0 ? "No matching contacts found." : "No unlocked contacts yet."}
+            </Text>
+            <Text className="text-slate-400 dark:text-slate-500 text-center font-medium mt-1 text-sm max-w-xs">
+                {searchQuery.length > 0 ? "Try search for another name or professional role." : "Find and contact highly-skilled workers in the Explore section!"}
             </Text>
         </View>
     );
@@ -67,70 +198,23 @@ export default function ContactScreen() {
             <FlatList
                 className="flex-1"
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingTop: 60, paddingBottom: 150 }}
+                contentContainerStyle={{
+                    paddingTop: insets.top > 0 ? insets.top + 16 : 24,
+                    paddingBottom: insets.bottom > 0 ? insets.bottom + 120 : 120
+                }}
                 ListHeaderComponent={renderHeader}
                 data={filteredProviders}
                 keyExtractor={(item) => item.id}
                 ListEmptyComponent={renderEmpty}
-                renderItem={({ item: provider }) => {
-                    const category = categories.find(c => c.id === provider.category_id);
-                    const categoryName = category ? category.name : 'Professional';
-                    const categoryIcon = category ? category.icon : 'briefcase';
-                    const color = category ? category.color : '#3B82F6';
-                    const avatar = provider.profile_image || ("https://ui-avatars.com/api/?name=" + provider.full_name);
-
-                    return (
-                        <View 
-                            key={provider.id} 
-                            className="rounded-[24px] p-4 flex-row mb-4 mx-4 shadow-sm overflow-hidden border border-white/10"
-                            style={{ backgroundColor: color }}
-                        >
-                            {/* Provider Image */}
-                            <Image 
-                                source={{ uri: avatar }} 
-                                className="w-24 h-28 rounded-2xl bg-white/20"
-                                resizeMode="cover"
-                            />
-                            
-                            {/* Provider Info */}
-                            <View className="ml-4 flex-1 justify-between">
-                                <View>
-                                    <View className="flex-row items-center justify-between">
-                                        <Text className="text-xl font-black text-white flex-1 mr-2" numberOfLines={1}>
-                                            {provider.full_name}
-                                        </Text>
-                                        {/* Category Tag */}
-                                        <View className="bg-white/25 px-2.5 py-0.5 rounded-full flex-row items-center border border-white/45">
-                                            <SafeIcon name={categoryIcon} size={12} color="white" />
-                                            <Text className="text-[9px] text-white font-bold ml-1 uppercase tracking-tighter">{categoryName}</Text>
-                                        </View>
-                                    </View>
-                                    <View className="flex-row items-center mt-1">
-                                        <Ionicons name="star" size={14} color="white" />
-                                        <Text className="text-white text-xs ml-1 font-bold">{(provider.average_rating || 4.5).toString()}</Text>
-                                    </View>
-                                    <View className="flex-row items-center mt-1">
-                                        <Feather name="briefcase" size={14} color="white" />
-                                        <Text className="text-white text-xs ml-1">{provider.experience_years || 0} years of experience</Text>
-                                    </View>
-                                </View>
-                                
-                                <View className="flex-row items-end justify-between">
-                                    <Text className="text-md font-bold text-white mb-1">{provider.mobile}</Text>
-                                    <TouchableOpacity 
-                                        onPress={() => handleCall(provider.mobile)}
-                                        className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-md active:scale-95"
-                                    >
-                                        <Ionicons name="call" size={24} color={color} />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
-                    );
-                }}
+                renderItem={({ item, index }) => (
+                    <ContactListItem
+                        provider={item}
+                        categories={categories}
+                        index={index}
+                        isDark={isDark}
+                    />
+                )}
             />
-
         </View>
     );
 }
-
