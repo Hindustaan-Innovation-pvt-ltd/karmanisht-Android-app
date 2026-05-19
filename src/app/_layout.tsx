@@ -7,27 +7,31 @@ import 'react-native-reanimated';
 import "./global.css"
 import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AppProvider } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
+import { useEffect } from 'react';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const refreshProfile = useAppStore(state => state.refreshProfile);
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
 
   return (
     <SafeAreaProvider>
-      <AppProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(onboarding)" />
-            <Stack.Screen name="(location)" />
-            <Stack.Screen name="(protected)" />
-            <Stack.Screen name="admin/index" />
-          </Stack>
-          <StatusBar style={colorScheme === 'dark' ? "light" : "dark"} backgroundColor={colorScheme === 'dark' ? '#1e1e1e' : '#f5f5f5'} />
-        </ThemeProvider>
-      </AppProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(onboarding)" />
+          <Stack.Screen name="(location)" />
+          <Stack.Screen name="(protected)" />
+          <Stack.Screen name="admin/index" />
+        </Stack>
+        <StatusBar style={colorScheme === 'dark' ? "light" : "dark"} backgroundColor={colorScheme === 'dark' ? '#1e1e1e' : '#f5f5f5'} />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

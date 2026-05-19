@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useAppContext } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import React from 'react';
 import { FlatList, Text, TouchableOpacity, View, Switch, ActivityIndicator } from 'react-native';
@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { StarIcon, MapPinIcon, EditIcon, UploadIcon, ShieldIcon, ClockIcon } from '@/svg/icons';
 
 export default function WorkerDashboard() {
-    const { user, isOnline, toggleOnlineStatus, workerStats } = useAppContext();
+    const { user, isOnline, toggleOnlineStatus, workerStats } = useAppStore();
     const router = useRouter();
     const [reviews, setReviews] = React.useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = React.useState(true);

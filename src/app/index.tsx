@@ -1,39 +1,49 @@
 // @ts-nocheck
 import React, { useEffect } from 'react'
-import { Image, Text, TouchableOpacity, View } from 'react-native'
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
+import { ActivityIndicator, Image, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { useAppContext } from '@/lib/context'
+import { useAppStore } from '@/lib/store'
 
 export default function Index() {
     const router = useRouter()
-    const { user, isLoading, hasCheckedAuth, isSessionExpired } = useAppContext()
-
-    console.log(user);
-    
+    const user = useAppStore(state => state.user)
+    const isLoading = useAppStore(state => state.isLoading)
+    const hasCheckedAuth = useAppStore(state => state.hasCheckedAuth)
 
     useEffect(() => {
-        if (hasCheckedAuth && !isLoading) {
-            // Authenticated
-            if (user?.id) {
-                if (user.role === 'admin') {
-                    router.replace('/admin')
-                } else if (user.role === 'worker') {
-                    router.replace('/(protected)/worker')
-                } else if (user.role === 'consumer') {
-                    router.replace('/(protected)/consumer')
-                } else {
-                    router.replace('/(onboarding)/auth/register')
-                }
-            } 
-            // Case 2: Session Expired
-            else if (isSessionExpired) {
-                router.replace('/(onboarding)/auth/login')
+        if (!hasCheckedAuth || isLoading) return;
+
+        if (user?.id) {
+            switch (user.role) {
+                case 'admin':
+                    router.replace('/admin');
+                    break;
+                case 'worker':
+                    router.replace('/(protected)/worker');
+                    break;
+                case 'consumer':
+                    router.replace('/(protected)/consumer');
+                    break;
+                default:
+                    // Authenticated but no role — send to register
+                    router.replace('/(onboarding)/auth/register');
             }
         }
-    }, [isLoading, hasCheckedAuth, isSessionExpired, router, user?.id, user?.role, user?.phone])
+        // If no user, fall through and render the landing page below
+    }, [isLoading, hasCheckedAuth, user?.id, user?.role, router])
 
-    if (isLoading) return null
+    // Show a spinner while checking auth on app boot
+    if (isLoading) {
+        return (
+            <View className='flex-1 bg-white dark:bg-slate-950 items-center justify-center'>
+                <ActivityIndicator size="large" color="#000" />
+            </View>
+        )
+    }
+
+    // User is not logged in — show the landing / welcome screen
+    if (user?.id) return null
 
     return (
         <SafeAreaView className='flex-1 relative bg-white dark:bg-slate-950'>
@@ -57,9 +67,7 @@ export default function Index() {
                         activeOpacity={0.8}
                         onPress={() => router.push('/(onboarding)/auth/login')}
                     >
-                        <Text className='text-xl font-bold text-white'>
-                            Log In
-                        </Text>
+                        <Text className='text-xl font-bold text-white'>Log In</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -67,9 +75,7 @@ export default function Index() {
                         activeOpacity={0.8}
                         onPress={() => router.push('/(onboarding)/auth/register')}
                     >
-                        <Text className='text-xl font-bold text-black dark:text-white'>
-                            Sign Up
-                        </Text>
+                        <Text className='text-xl font-bold text-black dark:text-white'>Sign Up</Text>
                     </TouchableOpacity>
                 </View>
             </View>

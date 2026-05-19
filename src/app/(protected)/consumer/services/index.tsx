@@ -1,4 +1,4 @@
-import { useAppContext } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity } from 'react-native';
@@ -38,7 +38,7 @@ const getVibrantColor = (service: any) => {
 };
 
 export default function ServicesScreen() {
-    const { categories } = useAppContext();
+    const { categories } = useAppStore();
     const router = useRouter();
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();

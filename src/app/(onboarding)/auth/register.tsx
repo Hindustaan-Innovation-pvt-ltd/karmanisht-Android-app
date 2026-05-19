@@ -1,15 +1,13 @@
-import { useAppContext } from '@/lib/context';
 // @ts-nocheck
 import React, { useState } from 'react'
 import { insforge } from '@/lib/insforge';
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme } from 'react-native'
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme, Modal } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import BackButton from '@/components/back-button'
 import Progress from '@/components/progress'
 import { UserIcon, BriefcaseIcon, PhoneIcon, ClockIcon } from '@/svg/icons'
-import { Modal } from 'react-native'
+import { useAppStore } from '@/lib/store'
 import {
     InputOTP,
     InputOTPGroup,
@@ -20,49 +18,46 @@ import {
 type Role = 'worker' | 'consumer'
 
 export default function Register() {
-    const { user, setUser, updateDatabaseProfile, refreshProfile, unlockedContacts, unlockedProviders, isUnlocked, unlockWorker, isOnline, setOnline, toggleOnlineStatus, isLoading, hasCheckedAuth, isSessionExpired, categories, userLocation, fetchCategories, sessionToken, workerStats, handleRazorpayPayment, updateProfile, updateWorkerSpecialties, signOut } = useAppContext();
-
-
     const router = useRouter()
+    const { updateDatabaseProfile, refreshProfile } = useAppStore()
+
     const {
-        mobile,
-        role: initialRole,
+        mobile: paramMobile,
         prefilledName,
-        prefilledEmail,
-        prefilledUserId
+        prefilledUserId,
     } = useLocalSearchParams<{
-        mobile: string,
-        role: Role,
+        mobile?: string,
         prefilledName?: string,
         prefilledEmail?: string,
-        prefilledUserId?: string
+        prefilledUserId?: string,
     }>()
+
     const [fullName, setFullName] = useState(prefilledName || '')
-    const [phone, setPhone] = useState(mobile || '')
+    const [phone, setPhone] = useState(paramMobile || '')
     const [experience, setExperience] = useState('')
-    const [role, setRole] = useState<Role | null>(initialRole || null)
+    const [role, setRole] = useState<Role | null>(null)
     const [loading, setLoading] = useState(false)
 
-    // OTP Modal States
+    // OTP modal states
     const [showOtpModal, setShowOtpModal] = useState(false)
     const [otp, setOtp] = useState('')
     const [verifyingOtp, setVerifyingOtp] = useState(false)
 
-    const canContinue = fullName.trim().length > 1 &&
+    const canContinue =
+        fullName.trim().length > 1 &&
         phone.trim().length >= 10 &&
         role !== null &&
         (role === 'consumer' || experience.trim().length > 0)
 
+    // ── Step 1: Send OTP ─────────────────────────────────────────────────────
     const handleContinue = async () => {
         if (!canContinue) return
-
         setLoading(true);
         try {
-            // Send actual OTP using backend edge function
             const { data, error } = await insforge.functions.invoke('send-otp', {
                 body: { mobile: phone }
             });
-            if (error || (data && data.error)) {
+            if (error || data?.error) {
                 throw new Error(error?.message || data?.error || 'Failed to send OTP');
             }
             Alert.alert('OTP Sent', data.message || 'OTP sent successfully!');
@@ -74,12 +69,12 @@ export default function Register() {
         }
     }
 
+    // ── Step 2: Verify OTP ───────────────────────────────────────────────────
     const handleVerifyOtp = async () => {
         if (otp.length < 6) return;
-
         setVerifyingOtp(true);
         try {
-            // 1. Verify OTP using backend edge function
+            // Verify OTP
             const { data: verifyData, error: verifyError } = await insforge.functions.invoke('verify-otp', {
                 body: { mobile: phone, otp_code: otp }
             });
@@ -88,7 +83,7 @@ export default function Register() {
                 throw new Error(verifyError?.message || verifyData?.error || 'Verification failed');
             }
 
-            // 2. Perform local authentication ONLY if not already authenticated via Google
+            // Establish auth session (only if this isn't a Google-prefilled registration)
             let finalUserId = prefilledUserId;
             if (!prefilledUserId) {
                 const mockEmail = `${phone}@mock-mobile.local`;
@@ -97,14 +92,12 @@ export default function Register() {
                     email: mockEmail,
                     password: mockPassword
                 });
-
                 if (authError || !authData?.user) {
-                    throw new Error(authError?.message || 'Authentication session could not be established');
+                    throw new Error(authError?.message || 'Could not establish auth session.');
                 }
                 finalUserId = authData.user.id;
             }
 
-            await refreshProfile();
             setShowOtpModal(false);
             await finalizeRegistration(finalUserId || '');
         } catch (err: any) {
@@ -114,33 +107,31 @@ export default function Register() {
         }
     }
 
+    // ── Step 3: Write profile to DB via store ─────────────────────────────────
     const finalizeRegistration = async (userId: string) => {
+        setLoading(true);
         try {
-            setLoading(true);
-
-            // Use prefilledUserId if available, otherwise fallback to generated userId
-            const actualUserId = prefilledUserId || userId;
-
-            // 2. Use the unified update helper
             await updateDatabaseProfile({
-                id: actualUserId,
+                id: userId,
                 name: fullName,
                 phone: phone,
-                role: role,
+                role: role!,
                 experienceYears: role === 'worker' ? parseInt(experience) || 0 : undefined,
-                experience: role === 'worker' ? `${experience} yrs` : undefined
+                experience: role === 'worker' ? `${experience} yrs` : undefined,
             });
 
             await refreshProfile();
 
-            // Both consumer and worker go to location screen immediately after basic registration
-            router.push('/(location)/locationinfo');
+            // Both roles go to location screen first
+            router.replace('/(location)/locationinfo');
         } catch (err: any) {
             Alert.alert('Registration Error', err.message);
         } finally {
             setLoading(false);
         }
     }
+
+    const colorScheme = useColorScheme();
 
     return (
         <View className='flex-1 pt-12 mt-16'>
@@ -157,7 +148,6 @@ export default function Register() {
                     contentContainerStyle={{ padding: 20, gap: 16 }}
                     keyboardShouldPersistTaps="handled"
                 >
-                    {/* Header */}
                     <View>
                         <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Your basic details</Text>
                         <Text className='text-sm text-slate-500 mt-1'>
@@ -198,9 +188,8 @@ export default function Register() {
                     {/* Role selection */}
                     <View className='gap-3'>
                         <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>I am a</Text>
-
                         <View className='flex-row gap-3'>
-                            {/* Worker role */}
+                            {/* Worker */}
                             <TouchableOpacity
                                 onPress={() => setRole('worker')}
                                 activeOpacity={0.8}
@@ -209,13 +198,11 @@ export default function Register() {
                                 <View className={`size-10 rounded-full items-center justify-center mb-2 ${role === 'worker' ? 'bg-black' : 'bg-slate-100'}`}>
                                     <BriefcaseIcon size={18} color={role === 'worker' ? '#fff' : '#64748b'} />
                                 </View>
-                                <Text className={`text-base font-bold ${role === 'worker' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
-                                    Provider
-                                </Text>
+                                <Text className={`text-base font-bold ${role === 'worker' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>Provider</Text>
                                 <Text className='text-xs text-slate-400 mt-0.5'>I want to work</Text>
                             </TouchableOpacity>
 
-                            {/* Consumer role */}
+                            {/* Consumer */}
                             <TouchableOpacity
                                 onPress={() => setRole('consumer')}
                                 activeOpacity={0.8}
@@ -224,17 +211,15 @@ export default function Register() {
                                 <View className={`size-10 rounded-full items-center justify-center mb-2 ${role === 'consumer' ? 'bg-black' : 'bg-slate-100'}`}>
                                     <UserIcon size={18} color={role === 'consumer' ? '#fff' : '#64748b'} />
                                 </View>
-                                <Text className={`text-base font-bold ${role === 'consumer' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
-                                    Customer
-                                </Text>
+                                <Text className={`text-base font-bold ${role === 'consumer' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>Customer</Text>
                                 <Text className='text-xs text-slate-400 mt-0.5'>I need a service</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
-                    {/* Experience (only for workers) */}
+                    {/* Experience (workers only) */}
                     {role === 'worker' && (
-                        <View className='gap-1.5 animate-in fade-in slide-in-from-top-2'>
+                        <View className='gap-1.5'>
                             <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>Years of Experience</Text>
                             <View className='flex-row items-center border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 px-4'>
                                 <ClockIcon size={18} color="#94A3B8" />
@@ -276,13 +261,13 @@ export default function Register() {
                 onRequestClose={() => setShowOtpModal(false)}
             >
                 <View className="flex-1 bg-black/50 items-center justify-center p-6">
-                    <View
-                        className="bg-white dark:bg-slate-900 w-full rounded-3xl p-6"
+                    <View className="bg-white dark:bg-slate-900 w-full rounded-3xl p-6"
                         style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
                     >
                         <Text className="text-2xl font-bold text-slate-900 dark:text-white text-center">Verify Mobile</Text>
                         <Text className="text-slate-500 text-center mt-2 mb-6">
-                            We&apos;ve sent a 6-digit code to <Text className="font-bold text-slate-900 dark:text-slate-100">{phone}</Text>
+                            We&apos;ve sent a 6-digit code to{' '}
+                            <Text className="font-bold text-slate-900 dark:text-slate-100">{phone}</Text>
                         </Text>
 
                         <View className="items-center mb-6">
@@ -309,14 +294,11 @@ export default function Register() {
                             {verifyingOtp ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <Text className={`text-base font-bold ${otp.length === 6 ? 'text-white' : 'text-slate-400'}`}>Verify & Continue</Text>
+                                <Text className={`text-base font-bold ${otp.length === 6 ? 'text-white' : 'text-slate-400'}`}>Verify &amp; Continue</Text>
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                            onPress={() => setShowOtpModal(false)}
-                            className="mt-4"
-                        >
+                        <TouchableOpacity onPress={() => setShowOtpModal(false)} className="mt-4">
                             <Text className="text-center text-slate-500 font-medium">Cancel</Text>
                         </TouchableOpacity>
                     </View>
@@ -325,4 +307,3 @@ export default function Register() {
         </View>
     )
 }
-

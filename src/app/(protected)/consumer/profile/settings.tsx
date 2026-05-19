@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal } from 'react-native';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAppContext } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 
 export default function SettingsScreen() {
     const router = useRouter();
-    const { user, signOut, updateDatabaseProfile, refreshProfile } = useAppContext();
+    const { user, signOut, updateDatabaseProfile, refreshProfile } = useAppStore();
     const [notifications, setNotifications] = useState(true);
     const [location, setLocation] = useState(true);
     const [radiusKm, setRadiusKm] = useState(user?.searchRadiusKm || 5);
@@ -293,7 +293,7 @@ export default function SettingsScreen() {
                                 </Text>
                                 <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">2. Transaction Policies</Text>
                                 <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    Unlocking contact cards is governed by credit quotas or local payment gateways. Completed unlocks are final and grant immediate, unrestricted access to the provider's coordinates.
+                                    Unlocking contact cards is governed by credit quotas or local payment gateways. Completed unlocks are final and grant immediate, unrestricted access to the provider&apos;s coordinates.
                                 </Text>
                                 <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">3. Termination Rules</Text>
                                 <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8">

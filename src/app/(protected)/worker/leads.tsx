@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { FlatList, Text, View, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { UserIcon, PhoneIcon, ClockIcon, MapPinIcon } from '@/svg/icons';
-import { useAppContext } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 
 export default function WorkerLeads() {
-    const { user } = useAppContext();
+    const { user } = useAppStore();
     const [leads, setLeads] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 

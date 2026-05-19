@@ -1,6 +1,6 @@
-import { useAppContext } from '@/lib/context';
-import { insforge } from '@/lib/insforge';
 // @ts-nocheck
+import { useAppStore } from '@/lib/store';
+import { insforge } from '@/lib/insforge';
 import React, { useState, useEffect } from 'react';
 import { 
     View, Text, TextInput, TouchableOpacity, ScrollView, 
@@ -8,10 +8,13 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function EditProfile() {
-    const { user, setUser, updateDatabaseProfile, refreshProfile, unlockedContacts, unlockedProviders, isUnlocked, unlockWorker, isOnline, setOnline, toggleOnlineStatus, isLoading, hasCheckedAuth, isSessionExpired, categories, userLocation, fetchCategories, sessionToken, workerStats, handleRazorpayPayment, updateProfile, updateWorkerSpecialties, signOut } = useAppContext();
+    const user = useAppStore(state => state.user);
+    const categories = useAppStore(state => state.categories);
+    const updateProfile = useAppStore(state => state.updateProfile);
+    const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
 
 
     const router = useRouter();

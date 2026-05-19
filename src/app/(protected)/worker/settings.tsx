@@ -1,5 +1,5 @@
-import { useAppContext } from '@/lib/context';
 // @ts-nocheck
+import { useAppStore } from '@/lib/store';
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View, Switch, Alert } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -12,7 +12,10 @@ import { insforge } from '@/lib/insforge';
 import { Feather } from '@expo/vector-icons';
 
 export default function WorkerSettings() {
-    const { user, setUser, updateDatabaseProfile, refreshProfile, unlockedContacts, unlockedProviders, isUnlocked, unlockWorker, isOnline, setOnline, toggleOnlineStatus, isLoading, hasCheckedAuth, isSessionExpired, categories, userLocation, fetchCategories, sessionToken, workerStats, handleRazorpayPayment, updateProfile, updateWorkerSpecialties, signOut } = useAppContext();
+    const user = useAppStore(state => state.user);
+    const isOnline = useAppStore(state => state.isOnline);
+    const toggleOnlineStatus = useAppStore(state => state.toggleOnlineStatus);
+    const signOut = useAppStore(state => state.signOut);
 
 
     const router = useRouter();

@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAppContext } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
 
 export default function ProfileInfoScreen() {
     const router = useRouter();
-    const { user, updateDatabaseProfile, refreshProfile } = useAppContext();
+    const { user, updateDatabaseProfile, refreshProfile } = useAppStore();
 
     const [name, setName] = useState(user.name || '');
     const [phone, setPhone] = useState(user.phone || '');

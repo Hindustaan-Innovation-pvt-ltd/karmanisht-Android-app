@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { insforge } from '@/lib/insforge';
-import { useAppContext } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
 type TabType = 'accounts' | 'audit' | 'requests';
@@ -99,7 +99,7 @@ const shadow2xl = Platform.OS === 'web'
 
 export default function AdminConsole() {
     const router = useRouter();
-    const { signOut } = useAppContext();
+    const { signOut } = useAppStore();
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState<TabType>('accounts');

@@ -3,14 +3,14 @@ import { View, Text, TouchableOpacity, ScrollView, useColorScheme } from 'react-
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { MapPinIcon, CrosshairIcon } from '@/svg/icons'
-import { useAppContext } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
 import BackButton from '@/components/back-button'
 import Progress from '@/components/progress'
 
 const RADIUS_OPTIONS = [1, 2, 5, 10, 20]
 
 export default function LocationInfo() {
-    const { user, updateDatabaseProfile } = useAppContext();
+    const { user, updateDatabaseProfile } = useAppStore();
     const isDark = useColorScheme() === 'dark'
 
     const router = useRouter()

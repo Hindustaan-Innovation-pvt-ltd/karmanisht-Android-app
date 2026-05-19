@@ -3,13 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAppContext } from '@/lib/context';
+import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import SafeIcon from '@/components/safe-icon';
 
 export default function PaymentHistoryScreen() {
     const router = useRouter();
-    const { user, categories } = useAppContext();
+    const { user, categories } = useAppStore();
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
