@@ -6,8 +6,38 @@ import { insforge } from '../../insforge';
 export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSlice> = (set, get) => ({
     unlockedContacts: [],
     unlockedProviders: [],
+    activePasses: [],
 
-    isUnlocked: (id: string) => get().unlockedContacts.includes(id),
+    isUnlocked: (id: string, categoryId?: string) => {
+        if (get().unlockedContacts.includes(id)) return true;
+        if (categoryId) {
+            const passes = get().activePasses || [];
+            const now = new Date().toISOString();
+            return passes.some(p => p.profession_id === categoryId && p.expires_at > now && p.payment_status === 'paid');
+        }
+        return false;
+    },
+
+    fetchActivePasses: async () => {
+        const userId = get().user.id;
+        if (!userId) return;
+        try {
+            const now = new Date().toISOString();
+            const { data, error } = await insforge.database
+                .from('unlock_passes')
+                .select('*')
+                .eq('customer_id', userId)
+                .eq('payment_status', 'paid')
+                .gt('expires_at', now);
+            if (data && !error) {
+                set({ activePasses: data });
+            } else {
+                set({ activePasses: [] });
+            }
+        } catch (e) {
+            console.error("fetchActivePasses failed:", e);
+        }
+    },
 
     unlockWorker: async (providerId: string) => {
         const userId = get().user.id;
@@ -27,13 +57,14 @@ export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSli
         }
     },
 
-    handleRazorpayPayment: async (provider: any): Promise<boolean> => {
+    handleRazorpayPayment: async (provider: any, amount?: number): Promise<boolean> => {
         const currentUser = get().user;
-        const amountPaisa = 50 * 100; // 50 INR in paisa = 5000
+        const actualAmount = amount !== undefined ? amount : 50;
+        const amountPaisa = actualAmount * 100;
 
         if (Platform.OS === 'web') {
             return new Promise((resolve) => {
-                alert("Web Mock Payment Successful (50 INR)");
+                alert(`Web Mock Payment Successful (${actualAmount} INR)`);
                 resolve(true);
             });
         }
@@ -49,7 +80,7 @@ export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSli
                     [
                         { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
                         { 
-                            text: "Pay with Mock (50 INR)", 
+                            text: `Pay with Mock (${actualAmount} INR)`, 
                             onPress: () => {
                                 Alert.alert("Success", "Mock Payment Successful!");
                                 resolve(true);

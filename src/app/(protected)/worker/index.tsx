@@ -188,7 +188,7 @@ export default function WorkerDashboard() {
 
                 {/* Verification Nudge */}
                 <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/worker/verify-identity?from=dashboard')}
+                    onPress={() => router.push('/(protected)/worker/verify-identity?from=dashboard')}
                     className="flex-row items-center gap-3 mt-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-4 border border-amber-100 dark:border-amber-900/30"
                 >
                     <View className="size-8 rounded-full bg-amber-100 items-center justify-center">
@@ -205,11 +205,10 @@ export default function WorkerDashboard() {
                 <TouchableOpacity
                     onPress={() => router.push('/(protected)/worker/premium-plans')}
                     activeOpacity={0.85}
-                    className={`mt-3 rounded-2xl border overflow-hidden ${
-                        user?.isPremium
-                            ? 'bg-[#18181B] border-amber-800/30'
-                            : 'bg-indigo-50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30'
-                    }`}
+                    className={`mt-3 rounded-2xl border overflow-hidden ${user?.isPremium
+                        ? 'bg-[#18181B] border-amber-800/30'
+                        : 'bg-indigo-50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30'
+                        }`}
                 >
                     {user?.isPremium ? (
                         <View className="p-4">

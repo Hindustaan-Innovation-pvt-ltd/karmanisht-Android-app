@@ -2,8 +2,8 @@
 import { useAppStore } from '@/lib/store';
 import { insforge, uploadToInsForge } from '@/lib/insforge';
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-    View, Text, TextInput, TouchableOpacity, ScrollView, 
+import {
+    View, Text, TextInput, TouchableOpacity, ScrollView,
     ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Image,
     Modal
 } from 'react-native';
@@ -22,7 +22,7 @@ export default function EditProfile() {
     const refreshProfile = useAppStore(state => state.refreshProfile);
 
     const router = useRouter();
-    
+
     useEffect(() => {
         fetchCategories();
     }, [fetchCategories]);
@@ -41,10 +41,8 @@ export default function EditProfile() {
     // Full tag objects for view-mode display (so names show without opening modal)
     const [savedTagObjects, setSavedTagObjects] = useState<any[]>([]);
 
-    // --- Edit modal state ---
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editCategoryId, setEditCategoryId] = useState('');
-    const [editTagIds, setEditTagIds] = useState<Set<string>>(new Set());
+    // --- Inline dropdown state ---
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [availableTags, setAvailableTags] = useState<any[]>([]);
     const [tagsLoading, setTagsLoading] = useState(false);
 
@@ -60,7 +58,7 @@ export default function EditProfile() {
                         .from('provider_services')
                         .select('category_id, tag_id')
                         .eq('provider_id', user.id);
-                    
+
                     if (data && data.length > 0 && !error) {
                         const catId = data[0].category_id;
                         const tagIds = data.map(r => r.tag_id).filter(Boolean);
@@ -75,13 +73,18 @@ export default function EditProfile() {
                                     .select('*')
                                     .in('id', tagIds);
                                 if (tagData) setSavedTagObjects(tagData);
-                            } catch (_) {}
+                            } catch (_) { }
                         }
+
+                        // Pre-load ALL available tags for the category so badges render without dropdown open
+                        fetchTagsForCategory(catId);
                     } else if (categories.length > 0) {
                         setSavedCategoryId(categories[0].id);
+                        fetchTagsForCategory(categories[0].id);
                     }
                 } else if (categories.length > 0) {
                     setSavedCategoryId(categories[0].id);
+                    fetchTagsForCategory(categories[0].id);
                 }
             } catch (err) {
                 console.error("Failed to load provider services:", err);
@@ -115,41 +118,25 @@ export default function EditProfile() {
         }
     }, []);
 
-    // Open the edit modal — pre-fill with saved values
-    const openEditModal = () => {
-        setEditCategoryId(savedCategoryId);
-        setEditTagIds(new Set(savedTagIds));
-        fetchTagsForCategory(savedCategoryId);
-        setShowEditModal(true);
-    };
-
-    // When category changes inside modal, clear tags & re-fetch
-    const handleModalCategoryChange = (catId: string) => {
-        setEditCategoryId(catId);
-        setEditTagIds(new Set());
+    // Inline category select — clear tags & re-fetch
+    const handleCategoryChange = (catId: string) => {
+        setSavedCategoryId(catId);
+        setSavedTagIds([]);
+        setSavedTagObjects([]);
+        setShowCategoryDropdown(false);
         fetchTagsForCategory(catId);
     };
 
     const toggleTag = (tagId: string) => {
-        setEditTagIds(prev => {
-            const next = new Set(prev);
-            if (next.has(tagId)) {
-                next.delete(tagId);
-            } else {
-                next.add(tagId);
-            }
-            return next;
+        const tagObj = availableTags.find(t => t.id === tagId);
+        setSavedTagIds(prev => {
+            if (prev.includes(tagId)) return prev.filter(id => id !== tagId);
+            return [...prev, tagId];
         });
-    };
-
-    // Save changes from modal — also update savedTagObjects from availableTags so view shows names instantly
-    const saveModalChanges = () => {
-        const newTagIds = Array.from(editTagIds);
-        setSavedCategoryId(editCategoryId);
-        setSavedTagIds(newTagIds);
-        // Pick matching tag objects from the already-loaded availableTags list
-        setSavedTagObjects(availableTags.filter(t => editTagIds.has(t.id)));
-        setShowEditModal(false);
+        setSavedTagObjects(prev => {
+            if (prev.find(t => t.id === tagId)) return prev.filter(t => t.id !== tagId);
+            return tagObj ? [...prev, tagObj] : prev;
+        });
     };
 
     // Photo handlers
@@ -209,7 +196,7 @@ export default function EditProfile() {
             }
 
             const selectedCategory = categories.find(c => c.id === savedCategoryId);
-            const profileSuccess = await updateProfile({ 
+            const profileSuccess = await updateProfile({
                 name: fullName,
                 bio: bio,
                 profile_image: uploadedImageUrl !== undefined ? uploadedImageUrl : user?.profile_image,
@@ -249,7 +236,7 @@ export default function EditProfile() {
                 visible={showSuccessModal}
                 transparent
                 animationType="fade"
-                onRequestClose={() => {}}
+                onRequestClose={() => { }}
             >
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
                     <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
@@ -279,7 +266,7 @@ export default function EditProfile() {
                     <Text className="text-xl font-bold ml-4">Edit Profile</Text>
                 </View>
 
-                <KeyboardAvoidingView 
+                <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     className="flex-1"
                 >
@@ -297,7 +284,7 @@ export default function EditProfile() {
                                         source={{ uri: selectedImage?.uri || user?.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'Worker')}&background=0D8ABC&color=fff` }}
                                         className="w-32 h-32 rounded-[32px] border-4 border-slate-100 bg-slate-50"
                                     />
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={handleSelectPhoto}
                                         activeOpacity={0.8}
                                         className="absolute bottom-0 right-0 w-10 h-10 bg-black rounded-xl items-center justify-center border-4 border-white"
@@ -331,54 +318,115 @@ export default function EditProfile() {
                                 />
                             </View>
 
-                            {/* Profession – View Mode */}
+                            {/* ── Profession & Services — Inline Dropdown + Tags ── */}
                             <View className="mb-8">
-                                <View className="flex-row items-center justify-between mb-3">
-                                    <Text className="text-sm font-bold text-slate-500 uppercase">Professions & Services</Text>
-                                    <TouchableOpacity
-                                        onPress={openEditModal}
-                                        className="flex-row items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-full"
+                                <Text className="text-sm font-bold text-slate-500 uppercase mb-3">Profession & Services</Text>
+
+                                {/* Category Dropdown Trigger */}
+                                <TouchableOpacity
+                                    onPress={() => setShowCategoryDropdown(v => !v)}
+                                    className="flex-row items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 mb-1"
+                                    activeOpacity={0.7}
+                                >
+                                    <View className="flex-row items-center gap-2 flex-1">
+                                        <Feather name="briefcase" size={16} color="#475569" />
+                                        <Text className={`text-base font-semibold flex-1 ${savedCategoryId ? 'text-slate-900' : 'text-slate-400'
+                                            }`}>
+                                            {savedCategoryId
+                                                ? (categories.find(c => c.id === savedCategoryId)?.name || 'Select profession')
+                                                : 'Select your profession'
+                                            }
+                                        </Text>
+                                    </View>
+                                    <Ionicons
+                                        name={showCategoryDropdown ? 'chevron-up' : 'chevron-down'}
+                                        size={18}
+                                        color="#94a3b8"
+                                    />
+                                </TouchableOpacity>
+
+                                {/* Dropdown List */}
+                                {showCategoryDropdown && (
+                                    <View
+                                        className="border border-slate-200 rounded-2xl bg-white mb-4 overflow-hidden"
+                                        style={{ maxHeight: 280 }}
                                     >
-                                        <Feather name="edit-2" size={12} color="#475569" />
-                                        <Text className="text-xs font-semibold text-slate-600 ml-1">Edit</Text>
-                                    </TouchableOpacity>
-                                </View>
+                                        <ScrollView
+                                            nestedScrollEnabled
+                                            showsVerticalScrollIndicator={false}
+                                            keyboardShouldPersistTaps="handled"
+                                        >
+                                            {categories.map((cat, idx) => (
+                                                <TouchableOpacity
+                                                    key={cat.id}
+                                                    onPress={() => handleCategoryChange(cat.id)}
+                                                    className={`flex-row items-center px-4 py-3.5 ${idx !== categories.length - 1 ? 'border-b border-slate-100' : ''
+                                                        } ${savedCategoryId === cat.id ? 'bg-slate-50' : 'bg-white'}`}
+                                                    activeOpacity={0.6}
+                                                >
+                                                    <Text className={`flex-1 text-sm font-medium ${savedCategoryId === cat.id ? 'text-black font-bold' : 'text-slate-700'
+                                                        }`}>
+                                                        {cat.name}
+                                                    </Text>
+                                                    {savedCategoryId === cat.id && (
+                                                        <Ionicons name="checkmark-circle" size={18} color="#000" />
+                                                    )}
+                                                </TouchableOpacity>
+                                            ))}
+                                        </ScrollView>
+                                    </View>
+                                )}
 
+                                {/* Tags — shown once a category is selected */}
                                 {savedCategoryId ? (
-                                    <View className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                                        {/* Selected Category */}
-                                        <View className="mb-3">
-                                            <Text className="text-xs font-semibold text-slate-400 uppercase mb-2">Category</Text>
-                                            <View className="self-start px-4 py-2 rounded-full bg-black border border-black">
-                                                <Text className="text-sm font-semibold text-white">{savedCategoryName || '—'}</Text>
-                                            </View>
-                                        </View>
-
-                                        {/* Selected Tags — use savedTagObjects which are fetched on load & updated after modal save */}
-                                        <View>
-                                            <Text className="text-xs font-semibold text-slate-400 uppercase mb-2">Services / Tags</Text>
-                                            {savedTagObjects.length > 0 ? (
-                                                <View className="flex-row flex-wrap">
-                                                    {savedTagObjects.map(tag => (
-                                                        <View key={tag.id} className="px-3 py-1.5 rounded-full border border-slate-300 bg-white mr-2 mb-2">
-                                                            <Text className="text-sm font-medium text-slate-700">{tag.name}</Text>
-                                                        </View>
-                                                    ))}
-                                                </View>
-                                            ) : savedTagIds.length > 0 ? (
-                                                // Fallback: IDs present but objects not yet loaded
-                                                <ActivityIndicator size="small" color="#94a3b8" />
-                                            ) : (
-                                                <Text className="text-sm text-slate-400 italic">No services selected — tap Edit to add</Text>
+                                    <View className="mt-4">
+                                        <View className="flex-row items-center justify-between mb-3">
+                                            <Text className="text-xs font-bold text-slate-500 uppercase">Services / Specialities</Text>
+                                            {savedTagIds.length > 0 && (
+                                                <TouchableOpacity onPress={() => { setSavedTagIds([]); setSavedTagObjects([]); }}>
+                                                    <Text className="text-xs text-red-400 font-semibold">Clear all</Text>
+                                                </TouchableOpacity>
                                             )}
                                         </View>
+
+                                        {tagsLoading ? (
+                                            <ActivityIndicator color="#000" size="small" />
+                                        ) : availableTags.length === 0 ? (
+                                            <Text className="text-sm text-slate-400 italic">No sub-services for this category yet.</Text>
+                                        ) : (
+                                            <View className="flex-row flex-wrap">
+                                                {availableTags.map(tag => {
+                                                    const selected = savedTagIds.includes(tag.id);
+                                                    return (
+                                                        <TouchableOpacity
+                                                            key={tag.id}
+                                                            onPress={() => toggleTag(tag.id)}
+                                                            activeOpacity={0.75}
+                                                            className={`flex-row items-center px-3 py-1.5 rounded-full border mr-2 mb-2 ${selected
+                                                                    ? 'bg-black border-black'
+                                                                    : 'bg-white border-slate-300'
+                                                                }`}
+                                                        >
+                                                            {selected && (
+                                                                <Ionicons name="checkmark" size={12} color="#fff" style={{ marginRight: 4 }} />
+                                                            )}
+                                                            <Text className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-700'
+                                                                }`}>
+                                                                {tag.name}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    );
+                                                })}
+                                            </View>
+                                        )}
+
+                                        {!tagsLoading && (
+                                            <Text className="text-xs text-slate-400 mt-2">
+                                                {savedTagIds.length} service{savedTagIds.length !== 1 ? 's' : ''} selected
+                                            </Text>
+                                        )}
                                     </View>
-                                ) : (
-                                    <TouchableOpacity onPress={openEditModal} className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-5 items-center">
-                                        <Feather name="plus-circle" size={20} color="#94a3b8" />
-                                        <Text className="text-sm text-slate-400 mt-2 font-medium">Tap to select your profession & services</Text>
-                                    </TouchableOpacity>
-                                )}
+                                ) : null}
                             </View>
 
                             {/* Save Button */}
@@ -397,99 +445,7 @@ export default function EditProfile() {
                     )}
                 </KeyboardAvoidingView>
 
-                {/* ── Edit Profession Modal ── */}
-                <Modal
-                    visible={showEditModal}
-                    animationType="slide"
-                    presentationStyle="pageSheet"
-                    onRequestClose={() => setShowEditModal(false)}
-                >
-                    <SafeAreaView className="flex-1 bg-white">
-                        {/* Modal Header */}
-                        <View className="flex-row items-center justify-between px-5 py-4 border-b border-slate-100">
-                            <TouchableOpacity onPress={() => setShowEditModal(false)} className="p-2">
-                                <Ionicons name="close" size={24} color="black" />
-                            </TouchableOpacity>
-                            <Text className="text-lg font-bold">Edit Profession</Text>
-                            <TouchableOpacity
-                                onPress={saveModalChanges}
-                                className="bg-black px-4 py-2 rounded-full"
-                            >
-                                <Text className="text-white font-bold text-sm">Done</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView contentContainerStyle={{ padding: 20 }}>
-                            {/* Category Selection */}
-                            <View className="mb-6">
-                                <Text className="text-sm font-bold text-slate-500 uppercase mb-3">Select Category</Text>
-                                <View className="flex-row flex-wrap gap-2">
-                                    {categories.map(cat => (
-                                        <TouchableOpacity
-                                            key={cat.id}
-                                            onPress={() => handleModalCategoryChange(cat.id)}
-                                            className={`px-4 py-2 rounded-full border ${
-                                                editCategoryId === cat.id
-                                                    ? 'bg-black border-black'
-                                                    : 'bg-white border-slate-200'
-                                            }`}
-                                        >
-                                            <Text className={`text-sm font-medium ${
-                                                editCategoryId === cat.id ? 'text-white' : 'text-slate-600'
-                                            }`}>
-                                                {cat.name}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            </View>
-
-                            {/* Tags Selection */}
-                            {editCategoryId ? (
-                                <View className="mb-6">
-                                    <View className="flex-row items-center justify-between mb-3">
-                                        <Text className="text-sm font-bold text-slate-500 uppercase">Services / Tags</Text>
-                                        {editTagIds.size > 0 && (
-                                            <TouchableOpacity onPress={() => setEditTagIds(new Set())}>
-                                                <Text className="text-xs text-red-400 font-medium">Clear all</Text>
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-
-                                    {tagsLoading ? (
-                                        <ActivityIndicator color="#000" />
-                                    ) : availableTags.length === 0 ? (
-                                        <Text className="text-sm text-slate-400 italic">No services found for this category.</Text>
-                                    ) : (
-                                        <View className="flex-row flex-wrap">
-                                            {availableTags.map(tag => (
-                                                <TouchableOpacity
-                                                    key={tag.id}
-                                                    onPress={() => toggleTag(tag.id)}
-                                                    className={`px-3 py-1.5 rounded-full border mr-2 mb-2 ${
-                                                        editTagIds.has(tag.id)
-                                                            ? 'bg-black border-black'
-                                                            : 'bg-white border-slate-300'
-                                                    }`}
-                                                >
-                                                    <Text className={`text-sm font-medium ${
-                                                        editTagIds.has(tag.id) ? 'text-white' : 'text-slate-700'
-                                                    }`}>
-                                                        {tag.name}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ))}
-                                        </View>
-                                    )}
-
-                                    <Text className="text-xs text-slate-400 mt-3">
-                                        {editTagIds.size} service{editTagIds.size !== 1 ? 's' : ''} selected
-                                    </Text>
-                                </View>
-                            ) : null}
-                        </ScrollView>
-                    </SafeAreaView>
-                </Modal>
+                {/* Modal removed — profession & tags are now inline on the page */}
 
                 <MediaLibraryPicker
                     visible={showMediaPicker}

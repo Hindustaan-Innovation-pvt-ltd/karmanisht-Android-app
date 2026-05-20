@@ -1,113 +1,286 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { FlatList, Text, View, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+    FlatList, Text, View, TouchableOpacity, Linking,
+    ActivityIndicator, RefreshControl, Alert, Image
+} from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { UserIcon, PhoneIcon, ClockIcon, MapPinIcon } from '@/svg/icons';
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
+import { Ionicons, Feather } from '@expo/vector-icons';
+import { useTheme } from '@/lib/theme';
+
+type Lead = {
+    id: string;
+    name: string;
+    phone: string;
+    profileImage: string;
+    amount: number;
+    paymentStatus: string;
+    unlockedAt: string;
+    called: boolean;
+};
+
+function relativeTime(dateStr: string): string {
+    if (!dateStr) return '—';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
+function isNew(dateStr: string): boolean {
+    if (!dateStr) return false;
+    return Date.now() - new Date(dateStr).getTime() < 24 * 60 * 60 * 1000; // < 24h
+}
+
+const FILTERS = ['All', 'New', 'Called'] as const;
+type Filter = typeof FILTERS[number];
 
 export default function WorkerLeads() {
     const { user } = useAppStore();
-    const [leads, setLeads] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { isDark } = useTheme();
 
-    useEffect(() => {
-        async function fetchLeads() {
-            if (!user?.id) {
-                setLoading(false);
-                return;
-            }
-            setLoading(true);
-            try {
-                const { data, error } = await insforge.database
-                    .from('unlock_transactions')
-                    .select('id, user_id, amount, payment_status, unlocked_at, users(full_name, mobile)')
-                    .eq('provider_id', user.id);
-                
-                if (data && !error) {
-                    const formatted = data.map((item: any) => ({
-                        id: item.id,
-                        name: item.users?.full_name || 'Customer',
-                        phone: item.users?.mobile || '',
-                        location: 'Hyperlocal Customer',
-                        date: item.unlocked_at ? new Date(item.unlocked_at).toLocaleString() : new Date().toLocaleString()
-                    }));
-                    setLeads(formatted);
-                } else {
-                    setLeads([]);
-                }
-            } catch (err) {
-                console.error("Failed to fetch worker leads:", err);
+    const [leads, setLeads] = useState<Lead[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [filter, setFilter] = useState<Filter>('All');
+    const [calledIds, setCalledIds] = useState<Set<string>>(new Set());
+
+    const fetchLeads = useCallback(async (isRefresh = false) => {
+        if (!user?.id) { setLoading(false); return; }
+        if (isRefresh) setRefreshing(true); else setLoading(true);
+        try {
+            const { data, error } = await insforge.database
+                .from('unlock_transactions')
+                .select('id, user_id, amount, payment_status, unlocked_at, users(full_name, mobile, profile_image)')
+                .eq('provider_id', user.id)
+                .order('unlocked_at', { ascending: false });
+
+            if (data && !error) {
+                const formatted: Lead[] = data.map((item: any) => ({
+                    id: item.id,
+                    name: item.users?.full_name || 'Customer',
+                    phone: item.users?.mobile || '',
+                    profileImage: item.users?.profile_image || '',
+                    amount: Number(item.amount) || 0,
+                    paymentStatus: item.payment_status || 'paid',
+                    unlockedAt: item.unlocked_at || '',
+                    called: false,
+                }));
+                setLeads(formatted);
+            } else {
                 setLeads([]);
-            } finally {
-                setLoading(false);
             }
+        } catch (err) {
+            console.error('Failed to fetch leads:', err);
+            setLeads([]);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
         }
-        fetchLeads();
     }, [user?.id]);
+
+    useEffect(() => { fetchLeads(); }, [fetchLeads]);
+
+    const handleCall = (lead: Lead) => {
+        if (!lead.phone) {
+            Alert.alert('No number', 'Phone number not available for this lead.');
+            return;
+        }
+        Linking.openURL(`tel:${lead.phone}`);
+        setCalledIds(prev => new Set([...prev, lead.id]));
+    };
+
+    const handleWhatsApp = (lead: Lead) => {
+        if (!lead.phone) return;
+        const msg = encodeURIComponent(`Hello ${lead.name}, I'm ${user?.name || 'your service provider'} from Karmanisht. How can I help you?`);
+        Linking.openURL(`https://wa.me/91${lead.phone.replace(/\D/g, '')}?text=${msg}`);
+        setCalledIds(prev => new Set([...prev, lead.id]));
+    };
+
+    const filteredLeads = leads.filter(l => {
+        const isCalled = calledIds.has(l.id);
+        if (filter === 'New') return isNew(l.unlockedAt) && !isCalled;
+        if (filter === 'Called') return isCalled;
+        return true;
+    });
+
+    const newCount = leads.filter(l => isNew(l.unlockedAt) && !calledIds.has(l.id)).length;
 
     return (
         <SafeAreaProvider>
-            <SafeAreaView className="flex-1 bg-slate-50">
-                <View className="px-5 py-6 bg-white border-b border-slate-100">
-                    <Text className="text-2xl font-black text-slate-900 tracking-tight">Recent Leads</Text>
-                    <Text className="text-sm text-slate-500 font-medium mt-1">Customers who viewed your contact</Text>
-                </View>
+            <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
 
-                {loading ? (
-                    <View className="flex-1 items-center justify-center">
-                        <ActivityIndicator size="large" color="black" />
-                    </View>
-                ) : (
-                <FlatList
-                    data={leads}
-                    keyExtractor={item => item.id}
-                    contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-                    renderItem={({ item }) => (
-                        <View className="bg-white rounded-3xl p-5 mb-4 border border-slate-100 shadow-sm">
-                            <View className="flex-row items-center justify-between mb-4">
-                                <View className="flex-row items-center gap-3">
-                                    <View className="size-12 rounded-2xl bg-slate-100 items-center justify-center">
-                                        <UserIcon size={20} color="#64748B" />
-                                    </View>
-                                    <View>
-                                        <Text className="text-base font-bold text-slate-900">{item.name}</Text>
-                                        <View className="flex-row items-center gap-1">
-                                            <MapPinIcon size={10} color="#94A3B8" />
-                                            <Text className="text-xs text-slate-400 font-medium">{item.location}</Text>
-                                        </View>
-                                    </View>
-                                </View>
-                                <View className="items-end">
-                                    <View className="flex-row items-center gap-1">
-                                        <ClockIcon size={10} color="#94A3B8" />
-                                        <Text className="text-[10px] text-slate-400 font-bold uppercase">{item.date}</Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            <TouchableOpacity
-                                onPress={() => Linking.openURL(`tel:${item.phone}`)}
-                                activeOpacity={0.8}
-                                className="bg-slate-900 flex-row items-center justify-center py-3.5 rounded-2xl gap-2"
-                            >
-                                <PhoneIcon size={16} color="#fff" />
-                                <Text className="text-white font-bold">Call Customer</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                    ListEmptyComponent={() => (
-                        <View className="flex-1 items-center justify-center py-20 px-10">
-                            <View className="size-20 bg-slate-100 rounded-full items-center justify-center mb-6">
-                                <UserIcon size={32} color="#CBD5E1" />
-                            </View>
-                            <Text className="text-xl font-bold text-slate-900 text-center">No leads yet</Text>
-                            <Text className="text-sm text-slate-500 text-center mt-2 leading-relaxed">
-                                Share your profile or improve your services to attract more customers!
+                {/* ── Header ─────────────────────────────────────────── */}
+                <View className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-5 pt-5 pb-4">
+                    <View className="flex-row items-center justify-between">
+                        <View>
+                            <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Leads</Text>
+                            <Text className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                                {leads.length} total • {newCount} new
                             </Text>
                         </View>
-                    )}
-                />
+                        <TouchableOpacity
+                            onPress={() => fetchLeads(true)}
+                            className="w-9 h-9 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center border border-slate-100 dark:border-slate-700"
+                            activeOpacity={0.7}
+                        >
+                            <Feather name="refresh-cw" size={14} color={isDark ? '#94a3b8' : '#64748b'} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Filter tabs - Simple pill design */}
+                    <View className="flex-row gap-2 mt-4">
+                        {FILTERS.map(f => {
+                            const active = filter === f;
+                            const count = f === 'New' ? newCount : f === 'Called' ? calledIds.size : leads.length;
+                            return (
+                                <TouchableOpacity
+                                    key={f}
+                                    onPress={() => setFilter(f)}
+                                    className="px-4 py-2 rounded-full border"
+                                    style={{
+                                        backgroundColor: active ? (isDark ? '#334155' : '#0f172a') : 'transparent',
+                                        borderColor: active ? (isDark ? '#475569' : '#0f172a') : (isDark ? '#1e293b' : '#e2e8f0'),
+                                    }}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text
+                                        className="text-xs font-bold"
+                                        style={{
+                                            color: active ? '#ffffff' : (isDark ? '#94a3b8' : '#64748b')
+                                        }}
+                                    >
+                                        {f} ({count})
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </View>
+
+                {/* ── List ───────────────────────────────────────────── */}
+                {loading ? (
+                    <View className="flex-1 items-center justify-center gap-3">
+                        <ActivityIndicator size="large" color="#6366f1" />
+                        <Text className="text-sm text-slate-400 font-medium">Loading leads...</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredLeads}
+                        keyExtractor={item => item.id}
+                        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+                        showsVerticalScrollIndicator={false}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={() => fetchLeads(true)}
+                                tintColor="#6366f1"
+                            />
+                        }
+                        renderItem={({ item }) => {
+                            const called = calledIds.has(item.id);
+                            const fresh = isNew(item.unlockedAt);
+
+                            return (
+                                <View
+                                    className="bg-white dark:bg-slate-900 rounded-2xl mb-2.5 border p-4 flex-row items-center justify-between"
+                                    style={{
+                                        borderColor: called ? (isDark ? '#1e293b' : '#f1f5f9') : (isDark ? '#334155' : '#cbd5e1'),
+                                    }}
+                                >
+                                    <View className="flex-row items-center flex-1 gap-3">
+                                        {/* Avatar / Profile photo */}
+                                        {item.profileImage ? (
+                                            <Image
+                                                source={{ uri: item.profileImage }}
+                                                className="w-11 h-11 rounded-full bg-slate-100 dark:bg-slate-800"
+                                            />
+                                        ) : (
+                                            <View
+                                                className="w-11 h-11 rounded-full items-center justify-center"
+                                                style={{
+                                                    backgroundColor: called ? (isDark ? '#1e293b' : '#f1f5f9') : (isDark ? '#1e1b4b' : '#e0e7ff')
+                                                }}
+                                            >
+                                                <Text
+                                                    className="text-sm font-black"
+                                                    style={{
+                                                        color: called ? '#94a3b8' : (isDark ? '#818cf8' : '#4f46e5')
+                                                    }}
+                                                >
+                                                    {item.name.charAt(0).toUpperCase()}
+                                                </Text>
+                                            </View>
+                                        )}
+
+                                        {/* Lead details */}
+                                        <View className="flex-1">
+                                            <View className="flex-row items-center gap-1.5 flex-wrap">
+                                                <Text
+                                                    className="text-sm font-bold"
+                                                    style={{
+                                                        color: called ? (isDark ? '#64748b' : '#94a3b8') : (isDark ? '#ffffff' : '#0f172a')
+                                                    }}
+                                                >
+                                                    {item.name}
+                                                </Text>
+                                                {fresh && !called && (
+                                                    <View className="bg-indigo-500/10 dark:bg-indigo-400/10 px-1.5 py-0.5 rounded-md">
+                                                        <Text className="text-indigo-600 dark:text-indigo-400 text-[8px] font-black uppercase tracking-wider">New</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                            <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                                {item.phone ? `+91 ${item.phone}` : 'No number'}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    {/* Action buttons */}
+                                    <View className="flex-row gap-1.5 items-center ml-2">
+                                        <TouchableOpacity
+                                            onPress={() => handleCall(item)}
+                                            className="w-10 h-10 rounded-xl items-center justify-center border"
+                                            style={{
+                                                backgroundColor: called ? (isDark ? '#0f172a' : '#f8fafc') : (isDark ? '#1e293b' : '#f1f5f9'),
+                                                borderColor: isDark ? '#334155' : '#e2e8f0',
+                                            }}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Ionicons
+                                                name="call"
+                                                size={16}
+                                                color={called ? (isDark ? '#64748b' : '#94a3b8') : (isDark ? '#38bdf8' : '#0284c7')}
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            );
+                        }}
+                        ListEmptyComponent={() => (
+                            <View className="items-center justify-center py-24 px-10">
+                                <View className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center mb-4">
+                                    <Ionicons name="people-outline" size={28} color={isDark ? '#94a3b8' : '#64748b'} />
+                                </View>
+                                <Text className="text-lg font-bold text-slate-900 dark:text-white text-center">
+                                    {filter === 'New' ? 'No new leads' : filter === 'Called' ? 'No called leads' : 'No leads yet'}
+                                </Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 text-center mt-2 leading-relaxed">
+                                    {filter === 'All'
+                                        ? 'When customers unlock your contact, they will appear here.'
+                                        : 'Switch to "All" to see your complete lead history.'
+                                    }
+                                </Text>
+                            </View>
+                        )}
+                    />
                 )}
             </SafeAreaView>
         </SafeAreaProvider>

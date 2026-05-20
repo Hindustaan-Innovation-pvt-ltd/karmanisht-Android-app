@@ -7,6 +7,7 @@ import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, Activi
 const { width } = Dimensions.get('window');
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import ConsumerNavbar from '@/components/consumer-navbar';
 import BackButton from '@/components/back-button';
 import SafeIcon from '@/components/safe-icon';
@@ -250,6 +251,9 @@ export default function ServiceDetailScreen() {
     const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
     const signOut = useAppStore(state => state.signOut);
 
+    const activePasses = useAppStore(state => (state as any).activePasses);
+    const fetchActivePasses = useAppStore(state => (state as any).fetchActivePasses);
+
     const { id, name, color, icon } = useLocalSearchParams<{ id: string, name: string, color: string, icon: string }>();
     const router = useRouter();
 
@@ -265,10 +269,18 @@ export default function ServiceDetailScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [tempProviderForSuccess, setTempProviderForSuccess] = useState<any | null>(null);
 
+    const [cityConfig, setCityConfig] = useState<{ id: string; name: string; tier: string } | null>(null);
+    const [pricingConfig, setPricingConfig] = useState<{ unlock_price: number; unlock_duration_hours: number } | null>(null);
+    const [loadingPricing, setLoadingPricing] = useState(true);
+
     useEffect(() => {
         fetchProviders();
         fetchSubCategories();
-    }, [id, userLocation]);
+        resolveUserCityAndPricing();
+        if (user?.id && fetchActivePasses) {
+            fetchActivePasses();
+        }
+    }, [id, userLocation, user?.id]);
 
     const fetchSubCategories = async () => {
         setLoadingTags(true);
@@ -303,6 +315,118 @@ export default function ServiceDetailScreen() {
             setSubCategories([]);
         } finally {
             setLoadingTags(false);
+        }
+    };
+
+    const resolveUserCityAndPricing = async () => {
+        setLoadingPricing(true);
+        try {
+            let lat = userLocation?.coords?.latitude;
+            let lng = userLocation?.coords?.longitude;
+            
+            if (!lat || !lng) {
+                try {
+                    const { status } = await Location.requestForegroundPermissionsAsync();
+                    if (status === 'granted') {
+                        const loc = await Location.getLastKnownPositionAsync() ??
+                                    await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                        if (loc?.coords) {
+                            lat = loc.coords.latitude;
+                            lng = loc.coords.longitude;
+                        }
+                    }
+                } catch (locationErr) {
+                    console.log("Could not obtain location coords:", locationErr);
+                }
+            }
+
+            let cityName = 'Raipur'; // Default fallback
+            if (lat && lng) {
+                try {
+                    const address = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+                    if (address && address.length > 0) {
+                        cityName = address[0].city || address[0].subregion || address[0].region || 'Raipur';
+                    }
+                } catch (err) {
+                    console.log("Reverse geocode failed, using closest city distance fallback:", err);
+                    const cityCoords = [
+                        { name: 'Raipur', lat: 21.2514, lng: 81.6296 },
+                        { name: 'Nagpur', lat: 21.1458, lng: 79.0882 },
+                        { name: 'Indore', lat: 22.7196, lng: 75.8577 },
+                        { name: 'Bhopal', lat: 23.2599, lng: 77.4126 },
+                        { name: 'Bilaspur', lat: 22.0797, lng: 82.1391 },
+                        { name: 'Mumbai', lat: 19.0760, lng: 72.8777 },
+                        { name: 'Delhi', lat: 28.7041, lng: 77.1025 },
+                        { name: 'Bengaluru', lat: 12.9716, lng: 77.5946 },
+                        { name: 'Hyderabad', lat: 17.3850, lng: 78.4867 },
+                        { name: 'Pune', lat: 18.5204, lng: 73.8567 },
+                    ];
+                    let minDistance = Infinity;
+                    let closest = 'Raipur';
+                    for (const c of cityCoords) {
+                        const dist = getDistanceKm(lat, lng, c.lat, c.lng);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            closest = c.name;
+                        }
+                    }
+                    cityName = closest;
+                }
+            }
+
+            // Query cities table
+            const { data: dbCities, error: cityError } = await insforge.database
+                .from('cities')
+                .select('*')
+                .ilike('name', `%${cityName}%`);
+            
+            let resolvedCity = null;
+            if (dbCities && dbCities.length > 0 && !cityError) {
+                resolvedCity = dbCities[0];
+            } else {
+                // Fallback: fetch Raipur from database
+                const { data: defaultCities } = await insforge.database
+                    .from('cities')
+                    .select('*')
+                    .eq('name', 'Raipur');
+                if (defaultCities && defaultCities.length > 0) {
+                    resolvedCity = defaultCities[0];
+                }
+            }
+
+            if (resolvedCity) {
+                setCityConfig(resolvedCity);
+                
+                // Fetch pricing config
+                const { data: priceData, error: priceError } = await insforge.database
+                    .from('city_pricing_config')
+                    .select('unlock_price, unlock_duration_hours')
+                    .eq('city_id', resolvedCity.id)
+                    .eq('profession_id', id)
+                    .maybeSingle();
+
+                if (priceData && !priceError) {
+                    setPricingConfig({
+                        unlock_price: Number(priceData.unlock_price),
+                        unlock_duration_hours: Number(priceData.unlock_duration_hours)
+                    });
+                } else {
+                    // Safety default based on city tier
+                    const defaultPrice = resolvedCity.tier === 'tier_1' ? 99 : 49;
+                    setPricingConfig({
+                        unlock_price: defaultPrice,
+                        unlock_duration_hours: 5
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("resolveUserCityAndPricing failed:", err);
+            setPricingConfig({
+                unlock_price: 49,
+                unlock_duration_hours: 5
+            });
+        } finally {
+            setLoadingPricing(false);
         }
     };
 
@@ -347,7 +471,8 @@ export default function ServiceDetailScreen() {
                     bio,
                     average_rating,
                     total_jobs_completed,
-                    is_active
+                    is_active,
+                    is_premium
                 `)
                 .in('id', providerIds)
                 .eq('is_active', true);
@@ -399,11 +524,19 @@ export default function ServiceDetailScreen() {
                     mobile: p.mobile,
                     description: p.bio || ('Expert ' + name + ' services.'),
                     tags: providerTags,
-                    service_radius_km: loc ? (loc.service_radius_km || 5) : 5
+                    service_radius_km: loc ? (loc.service_radius_km || 5) : 5,
+                    is_premium: p.is_premium || false
                 };
             });
 
-            setProviders(formattedProviders);
+            // Sort premium providers to the top, and sort by distance as secondary metric
+            const sortedProviders = [...formattedProviders].sort((a, b) => {
+                if (a.is_premium && !b.is_premium) return -1;
+                if (!a.is_premium && b.is_premium) return 1;
+                return a.distance_km - b.distance_km;
+            });
+
+            setProviders(sortedProviders);
         } catch (err) {
             console.error("Failed to load providers:", err);
             setProviders([]);
@@ -431,28 +564,82 @@ export default function ServiceDetailScreen() {
             return;
         }
 
-        if (isUnlocked(provider.provider_id)) {
+        if (isUnlocked(provider.provider_id, id)) {
             setSelectedContact(provider);
             setShowContactModal(true);
             return;
         }
 
-        try {
-            setLoading(true);
-            const success = await handleRazorpayPayment(provider);
+        const dynamicPrice = pricingConfig?.unlock_price || 49;
+        const durationHours = pricingConfig?.unlock_duration_hours || 5;
+        const resolvedCityName = cityConfig?.name || 'your city';
 
-            if (success) {
-                await unlockWorker(provider.provider_id);
-                setTempProviderForSuccess(provider);
-                setShowSuccessModal(true);
-            } else {
-                Alert.alert('Payment Cancelled', 'The payment process was not completed.');
-            }
-        } catch (err: any) {
-            Alert.alert('Payment Error', err.message);
-        } finally {
-            setLoading(false);
-        }
+        Alert.alert(
+            `Unlock Category Pass`,
+            `Unlock all ${name} contacts in ${resolvedCityName} for ₹${dynamicPrice} for ${durationHours} hours.`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Proceed to Pay",
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            const success = await handleRazorpayPayment(provider, dynamicPrice);
+
+                            if (success) {
+                                // 1. Create a row in unlock_passes table
+                                const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+                                
+                                const { error: passError } = await insforge.database
+                                    .from('unlock_passes')
+                                    .insert([{
+                                        customer_id: user.id,
+                                        profession_id: id,
+                                        city_id: cityConfig?.id || '57b3868e-c554-4ae5-b80f-fb1bd0617542',
+                                        amount_paid: dynamicPrice,
+                                        expires_at: expiresAt,
+                                        payment_status: 'paid'
+                                    }]);
+
+                                if (passError) {
+                                    console.error("Failed to insert unlock pass record:", passError);
+                                }
+
+                                // 2. Create lead inside unlock_transactions so worker sees the lead notification!
+                                const { error: txError } = await insforge.database
+                                    .from('unlock_transactions')
+                                    .insert([{
+                                        user_id: user.id,
+                                        provider_id: provider.provider_id,
+                                        amount: dynamicPrice,
+                                        payment_status: 'completed',
+                                        transaction_id: `tx_${Date.now()}`
+                                    }]);
+
+                                if (txError) {
+                                    console.error("Failed to insert unlock lead transaction:", txError);
+                                }
+
+                                // Refresh passes & profile state
+                                if (fetchActivePasses) {
+                                    await fetchActivePasses();
+                                }
+                                await refreshProfile();
+
+                                setTempProviderForSuccess(provider);
+                                setShowSuccessModal(true);
+                            } else {
+                                Alert.alert('Payment Cancelled', 'The payment process was not completed.');
+                            }
+                        } catch (err: any) {
+                            Alert.alert('Payment Error', err.message);
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const filteredProviders = providers.filter(p => {
@@ -664,11 +851,13 @@ export default function ServiceDetailScreen() {
                         className="rounded-[30px] p-5 flex-row mb-4 mx-5 relative"
                         style={{
                             backgroundColor: color || '#3B82F6',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 10 },
-                            shadowOpacity: 0.15,
-                            shadowRadius: 15,
-                            elevation: 8
+                            shadowColor: provider.is_premium ? '#F59E0B' : '#000',
+                            shadowOffset: { width: 0, height: provider.is_premium ? 12 : 10 },
+                            shadowOpacity: provider.is_premium ? 0.35 : 0.15,
+                            shadowRadius: provider.is_premium ? 18 : 15,
+                            elevation: provider.is_premium ? 12 : 8,
+                            borderColor: '#FBBF24',
+                            borderWidth: provider.is_premium ? 2.5 : 0
                         }}
                     >
                         {/* Provider Image */}
@@ -680,7 +869,15 @@ export default function ServiceDetailScreen() {
 
                         {/* Provider Info */}
                         <View className="ml-4 flex-1">
-                            <Text className="text-2xl font-bold text-white mb-1" numberOfLines={1}>{provider.full_name}</Text>
+                            <View className="flex-row items-center mb-1 flex-wrap pr-10">
+                                <Text className="text-2xl font-bold text-white mr-2" numberOfLines={1}>{provider.full_name}</Text>
+                                {provider.is_premium && (
+                                    <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}>
+                                        <Ionicons name="crown" size={12} color="#D97706" />
+                                        <Text style={{ color: '#D97706', fontSize: 9, fontWeight: 'bold', marginLeft: 2 }}>PREMIUM</Text>
+                                    </View>
+                                )}
+                            </View>
                             <View className="flex-row items-center mb-1">
                                 <Ionicons name="star" size={15} color="white" className='mb-0.4' />
                                 <Text className="text-white text-xs ml-1">{provider.average_rating || 0}({provider.total_reviews || 0})</Text>
@@ -694,9 +891,15 @@ export default function ServiceDetailScreen() {
 
                             {/* Skills Tags */}
                             <View className="flex-row flex-wrap">
-                                <View className="px-2 py-1 rounded-full mr-3 mb-2 border-2 border-white">
-                                    <Text className="text-[10px] text-white">{name}</Text>
+                                <View className="px-2 py-1 rounded-full mr-2 mb-2 border border-white/50 bg-white/10">
+                                    <Text className="text-[10px] text-white font-semibold">{name}</Text>
                                 </View>
+                                {provider.is_premium && (
+                                    <View style={{ backgroundColor: '#FBBF24' }} className="px-2 py-1 rounded-full mr-2 mb-2 flex-row items-center">
+                                        <MaterialCommunityIcons name="sparkles" size={10} color="#78350F" />
+                                        <Text style={{ color: '#78350F', fontSize: 10, fontWeight: 'bold', marginLeft: 2 }}>Top Verified</Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
 
@@ -713,7 +916,7 @@ export default function ServiceDetailScreen() {
                             onPress={() => handleUnlockContact(provider)}
                         >
                             <Ionicons
-                                name={isUnlocked(provider.provider_id) ? "call" : "lock-closed"}
+                                name={isUnlocked(provider.provider_id, id) ? "call" : "lock-closed"}
                                 size={24}
                                 color={color || '#3B82F6'}
                             />

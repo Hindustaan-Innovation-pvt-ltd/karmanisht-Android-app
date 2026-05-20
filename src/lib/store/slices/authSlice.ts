@@ -106,7 +106,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     phone: consumerData.mobile || '',
                     isOnline: consumerData.is_active ?? true,
                     searchRadiusKm: consumerData.search_radius_km || 5,
-                    isPremium: consumerData.is_premium ?? false,
+                    // isPremium intentionally omitted — premium is a worker-only feature
                 };
                 set({ user: profile });
                 await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
@@ -193,7 +193,10 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                                 isOnline: data.is_active ?? activeUser.isOnline,
                                 searchRadiusKm: data.search_radius_km || activeUser.searchRadiusKm,
                                 profile_image: data.profile_image || activeUser.profile_image,
-                                isPremium: data.is_premium ?? activeUser.isPremium ?? false,
+                                // isPremium is only valid for workers — read from service_providers.is_premium
+                                isPremium: activeUser.role === 'worker'
+                                    ? (data.is_premium ?? activeUser.isPremium ?? false)
+                                    : undefined,
                             };
 
                             if (activeUser.role === 'worker') {
@@ -244,9 +247,12 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         }
                     }
 
-                    // B. Sync Unlocked Contacts for Consumers
+                    // B. Sync Unlocked Contacts & Active Passes for Consumers
                     const latestUser = get().user;
                     if (latestUser && latestUser.id && latestUser.role === 'consumer' && uuidRegex.test(latestUser.id)) {
+                        // Fetch active passes in parallel
+                        get().fetchActivePasses().catch(err => console.error('[refreshProfile] fetchActivePasses error:', err));
+
                         const { data: txs, error: txError } = await insforge.database
                             .from('unlock_transactions')
                             .select('provider_id')

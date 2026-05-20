@@ -185,7 +185,7 @@ export default function WorkerSettings() {
                         label="Identity Verification" 
                         value="Pending"
                         iconColor="#D97706"
-                        onPress={() => router.push('/(onboarding)/worker/verify-identity?from=dashboard')} 
+                        onPress={() => router.push('/(protected)/worker/verify-identity?from=dashboard')} 
                     />
                     {/* SERVICE CONFIGURATION SECTION */}
                     <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Service Configuration</Text>

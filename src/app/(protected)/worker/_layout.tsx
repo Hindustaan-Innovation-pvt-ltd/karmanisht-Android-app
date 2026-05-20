@@ -15,7 +15,7 @@ export default function WorkerProtectedLayout() {
                 tabBarInactiveTintColor: colors.inactive,
                 tabBarStyle: {
                     borderTopWidth: 1,
-                    
+
                     borderTopColor: colors.border,
                     backgroundColor: colors.background,
                     height: 100,
@@ -66,6 +66,12 @@ export default function WorkerProtectedLayout() {
             />
             <Tabs.Screen
                 name="premium-payment"
+                options={{
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="verify-identity"
                 options={{
                     href: null,
                 }}

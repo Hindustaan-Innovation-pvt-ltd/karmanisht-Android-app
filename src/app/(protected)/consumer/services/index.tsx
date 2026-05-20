@@ -1,7 +1,7 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, LayoutAnimation, Platform, Keyboard, Modal } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, LayoutAnimation, Platform, Keyboard, Modal, ActivityIndicator } from 'react-native';
 import SafeIcon from '@/components/safe-icon';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
@@ -39,7 +39,9 @@ const getVibrantColor = (service: any) => {
 };
 
 export default function ServicesScreen() {
-    const { categories, fetchCategories } = useAppStore();
+    const categories = useAppStore(state => state.categories);
+    const isCategoriesLoading = useAppStore(state => state.isCategoriesLoading);
+    const fetchCategories = useAppStore(state => state.fetchCategories);
     const router = useRouter();
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
@@ -56,8 +58,9 @@ export default function ServicesScreen() {
     });
 
     useEffect(() => {
+        // Always re-fetch to ensure we have the latest and complete list
         fetchCategories();
-    }, [fetchCategories]);
+    }, []);
 
     const renderHeader = () => (
         <View className="px-5 flex-row items-center justify-between mb-8 min-h-12" onTouchStart={(e) => e.stopPropagation()}>
@@ -219,7 +222,14 @@ export default function ServicesScreen() {
                 numColumns={3}
                 columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 20 }}
                 ListEmptyComponent={
-                    searchQuery.length > 0 ? (
+                    isCategoriesLoading ? (
+                        <View className="items-center justify-center py-16 px-5">
+                            <ActivityIndicator size="large" color="#6366F1" />
+                            <Text className="text-slate-400 dark:text-slate-500 text-sm mt-4 text-center font-medium">
+                                Loading services...
+                            </Text>
+                        </View>
+                    ) : searchQuery.length > 0 ? (
                         <View className="items-center justify-center py-10 px-5">
                             <Ionicons name="search-outline" size={48} color="#9CA3AF" />
                             <Text className="text-gray-900 dark:text-slate-100 font-bold mt-4 text-center text-lg">

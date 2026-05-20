@@ -17,6 +17,7 @@ export interface UserProfile {
     searchRadiusKm?: number;
     profile_image?: string;
     hasSpecialties?: boolean;
+    /** Worker-only. Consumers do NOT have premium. Sourced from service_providers.is_premium. */
     isPremium?: boolean;
 }
 
@@ -51,6 +52,7 @@ export interface AuthSlice {
 
 export interface CommonSlice {
     categories: Category[];
+    isCategoriesLoading: boolean;
     userLocation: Location.LocationObject | null;
 
     fetchCategories: () => Promise<void>;
@@ -60,10 +62,12 @@ export interface CommonSlice {
 export interface ConsumerSlice {
     unlockedContacts: string[];
     unlockedProviders: any[];
+    activePasses: any[];
 
-    isUnlocked: (id: string) => boolean;
+    isUnlocked: (id: string, categoryId?: string) => boolean;
     unlockWorker: (id: string) => Promise<void>;
-    handleRazorpayPayment: (provider: any) => Promise<boolean>;
+    handleRazorpayPayment: (provider: any, amount?: number) => Promise<boolean>;
+    fetchActivePasses: () => Promise<void>;
 }
 
 export interface WorkerSlice {
