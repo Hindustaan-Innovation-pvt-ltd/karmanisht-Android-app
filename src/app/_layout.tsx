@@ -10,6 +10,26 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppStore } from '@/lib/store';
 import { useEffect } from 'react';
 
+// Suppress ExpoKeepAwake uncaught promise rejections on Android during startup/activity recreation
+if (__DEV__) {
+  try {
+    const rejectionTracking = require('promise/setimmediate/rejection-tracking');
+    rejectionTracking.enable({
+      allRejections: true,
+      onUnhandled: (id, error) => {
+        const message = error?.message || (typeof error === 'string' ? error : '');
+        if (message.includes('ExpoKeepAwake') || message.includes('KeepAwake')) {
+          return;
+        }
+        console.warn(`[Unhandled Promise Rejection] ID: ${id}`, error);
+      },
+      onHandled: () => {},
+    });
+  } catch (e) {
+    // Ignore if rejection tracking module is not available
+  }
+}
+
 WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
