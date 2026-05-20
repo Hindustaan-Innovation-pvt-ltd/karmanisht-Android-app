@@ -110,14 +110,14 @@ export default function Index() {
                 <View className='items-center mb-8'>
                     <Image
                         source={require('@assets/images/logo.png')}
-                        style={{ width: 100, height: 100, marginBottom: 16 }}
+                        className='size-24'
                         resizeMode="contain"
                     />
-                    <Text className='text-5xl font-black text-center text-slate-900 dark:text-slate-100'>Karmanisht</Text>
+                    <Text className='text-[5rem] font-black text-center text-slate-900 dark:text-slate-100'>Karma<Text className='text-orange-500'>nisht</Text></Text>
                     <Text className='text-base font-bold text-center text-slate-500 dark:text-slate-400 mt-2'>Every service you need, at your screen</Text>
                 </View>
 
-                <View className='gap-4 mt-8'>
+                <View className='gap-4'>
                     <TouchableOpacity
                         className='bg-black dark:bg-slate-800 py-5 rounded-2xl items-center'
                         style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
