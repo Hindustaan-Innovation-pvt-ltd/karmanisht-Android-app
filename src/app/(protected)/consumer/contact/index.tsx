@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput, useColorScheme, Linking } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, useColorScheme, Linking, LayoutAnimation, Platform } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -141,6 +141,7 @@ const ContactListItem = ({ provider, categories, index, isDark }) => {
 export default function ContactScreen() {
     const { unlockedProviders, categories } = useAppStore();
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const insets = useSafeAreaInsets();
     const isDark = useColorScheme() === 'dark';
 
@@ -152,29 +153,48 @@ export default function ContactScreen() {
     });
 
     const renderHeader = () => (
-        <View className="w-full">
-            {/* Header */}
-            <View className="px-5 flex-row items-center justify-between mb-6">
-                <Text className="text-3xl font-black text-slate-800 dark:text-slate-100">Your Contacts</Text>
-            </View>
-
-            {/* Search Bar */}
-            <View className="px-5 mb-6">
-                <View className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl px-4 h-12 flex-row items-center">
-                    <Feather name="search" size={18} color="#94A3B8" />
-                    <TextInput
-                        className="ml-3 flex-1 text-slate-800 dark:text-slate-100 font-semibold text-sm"
-                        placeholder="Search contacts..."
-                        placeholderTextColor="#94A3B8"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <Ionicons name="close-circle" size={18} color="#2363bdff" />
+        <View className="w-full mb-6">
+            <View className="px-5 flex-row items-center justify-between min-h-12">
+                <Text className="text-3xl font-black text-slate-800 dark:text-slate-100 flex-1 mr-2">Your Contacts</Text>
+                {isSearchExpanded ? (
+                    <View className="w-[50%] flex-row items-center rounded-xl px-2.5 py-1.5 border-2 border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900">
+                        <Ionicons name="search" size={16} color="#9CA3AF" />
+                        <TextInput
+                            className="ml-1.5 flex-1 text-gray-900 dark:text-slate-100 font-medium text-[13px] p-0 m-0"
+                            placeholder="Search..."
+                            placeholderTextColor="#9CA3AF"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            autoFocus
+                        />
+                        {searchQuery.length > 0 && (
+                            <TouchableOpacity onPress={() => setSearchQuery('')} className="p-1">
+                                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                            onPress={() => {
+                                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                                setIsSearchExpanded(false);
+                                setSearchQuery('');
+                            }}
+                            className="ml-2 pl-2 border-l border-gray-200 dark:border-slate-700"
+                        >
+                            <Text className="text-blue-500 font-semibold text-xs">Cancel</Text>
                         </TouchableOpacity>
-                    )}
-                </View>
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        onPress={() => {
+                            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                            setIsSearchExpanded(true);
+                        }}
+                        className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
+                    >
+                        <Ionicons name="search" size={18} color="#9CA3AF" />
+                        <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );
@@ -202,7 +222,7 @@ export default function ContactScreen() {
                     paddingTop: insets.top > 0 ? insets.top + 16 : 24,
                     paddingBottom: insets.bottom > 0 ? insets.bottom + 120 : 120
                 }}
-                ListHeaderComponent={renderHeader}
+                ListHeaderComponent={renderHeader()}
                 data={filteredProviders}
                 keyExtractor={(item) => item.id}
                 ListEmptyComponent={renderEmpty}
