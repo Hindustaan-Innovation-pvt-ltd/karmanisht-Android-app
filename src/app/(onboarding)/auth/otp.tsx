@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '@/lib/store';
 import { getOnboardingRoute } from '@/lib/utils';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,6 +21,36 @@ export default function Otp() {
     const processUserSession = useAppStore(state => state.processUserSession)
     const [otp, setOtp] = useState('')
     const [loading, setLoading] = useState(false)
+    const [cooldown, setCooldown] = useState(75) // starts at 1 min 15 sec on entry
+
+    // ── Cooldown countdown timer ─────────────────────────────────────────────
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setInterval(() => {
+            setCooldown(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [cooldown]);
+
+    // ── Resend OTP handler ───────────────────────────────────────────────────
+    const handleResendOtp = async () => {
+        if (cooldown > 0) return;
+        setLoading(true);
+        try {
+            const { data, error } = await insforge.functions.invoke('send-otp', {
+                body: { mobile }
+            });
+            if (error || data?.error) {
+                throw new Error(error?.message || data?.error || 'Failed to send OTP');
+            }
+            Alert.alert('OTP Sent', data.message || 'OTP resent successfully!');
+            setCooldown(75); // restart cooldown
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to resend OTP');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleVerifyOtp = async () => {
         if (otp.length < 6) {
@@ -112,9 +142,25 @@ export default function Otp() {
                         </InputOTPGroup>
                     </InputOTP>
 
-                    <Text className='text-center text-slate-400 dark:text-slate-500 text-xs'>
-                        Hint: Use <Text className='font-bold'>123456</Text> if you didn&apos;t receive an SMS.
-                    </Text>
+                    <View className='flex-col gap-2 -mt-2'>
+                        <Text className='text-center text-slate-400 dark:text-slate-500 text-xs'>
+                            Hint: Use <Text className='font-bold'>123456</Text> if you didn&apos;t receive an SMS.
+                        </Text>
+                        
+                        <View className='flex-row justify-center items-center h-6'>
+                            {cooldown > 0 ? (
+                                <Text className='text-slate-500 dark:text-slate-400 text-sm font-medium'>
+                                    Resend code in {Math.floor(cooldown / 60)}:{(cooldown % 60).toString().padStart(2, '0')}
+                                </Text>
+                            ) : (
+                                <TouchableOpacity onPress={handleResendOtp} disabled={loading} activeOpacity={0.7}>
+                                    <Text className='text-blue-600 dark:text-blue-400 font-bold text-sm'>
+                                        Resend OTP
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
 
                     <TouchableOpacity
                         className='bg-black dark:bg-slate-800 py-4 rounded-xl items-center'

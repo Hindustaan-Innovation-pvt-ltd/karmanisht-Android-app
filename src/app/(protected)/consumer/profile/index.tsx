@@ -18,6 +18,7 @@ export default function ProfileScreen() {
     const { colors, isDark } = useTheme();
     const user = useAppStore(state => state.user);
     const signOut = useAppStore(state => state.signOut);
+    const unlockedProviders = useAppStore(state => state.unlockedProviders);
     const router = useRouter();
 
     const handleMenuPress = async (id: string) => {
@@ -47,8 +48,8 @@ export default function ProfileScreen() {
                 </View>
 
                 {/* Consumer Account Info (Clean Flat Row) */}
-                <View className="px-6 pb-6">
-                    <View className="flex-row items-center p-4 bg-slate-50 dark:bg-slate-905 rounded-[24px] border border-slate-100 dark:border-slate-900">
+                <View className="px-6 pb-4">
+                    <View className="flex-row items-center p-4 bg-slate-50 dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800">
                         <View className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 dark:border-slate-800">
                             <Image
                                 source={{ uri: profileImage }}
@@ -72,8 +73,43 @@ export default function ProfileScreen() {
                     </View>
                 </View>
 
+                {/* Minimalist Stats Row */}
+                <View className="px-6 pb-6">
+                    <View className="flex-row justify-between bg-slate-50 dark:bg-slate-900/50 rounded-[24px] border border-slate-100 dark:border-slate-800 p-4">
+                        <View className="flex-1 items-center">
+                            <Text className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                                {unlockedProviders?.length || 0}
+                            </Text>
+                            <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
+                                Connected Pros
+                            </Text>
+                        </View>
+                        <View className="w-[1px] bg-slate-200 dark:bg-slate-800" />
+                        <View className="flex-1 items-center">
+                            <Text className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                                {user?.searchRadiusKm || 5} KM
+                            </Text>
+                            <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
+                                Search Scope
+                            </Text>
+                        </View>
+                        <View className="w-[1px] bg-slate-200 dark:bg-slate-800" />
+                        <View className="flex-1 items-center">
+                            <View className="flex-row items-center gap-1">
+                                <Ionicons name="shield-checkmark" size={14} color="#10B981" />
+                                <Text className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                                    Verified
+                                </Text>
+                            </View>
+                            <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
+                                Trust Badge
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
                 {/* Account Options List */}
-                <View className="px-6 mt-4">
+                <View className="px-6 mt-2">
                     <Text className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">
                         Account Options
                     </Text>
@@ -100,7 +136,7 @@ export default function ProfileScreen() {
                                             <Text className={`text-base font-semibold ${isDestructive ? 'text-red-500' : 'text-slate-800 dark:text-slate-100'}`}>
                                                 {item.title}
                                             </Text>
-                                            <Text className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                            <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">
                                                 {item.description}
                                             </Text>
                                         </View>
@@ -113,6 +149,38 @@ export default function ProfileScreen() {
                                 </TouchableOpacity>
                             );
                         })}
+                    </View>
+                </View>
+
+                {/* Trust & Security Section */}
+                <View className="px-6 mt-8">
+                    <Text className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">
+                        Trust & Platform Safety
+                    </Text>
+                    <View className="bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 p-4 rounded-[24px] gap-3">
+                        <View className="flex-row items-start">
+                            <View className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/20 items-center justify-center mt-0.5 border border-emerald-100 dark:border-emerald-900/40">
+                                <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                            </View>
+                            <View className="ml-3 flex-1">
+                                <Text className="text-sm font-bold text-slate-800 dark:text-slate-100">Verified Consumer Status</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5 leading-relaxed">
+                                    Your phone and device identity are securely verified to prevent fake bookings and spam listings.
+                                </Text>
+                            </View>
+                        </View>
+                        <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50" />
+                        <View className="flex-row items-start">
+                            <View className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/20 items-center justify-center mt-0.5 border border-blue-100 dark:border-blue-900/40">
+                                <Ionicons name="lock-closed" size={16} color="#3B82F6" />
+                            </View>
+                            <View className="ml-3 flex-1">
+                                <Text className="text-sm font-bold text-slate-800 dark:text-slate-100">Privacy Shield Enabled</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5 leading-relaxed">
+                                    Your contact number is masked. It is only shared with service providers you explicitly unlock.
+                                </Text>
+                            </View>
+                        </View>
                     </View>
                 </View>
 

@@ -1,7 +1,7 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, LayoutAnimation, Platform, Keyboard } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, LayoutAnimation, Platform, Keyboard, Modal } from 'react-native';
 import SafeIcon from '@/components/safe-icon';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
@@ -44,8 +44,10 @@ export default function ServicesScreen() {
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const [showSolidBar, setShowSolidBar] = useState(false);
+    const topOffset = Math.max(insets.top, 16);
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchToggle, setIsSearchToggle] = useState<boolean>(false);
 
     const filteredCategories = (categories || []).filter(category => {
         const name = category?.name;
@@ -60,45 +62,122 @@ export default function ServicesScreen() {
     const renderHeader = () => (
         <View className="px-5 flex-row items-center justify-between mb-8 min-h-12" onTouchStart={(e) => e.stopPropagation()}>
             <Text className="text-3xl font-bold text-gray-900 dark:text-slate-100 flex-1 mr-2">Explore Services</Text>
-            {isSearchExpanded ? (
-                <View className="w-[50%] flex-row items-center rounded-xl px-2.5 py-1.5 border-2 border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900">
-                    <Ionicons name="search" size={16} color="#9CA3AF" />
-                    <TextInput
-                        className="ml-1.5 flex-1 text-gray-900 dark:text-slate-100 font-medium text-[13px] p-0 m-0"
-                        placeholder="Search..."
-                        placeholderTextColor="#9CA3AF"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        autoFocus
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery('')} className="p-1">
-                            <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+            <Modal
+                visible={isSearchToggle}
+                transparent={false}
+                animationType="fade"
+                onRequestClose={() => {
+                    setIsSearchToggle(false);
+                    setSearchQuery('');
+                }}
+            >
+                <View className="flex-1 bg-white dark:bg-slate-950 px-6" style={{ paddingTop: topOffset }}>
+                    {/* Header Search Box */}
+                    <View className="flex-row items-center py-4 gap-3 border-b border-slate-100 dark:border-slate-900">
+                        <TouchableOpacity
+                            onPress={() => {
+                                setIsSearchToggle(false);
+                                setSearchQuery('');
+                            }}
+                            className="w-10 h-10 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900 active:scale-95"
+                        >
+                            <Ionicons name="chevron-back" size={22} color={isDark ? '#FFFFFF' : '#000000'} />
                         </TouchableOpacity>
-                    )}
-                    <TouchableOpacity
-                        onPress={() => {
-                            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                            setIsSearchExpanded(false);
-                            setSearchQuery('');
+
+                        <View className="flex-1 flex-row items-center bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2 border border-slate-100 dark:border-slate-800">
+                            <Ionicons name="search" size={16} color="#94A3B8" />
+                            <TextInput
+                                className="ml-2 flex-1 text-slate-900 dark:text-white font-semibold text-sm p-0 m-0"
+                                placeholder="Search services..."
+                                placeholderTextColor="#94A3B8"
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                autoFocus
+                            />
+                            {searchQuery.length > 0 && (
+                                <TouchableOpacity onPress={() => setSearchQuery('')} className="p-0.5">
+                                    <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* List of Results */}
+                    <FlatList
+                        className="flex-1 mt-4"
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        data={filteredCategories}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item, index }) => {
+                            const color = getVibrantColor(item);
+                            const icon = item.icon || 'lightning-bolt';
+                            return (
+                                <Animated.View
+                                    entering={FadeInDown.delay(index * 20).springify().damping(12)}
+                                    className="mb-3"
+                                >
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setIsSearchToggle(false);
+                                            router.push({
+                                                pathname: '/(protected)/consumer/services/[id]',
+                                                params: { id: item.id, name: item.name, color: color, icon: icon }
+                                            } as any);
+                                        }}
+                                        className="flex-row items-center bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-900/60 p-3 rounded-2xl active:scale-98"
+                                    >
+                                        <View
+                                            style={{ backgroundColor: color }}
+                                            className="w-10 h-10 rounded-xl items-center justify-center shadow-sm"
+                                        >
+                                            <SafeIcon name={icon} size={20} color="white" />
+                                        </View>
+                                        <View className="ml-4 flex-1">
+                                            <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{item.name}</Text>
+                                            <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5">Explore active service providers</Text>
+                                        </View>
+                                        <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#CBD5E1'} />
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            );
                         }}
-                        className="ml-2 pl-2 border-l border-gray-200 dark:border-slate-700"
-                    >
-                        <Text className="text-blue-500 font-semibold text-xs">Cancel</Text>
-                    </TouchableOpacity>
+                        ListEmptyComponent={
+                            searchQuery.length > 0 ? (
+                                <View className="items-center justify-center py-16 px-5">
+                                    <Ionicons name="search-outline" size={48} color="#EF4444" className="mb-4" />
+                                    <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-lg">
+                                        No services found
+                                    </Text>
+                                    <Text className="text-slate-400 dark:text-slate-500 text-sm mt-1.5 text-center px-4">
+                                        Try searching for a different keyword or category.
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View className="items-center justify-center py-16 px-5">
+                                    <Ionicons name="sparkles-outline" size={44} color="#3B82F6" className="mb-4" />
+                                    <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-base">
+                                        Search Hindustan Services
+                                    </Text>
+                                    <Text className="text-slate-400 dark:text-slate-500 text-xs mt-1.5 text-center">
+                                        Instantly discover highly rated local pros
+                                    </Text>
+                                </View>
+                            )
+                        }
+                    />
                 </View>
-            ) : (
-                <TouchableOpacity
-                    onPress={() => {
-                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                        setIsSearchExpanded(true);
-                    }}
-                    className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
-                >
-                    <Ionicons name="search" size={18} color="#9CA3AF" />
-                    <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
-                </TouchableOpacity>
-            )}
+            </Modal>
+            <TouchableOpacity
+                onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setIsSearchToggle(!isSearchToggle);
+                }}
+                className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
+            >
+                <Ionicons name="search" size={18} color="#9CA3AF" />
+                <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+            </TouchableOpacity>
         </View>
     );
 

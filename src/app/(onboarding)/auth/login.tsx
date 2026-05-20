@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Text, TextInput, View, Platform, KeyboardAvoidingView, Image, Alert, ActivityIndicator, useColorScheme } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Google } from '@/svg/Google'
@@ -19,6 +19,16 @@ export default function Login() {
     const processUserSession = useAppStore(state => state.processUserSession)
     const [mobile, setMobile] = useState('')
     const [loading, setLoading] = useState(false)
+    const [cooldown, setCooldown] = useState(0)
+
+    // ── OTP countdown timer ──────────────────────────────────────────────────
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setInterval(() => {
+            setCooldown(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [cooldown]);
 
     // ── Helper: route a profile to the right screen based on onboarding status 
     const routeProfile = (profile: any) => {
@@ -30,8 +40,13 @@ export default function Login() {
 
     // ── Mobile OTP: verify account exists then send OTP ──────────────────────
     const handleGetOtp = async () => {
-        if (mobile.length < 10) {
-            Alert.alert('Invalid Mobile', 'Please enter a valid 10-digit mobile number.');
+        if (!/^[7-9]\d{9}$/.test(mobile)) {
+            Alert.alert('Invalid Mobile', 'Please enter a valid 10-digit Indian mobile number starting with 7, 8, or 9.');
+            return;
+        }
+
+        if (cooldown > 0) {
+            Alert.alert('Please Wait', `You can request another OTP in ${cooldown} seconds.`);
             return;
         }
 
@@ -64,6 +79,7 @@ export default function Login() {
             }
 
             Alert.alert('OTP Sent', data.message || 'OTP sent successfully!');
+            setCooldown(75); // 1 minute and 15 seconds cooldown
             router.push({ pathname: '/(onboarding)/auth/otp', params: { mobile } });
         } catch (err: any) {
             Alert.alert('Error', err.message || 'Failed to connect to server');
@@ -187,16 +203,18 @@ export default function Login() {
                             maxLength={10}
                         />
                         <ScalePressable
-                            className='bg-black dark:bg-slate-800 py-4 rounded-lg items-center'
+                            className={`py-4 rounded-lg items-center ${cooldown > 0 ? 'bg-slate-200 dark:bg-slate-800' : 'bg-black dark:bg-slate-700'}`}
                             onPress={handleGetOtp}
-                            disabled={loading}
+                            disabled={loading || cooldown > 0}
                             hapticType="medium"
                             scaleTo={0.96}
                         >
                             {loading ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <Text className='text-white font-bold text-lg'>Get OTP</Text>
+                                <Text className={`font-bold text-lg ${cooldown > 0 ? 'text-slate-400 dark:text-slate-500' : 'text-white'}`}>
+                                    {cooldown > 0 ? `Resend in ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}` : 'Get OTP'}
+                                </Text>
                             )}
                         </ScalePressable>
                     </View>

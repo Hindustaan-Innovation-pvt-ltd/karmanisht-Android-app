@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { insforge, uploadToInsForge } from '@/lib/insforge';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme, Modal, Image } from 'react-native'
@@ -42,12 +42,23 @@ export default function Register() {
     const [experience, setExperience] = useState('')
     const [role, setRole] = useState<Role | null>(null)
     const [loading, setLoading] = useState(false)
+    const [cooldown, setCooldown] = useState(0)
+    const [resendingOtp, setResendingOtp] = useState(false)
 
     // OTP modal states
     const [showOtpModal, setShowOtpModal] = useState(false)
     const [otp, setOtp] = useState('')
     const [verifyingOtp, setVerifyingOtp] = useState(false)
     const [showMediaPicker, setShowMediaPicker] = useState(false)
+
+    // ── Cooldown countdown timer ─────────────────────────────────────────────
+    useEffect(() => {
+        if (cooldown <= 0) return;
+        const timer = setInterval(() => {
+            setCooldown(prev => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [cooldown]);
 
     const canContinue =
         fullName.trim().length > 1 &&
@@ -58,6 +69,14 @@ export default function Register() {
     // ── Step 1: Send OTP ─────────────────────────────────────────────────────
     const handleContinue = async () => {
         if (!canContinue) return
+        if (!/^[7-9]\d{9}$/.test(phone)) {
+            Alert.alert('Invalid Mobile', 'Please enter a valid 10-digit Indian mobile number starting with 7, 8, or 9.');
+            return;
+        }
+        if (cooldown > 0) {
+            Alert.alert('Please Wait', `You can request another OTP in ${cooldown} seconds.`);
+            return;
+        }
         setLoading(true);
         try {
             const { data, error } = await insforge.functions.invoke('send-otp', {
@@ -67,11 +86,31 @@ export default function Register() {
                 throw new Error(error?.message || data?.error || 'Failed to send OTP');
             }
             Alert.alert('OTP Sent', data.message || 'OTP sent successfully!');
+            setCooldown(75); // 75 seconds cooldown (1 min 15 sec)
             setShowOtpModal(true);
         } catch (err: any) {
             Alert.alert('Error', err.message);
         } finally {
             setLoading(false);
+        }
+    }
+
+    const handleResendOtp = async () => {
+        if (cooldown > 0) return;
+        setResendingOtp(true);
+        try {
+            const { data, error } = await insforge.functions.invoke('send-otp', {
+                body: { mobile: phone }
+            });
+            if (error || data?.error) {
+                throw new Error(error?.message || data?.error || 'Failed to send OTP');
+            }
+            Alert.alert('OTP Sent', data.message || 'OTP resent successfully!');
+            setCooldown(75);
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to resend OTP');
+        } finally {
+            setResendingOtp(false);
         }
     }
 
@@ -324,13 +363,15 @@ export default function Register() {
                     <TouchableOpacity
                         onPress={handleContinue}
                         activeOpacity={0.8}
-                        disabled={!canContinue || loading}
-                        className={`py-4 rounded-2xl items-center ${canContinue ? 'bg-black dark:bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`}
+                        disabled={!canContinue || loading || cooldown > 0}
+                        className={`py-4 rounded-2xl items-center ${canContinue && cooldown === 0 ? 'bg-black dark:bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`}
                     >
                         {loading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text className={`text-base font-bold ${canContinue ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>Continue</Text>
+                            <Text className={`text-base font-bold ${canContinue && cooldown === 0 ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>
+                                {cooldown > 0 ? `Resend in ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}` : 'Continue'}
+                            </Text>
                         )}
                     </TouchableOpacity>
                 </View>
@@ -341,7 +382,11 @@ export default function Register() {
                 visible={showOtpModal}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setShowOtpModal(false)}
+                onRequestClose={() => {
+                    if (!verifyingOtp && !resendingOtp) {
+                        setShowOtpModal(false);
+                    }
+                }}
             >
                 <View className="flex-1 bg-black/50 items-center justify-center p-6">
                     <View className="bg-white dark:bg-slate-900 w-full rounded-3xl p-6"
@@ -369,19 +414,38 @@ export default function Register() {
                             </InputOTP>
                         </View>
 
+                        {/* Cooldown / Resend Section */}
+                        <View className="flex-row justify-center items-center mb-6 h-6">
+                            {cooldown > 0 ? (
+                                <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+                                    Resend code in {Math.floor(cooldown / 60)}:{(cooldown % 60).toString().padStart(2, '0')}
+                                </Text>
+                            ) : (
+                                <TouchableOpacity onPress={handleResendOtp} disabled={resendingOtp} activeOpacity={0.7}>
+                                    {resendingOtp ? (
+                                        <ActivityIndicator size="small" color="#2563eb" />
+                                    ) : (
+                                        <Text className="text-blue-600 dark:text-blue-400 font-bold text-sm">
+                                            Resend OTP
+                                        </Text>
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
                         <TouchableOpacity
                             onPress={handleVerifyOtp}
-                            disabled={otp.length < 6 || verifyingOtp}
-                            className={`py-4 rounded-2xl items-center ${otp.length === 6 ? 'bg-black dark:bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`}
+                            disabled={otp.length < 6 || verifyingOtp || resendingOtp}
+                            className={`py-4 rounded-2xl items-center ${otp.length === 6 && !resendingOtp ? 'bg-black dark:bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`}
                         >
                             {verifyingOtp ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <Text className={`text-base font-bold ${otp.length === 6 ? 'text-white' : 'text-slate-400'}`}>Verify &amp; Continue</Text>
+                                <Text className={`text-base font-bold ${otp.length === 6 && !resendingOtp ? 'text-white' : 'text-slate-400'}`}>Verify &amp; Continue</Text>
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => setShowOtpModal(false)} className="mt-4">
+                        <TouchableOpacity onPress={() => setShowOtpModal(false)} className="mt-4" disabled={verifyingOtp || resendingOtp}>
                             <Text className="text-center text-slate-500 font-medium">Cancel</Text>
                         </TouchableOpacity>
                     </View>
