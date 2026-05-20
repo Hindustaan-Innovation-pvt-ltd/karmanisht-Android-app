@@ -44,7 +44,101 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             if (refreshToken) {
                 insforge.getHttpClient().setRefreshToken(refreshToken);
             }
-            // 1. Check service providers (workers) table first
+            // 1. Check users (primary identity table containing roles) first
+            const { data: userData } = await insforge.database
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+
+            if (userData) {
+                if (userData.role === 'admin') {
+                    const profile: UserProfile = {
+                        id: userData.id,
+                        name: userData.full_name || fallbackName || 'Admin',
+                        role: 'admin',
+                        phone: userData.mobile || '',
+                        isOnline: userData.is_active ?? true,
+                        searchRadiusKm: userData.search_radius_km || 5,
+                    };
+                    set({ user: profile });
+                    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                    await get().refreshProfile();
+                    return profile;
+                } else if (userData.role === 'worker') {
+                    // Fetch details from service_providers
+                    const { data: workerData } = await insforge.database
+                        .from('service_providers')
+                        .select('*')
+                        .eq('id', userId)
+                        .maybeSingle();
+
+                    if (workerData) {
+                        const profile: UserProfile = {
+                            id: workerData.id,
+                            name: workerData.full_name || fallbackName || 'Provider',
+                            role: 'worker',
+                            phone: workerData.mobile || '',
+                            profession: workerData.business_name || '',
+                            bio: workerData.bio || '',
+                            experienceYears: workerData.experience_years || 0,
+                            isOnline: workerData.is_active ?? true,
+                            isPremium: workerData.is_premium ?? false,
+                        };
+
+                        // Fetch location for worker
+                        const { data: locData } = await insforge.database
+                            .from('provider_locations')
+                            .select('service_radius_km, area_name')
+                            .eq('provider_id', workerData.id)
+                            .maybeSingle();
+                        
+                        if (locData) {
+                            profile.searchRadiusKm = locData.service_radius_km || 5;
+                            profile.location = locData.area_name || '';
+                        }
+
+                        // Fetch specialties for worker
+                        const { data: servicesData } = await insforge.database
+                            .from('provider_services')
+                            .select('category_id')
+                            .eq('provider_id', workerData.id);
+
+                        profile.hasSpecialties = (servicesData && servicesData.length > 0) || false;
+                        if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
+                            profile.professionId = servicesData[0].category_id;
+                        }
+
+                        set({ 
+                            user: profile,
+                            workerStats: {
+                                rating: workerData.average_rating ? Number(workerData.average_rating) : 0.0,
+                                jobsDone: workerData.total_jobs_completed || 0,
+                                responseTime: 'Fast'
+                            }
+                        });
+                        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                        await get().refreshProfile();
+                        return profile;
+                    }
+                }
+
+                // If not admin or worker, treat as consumer
+                const profile: UserProfile = {
+                    id: userData.id,
+                    name: userData.full_name || fallbackName || 'User',
+                    role: 'consumer',
+                    phone: userData.mobile || '',
+                    isOnline: userData.is_active ?? true,
+                    searchRadiusKm: userData.search_radius_km || 5,
+                };
+                set({ user: profile });
+                await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                await get().refreshProfile();
+                return profile;
+            }
+
+            // Fallback: Check service_providers directly if user record is missing in users table
             const { data: workerData } = await insforge.database
                 .from('service_providers')
                 .select('*')
@@ -95,29 +189,6 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         responseTime: 'Fast'
                     }
                 });
-                await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
-                await get().refreshProfile();
-                return profile;
-            }
-
-            // 2. Check consumers / admins table second
-            const { data: consumerData } = await insforge.database
-                .from('users')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle();
-
-            if (consumerData) {
-                const profile: UserProfile = {
-                    id: consumerData.id,
-                    name: consumerData.full_name || fallbackName || 'User',
-                    role: (consumerData.role === 'admin' ? 'admin' : 'consumer') as any,
-                    phone: consumerData.mobile || '',
-                    isOnline: consumerData.is_active ?? true,
-                    searchRadiusKm: consumerData.search_radius_km || 5,
-                    // isPremium intentionally omitted — premium is a worker-only feature
-                };
-                set({ user: profile });
                 await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
                 await get().refreshProfile();
                 return profile;
@@ -188,69 +259,81 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             const activeUser = get().user;
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             if (activeUser && activeUser.id && !activeUser.id.startsWith('local_') && uuidRegex.test(activeUser.id)) {
-                const tableName = activeUser.role === 'worker' ? 'service_providers' : 'users';
-                const { data, error } = await insforge.database
-                    .from(tableName)
+                // Fetch the primary user record from users table to get the true, latest role
+                const { data: identityData, error: identityErr } = await insforge.database
+                    .from('users')
                     .select('*')
                     .eq('id', activeUser.id)
                     .maybeSingle();
 
-                if (data && !error) {
-                    const updatedUser: UserProfile = {
-                        ...activeUser,
-                        name: data.full_name || activeUser.name,
-                        phone: data.mobile || activeUser.phone,
-                        isOnline: data.is_active ?? activeUser.isOnline,
-                        searchRadiusKm: data.search_radius_km || activeUser.searchRadiusKm,
-                        profile_image: data.profile_image || activeUser.profile_image,
-                        // isPremium is only valid for workers — read from service_providers.is_premium
-                        isPremium: activeUser.role === 'worker'
-                            ? (data.is_premium ?? activeUser.isPremium ?? false)
-                            : undefined,
-                    };
+                if (identityData && !identityErr) {
+                    const resolvedRole = identityData.role || 'consumer';
+                    const tableName = resolvedRole === 'worker' ? 'service_providers' : 'users';
 
-                    if (activeUser.role === 'worker') {
-                        updatedUser.profession = data.business_name || activeUser.profession;
-                        updatedUser.bio = data.bio || activeUser.bio;
-                        updatedUser.experienceYears = data.experience_years || activeUser.experienceYears;
-                        updatedUser.experience = `${data.experience_years || 0} yrs`;
-
-                        const { data: locData } = await insforge.database
-                            .from('provider_locations')
-                            .select('service_radius_km, area_name')
-                            .eq('provider_id', activeUser.id)
+                    const { data, error } = tableName === 'users'
+                        ? { data: identityData, error: null }
+                        : await insforge.database
+                            .from(tableName)
+                            .select('*')
+                            .eq('id', activeUser.id)
                             .maybeSingle();
-                        if (locData) {
-                            updatedUser.searchRadiusKm = locData.service_radius_km || 5;
-                            updatedUser.location = locData.area_name || activeUser.location;
-                        }
 
-                        const { data: servicesData } = await insforge.database
-                            .from('provider_services')
-                            .select('category_id')
-                            .eq('provider_id', activeUser.id);
+                    if (data && !error) {
+                        const updatedUser: UserProfile = {
+                            ...activeUser,
+                            name: data.full_name || activeUser.name,
+                            phone: data.mobile || activeUser.phone,
+                            isOnline: data.is_active ?? activeUser.isOnline,
+                            searchRadiusKm: data.search_radius_km || activeUser.searchRadiusKm,
+                            profile_image: data.profile_image || activeUser.profile_image,
+                            role: resolvedRole as any,
+                            // isPremium is only valid for workers — read from service_providers.is_premium
+                            isPremium: resolvedRole === 'worker'
+                                ? (data.is_premium ?? activeUser.isPremium ?? false)
+                                : undefined,
+                        };
 
-                        updatedUser.hasSpecialties = (servicesData && servicesData.length > 0) || false;
-                        if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
-                            updatedUser.professionId = servicesData[0].category_id;
-                        }
+                        if (resolvedRole === 'worker') {
+                            updatedUser.profession = data.business_name || activeUser.profession;
+                            updatedUser.bio = data.bio || activeUser.bio;
+                            updatedUser.experienceYears = data.experience_years || activeUser.experienceYears;
+                            updatedUser.experience = `${data.experience_years || 0} yrs`;
 
-                        set({
-                            workerStats: {
-                                rating: data.average_rating ? Number(data.average_rating) : 0.0,
-                                jobsDone: data.total_jobs_completed || 0,
-                                responseTime: 'Fast'
+                            const { data: locData } = await insforge.database
+                                .from('provider_locations')
+                                .select('service_radius_km, area_name')
+                                .eq('provider_id', activeUser.id)
+                                .maybeSingle();
+                            if (locData) {
+                                updatedUser.searchRadiusKm = locData.service_radius_km || 5;
+                                updatedUser.location = locData.area_name || activeUser.location;
                             }
-                        });
-                    } else {
-                        updatedUser.role = data.role || activeUser.role;
-                    }
 
-                    set({ user: updatedUser });
-                    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
-                } else if (error || !data) {
+                            const { data: servicesData } = await insforge.database
+                                .from('provider_services')
+                                .select('category_id')
+                                .eq('provider_id', activeUser.id);
+
+                            updatedUser.hasSpecialties = (servicesData && servicesData.length > 0) || false;
+                            if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
+                                updatedUser.professionId = servicesData[0].category_id;
+                            }
+
+                            set({
+                                workerStats: {
+                                    rating: data.average_rating ? Number(data.average_rating) : 0.0,
+                                    jobsDone: data.total_jobs_completed || 0,
+                                    responseTime: 'Fast'
+                                }
+                            });
+                        }
+
+                        set({ user: updatedUser });
+                        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+                    }
+                } else if (identityErr || !identityData) {
                     // Account no longer exists in DB or call failed with no record
-                    if (!error || (error as any).status === 404 || error.code === 'P0001') {
+                    if (!identityErr || (identityErr as any).status === 404 || identityErr.code === 'P0001') {
                         await AsyncStorage.removeItem(STORAGE_KEYS.USER);
                         set({ user: defaultUser });
                     }
