@@ -5,6 +5,69 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppStore } from '@/lib/store'
 import { getOnboardingRoute } from '@/lib/utils'
+import { LinearGradient } from 'expo-linear-gradient'
+
+const BackgroundPattern = () => {
+    return (
+        <View style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+            {/* Green Track - Top Right (top-first.png) */}
+            <View style={{ position: 'absolute', top: 0, right: 15, width: '74%', height: 120 }}>
+                <Image
+                    source={require('@assets/images/top-first.png')}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="stretch"
+                />
+                <Image
+                    source={require('@assets/images/leaf.png')}
+                    style={{ position: 'absolute', left: 30, bottom: 18, width: 36, height: 36 }}
+                    resizeMode="contain"
+                />
+            </View>
+
+            {/* Red Track - Upper Middle Left (second.png) */}
+            <View style={{ position: 'absolute', top: '2%', left: 0, width: '68%', height: 220}}>
+                <Image
+                    source={require('@assets/images/second.png')}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="stretch"
+                />
+                <Image
+                    source={require('@assets/images/wheel.png')}
+                    style={{ position: 'absolute', right: 30, bottom: 18, width: 36, height: 36 }}
+                    resizeMode="contain"
+                />
+            </View>
+
+            {/* Blue Track - Middle Right (third.png) */}
+            <View style={{ position: 'absolute', top: '52%', left: 50, right: 1, height: 400 }}>
+                <Image
+                    source={require('@assets/images/third.png')}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="stretch"
+                />
+                <Image
+                    source={require('@assets/images/fan.png')}
+                    style={{ position: 'absolute', left: 30, top: 26, width: 36, height: 36 }}
+                    resizeMode="contain"
+                />
+            </View>
+
+            {/* Yellow Track - Lower Left (forth.png) */}
+            <View style={{ position: 'absolute', top: '75%', left: 0, width: '74%', height: 350 }}>
+                <Image
+                    source={require('@assets/images/forth.png')}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="stretch"
+                />
+                <Image
+                    source={require('@assets/images/elect.png')}
+                    style={{ position: 'absolute', right: 30, top: 22, width: 36, height: 36 }}
+                    resizeMode="contain"
+                />
+            </View>
+        </View>
+    )
+}
 
 export default function Index() {
     const router = useRouter()
@@ -40,17 +103,18 @@ export default function Index() {
 
     return (
         <SafeAreaView className='flex-1 relative bg-white dark:bg-slate-950'>
-            <View className='flex-1 opacity-80 dark:opacity-60'>
-                <Image
-                    source={require('@assets/images/firstBg.png')}
-                    className='w-full h-full'
-                    resizeMode="cover"
-                />
+            <View className='flex-1 opacity-90 dark:opacity-60'>
+                <BackgroundPattern />
             </View>
             <View className='p-6'>
-                <View className='space-y-2'>
-                    <Text className='text-6xl font-black text-center text-slate-900 dark:text-slate-100'>Utility</Text>
-                    <Text className='text-lg font-bold text-center text-slate-600 dark:text-slate-400'>Every service you need, at your screen</Text>
+                <View className='items-center mb-8'>
+                    <Image
+                        source={require('@assets/images/logo.png')}
+                        style={{ width: 100, height: 100, marginBottom: 16 }}
+                        resizeMode="contain"
+                    />
+                    <Text className='text-5xl font-black text-center text-slate-900 dark:text-slate-100'>Karmanisht</Text>
+                    <Text className='text-base font-bold text-center text-slate-500 dark:text-slate-400 mt-2'>Every service you need, at your screen</Text>
                 </View>
 
                 <View className='gap-4 mt-8'>
