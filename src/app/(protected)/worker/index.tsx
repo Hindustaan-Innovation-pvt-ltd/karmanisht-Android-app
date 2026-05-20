@@ -14,6 +14,8 @@ export default function WorkerDashboard() {
     const router = useRouter();
     const [reviews, setReviews] = React.useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = React.useState(true);
+    const [subExpiry, setSubExpiry] = React.useState<string | null>(null);
+    const [daysLeft, setDaysLeft] = React.useState<number>(0);
 
     const initials = user?.name
         ? user.name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()
@@ -21,6 +23,35 @@ export default function WorkerDashboard() {
 
     const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-rose-500', 'bg-emerald-500', 'bg-amber-500'];
     const avatarColor = avatarColors[user?.name ? user.name.length % avatarColors.length : 0];
+
+    // Fetch subscription expiry from DB (schema: provider_id, expires_at, is_active)
+    React.useEffect(() => {
+        async function fetchSubInfo() {
+            if (!user?.id || !user?.isPremium) return;
+            try {
+                const { data } = await insforge.database
+                    .from('provider_premium_subscriptions')
+                    .select('expires_at')
+                    .eq('provider_id', user.id)
+                    .eq('is_active', true)
+                    .order('expires_at', { ascending: false })
+                    .limit(1);
+
+                if (data && data[0]) {
+                    const exp = data[0].expires_at;
+                    setSubExpiry(exp);
+                    const days = Math.max(0, Math.ceil((new Date(exp).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+                    setDaysLeft(days);
+                }
+            } catch (e) {
+                console.error('[Dashboard] Sub fetch error:', e);
+            }
+        }
+        fetchSubInfo();
+    }, [user?.id, user?.isPremium]);
+
+    const formatExpiry = (iso: string) =>
+        new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
     React.useEffect(() => {
         async function fetchReviews() {
@@ -100,14 +131,20 @@ export default function WorkerDashboard() {
 
                     {/* Info */}
                     <View className="flex-1">
-                        <View className="flex-row items-center gap-2">
+                        <View className="flex-row items-center gap-2 flex-wrap">
                             <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
                                 {user?.name || 'Anonymous'}
                             </Text>
                             {user?.isPremium && (
-                                <View className="bg-amber-500 px-1.5 py-0.5 rounded-full flex-row items-center gap-0.5">
-                                    <Ionicons name="star" size={8} color="#fff" />
-                                    <Text className="text-[8px] font-black text-white uppercase">PREMIUM</Text>
+                                <View style={{
+                                    flexDirection: 'row', alignItems: 'center', gap: 3,
+                                    backgroundColor: '#F59E0B',
+                                    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99
+                                }}>
+                                    <Ionicons name="ribbon" size={10} color="#fff" />
+                                    <Text style={{ color: '#fff', fontWeight: '900', fontSize: 9, letterSpacing: 0.5 }}>
+                                        PREMIUM
+                                    </Text>
                                 </View>
                             )}
                         </View>
@@ -167,28 +204,62 @@ export default function WorkerDashboard() {
                 {/* Premium Subscription Nudge */}
                 <TouchableOpacity
                     onPress={() => router.push('/(protected)/worker/premium-plans')}
-                    className={`flex-row items-center gap-3 mt-3 rounded-2xl p-4 border ${user?.isPremium
-                        ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30'
-                        : 'bg-indigo-50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30'
-                        }`}
+                    activeOpacity={0.85}
+                    className={`mt-3 rounded-2xl border overflow-hidden ${
+                        user?.isPremium
+                            ? 'bg-[#18181B] border-amber-800/30'
+                            : 'bg-indigo-50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30'
+                    }`}
                 >
-                    <View className={`size-8 rounded-full items-center justify-center ${user?.isPremium ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-indigo-100 dark:bg-indigo-900/40'
-                        }`}>
-                        <Ionicons name="ribbon" size={16} color={user?.isPremium ? '#10B981' : '#6366F1'} />
-                    </View>
-                    <View className="flex-1">
-                        <Text className={`text-xs font-bold ${user?.isPremium ? 'text-emerald-900 dark:text-emerald-300' : 'text-indigo-950 dark:text-indigo-300'}`}>
-                            {user?.isPremium ? 'Premium Active' : 'Upgrade to Premium'}
-                        </Text>
-                        <Text className={`text-[10px] ${user?.isPremium ? 'text-emerald-700 dark:text-emerald-400' : 'text-indigo-700 dark:text-indigo-400'}`}>
-                            {user?.isPremium
-                                ? 'Enjoying top search ranking, verified badge & unlimited leads!'
-                                : 'Boost ranking, get verified premium badge & unlimited leads'}
-                        </Text>
-                    </View>
-                    <Text className={`text-xs font-black ${user?.isPremium ? 'text-emerald-950 dark:text-emerald-200' : 'text-indigo-950 dark:text-indigo-200'}`}>
-                        {user?.isPremium ? 'ACTIVE' : 'VIEW'}
-                    </Text>
+                    {user?.isPremium ? (
+                        <View className="p-4">
+                            {/* Plan header */}
+                            <View className="flex-row items-center justify-between mb-3">
+                                <View className="flex-row items-center gap-2">
+                                    <Ionicons name="ribbon" size={16} color="#F59E0B" />
+                                    <Text className="text-xs font-black text-amber-400 uppercase tracking-widest">
+                                        PREMIUM PLAN
+                                    </Text>
+                                </View>
+                                {/* Active dot */}
+                                <View className="flex-row items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                                    <View className="size-1.5 rounded-full bg-emerald-400" />
+                                    <Text className="text-[9px] font-black text-emerald-400">ACTIVE</Text>
+                                </View>
+                            </View>
+
+                            {/* Expiry row */}
+                            {subExpiry && (
+                                <View className="flex-row items-center gap-2 mb-3">
+                                    <Ionicons name="calendar-outline" size={13} color="#94a3b8" />
+                                    <Text className="text-xs font-semibold text-slate-400">
+                                        Valid till {formatExpiry(subExpiry)} · {daysLeft} days left
+                                    </Text>
+                                </View>
+                            )}
+
+                            {/* Benefits summary */}
+                            <View className="flex-row items-center justify-between">
+                                <Text className="text-xs font-medium text-slate-400">
+                                    Top ranking · Unlimited leads · Verified badge
+                                </Text>
+                                <View className="bg-slate-700 px-3 py-1 rounded-xl">
+                                    <Text className="text-white text-[10px] font-black">MANAGE</Text>
+                                </View>
+                            </View>
+                        </View>
+                    ) : (
+                        <View className="flex-row items-center gap-3 p-4">
+                            <View className="size-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 items-center justify-center">
+                                <Ionicons name="ribbon" size={16} color="#6366F1" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-xs font-bold text-indigo-950 dark:text-indigo-300">Upgrade to Premium</Text>
+                                <Text className="text-[10px] text-indigo-700 dark:text-indigo-400">Boost ranking, get verified badge & unlimited leads</Text>
+                            </View>
+                            <Text className="text-xs font-black text-indigo-950 dark:text-indigo-200">VIEW</Text>
+                        </View>
+                    )}
                 </TouchableOpacity>
             </View>
 
