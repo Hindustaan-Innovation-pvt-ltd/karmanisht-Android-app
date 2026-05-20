@@ -226,6 +226,121 @@ const SuccessModal = ({ visible, onClose, themeColor }: SuccessModalProps) => {
     );
 };
 
+interface UnlockCategoryPassModalProps {
+    visible: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    themeColor: string;
+    categoryName: string;
+    cityName: string;
+    price: number;
+    durationHours: number;
+}
+
+const UnlockCategoryPassModal = ({
+    visible,
+    onClose,
+    onConfirm,
+    themeColor,
+    categoryName,
+    cityName,
+    price,
+    durationHours
+}: UnlockCategoryPassModalProps) => {
+    if (!visible) return null;
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={onClose}
+        >
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+                <Pressable style={{ flex: 1 }} onPress={onClose} />
+                <View 
+                    style={{ 
+                        backgroundColor: '#FFFFFF', 
+                        borderTopLeftRadius: 30, 
+                        borderTopRightRadius: 30, 
+                        padding: 24, 
+                        paddingBottom: 40,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: -4 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 10,
+                        elevation: 10
+                    }}
+                >
+                    {/* Header Handle */}
+                    <View style={{ width: 40, height: 5, backgroundColor: '#E2E8F0', borderRadius: 3, alignSelf: 'center', marginBottom: 20 }} />
+
+                    {/* Title */}
+                    <View className="items-center mb-6">
+                        <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: `${themeColor}20`, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                            <Ionicons name="key" size={28} color={themeColor} />
+                        </View>
+                        <Text className="text-2xl font-black text-slate-800 text-center">Unlock Category Pass</Text>
+                        <Text className="text-sm text-slate-500 text-center mt-2 px-4 leading-relaxed">
+                            Get instant access to contact details for all {categoryName}s in {cityName}.
+                        </Text>
+                    </View>
+
+                    {/* Pass Details Card */}
+                    <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4.5 mb-6">
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Pass Duration</Text>
+                            <View className="bg-blue-50 px-3 py-1 rounded-full">
+                                <Text className="text-blue-600 font-bold text-xs">{durationHours} Hours Active</Text>
+                            </View>
+                        </View>
+                        <View className="flex-row justify-between items-center">
+                            <Text className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Price</Text>
+                            <Text className="text-2xl font-black text-slate-900">₹{price}</Text>
+                        </View>
+                    </View>
+
+                    {/* Features List */}
+                    <View className="mb-6 gap-3">
+                        <View className="flex-row items-center">
+                            <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">Call & message all professionals directly</Text>
+                        </View>
+                        <View className="flex-row items-center">
+                            <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">No commission fees or middleman charges</Text>
+                        </View>
+                        <View className="flex-row items-center">
+                            <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">Valid for any provider in this category</Text>
+                        </View>
+                    </View>
+
+                    {/* Action Buttons */}
+                    <View className="flex-row gap-4">
+                        <TouchableOpacity
+                            onPress={onClose}
+                            style={{ flex: 1 }}
+                            className="bg-slate-100 py-4 rounded-2xl items-center justify-center border border-slate-200"
+                        >
+                            <Text className="text-base font-bold text-slate-600">Cancel</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={onConfirm}
+                            style={{ backgroundColor: '#000000', flex: 2 }}
+                            className="py-4 rounded-2xl items-center justify-center flex-row"
+                        >
+                            <Ionicons name="card" size={20} color="white" style={{ marginRight: 8 }} />
+                            <Text className="text-base font-bold text-white">Proceed to Pay</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
 export default function ServiceDetailScreen() {
     const user = useAppStore(state => state.user);
     const setUser = useAppStore(state => state.setUser);
@@ -268,6 +383,8 @@ export default function ServiceDetailScreen() {
     const [showContactModal, setShowContactModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [tempProviderForSuccess, setTempProviderForSuccess] = useState<any | null>(null);
+    const [showUnlockModal, setShowUnlockModal] = useState(false);
+    const [providerToUnlock, setProviderToUnlock] = useState<any | null>(null);
 
     const [cityConfig, setCityConfig] = useState<{ id: string; name: string; tier: string } | null>(null);
     const [pricingConfig, setPricingConfig] = useState<{ unlock_price: number; unlock_duration_hours: number } | null>(null);
@@ -570,76 +687,72 @@ export default function ServiceDetailScreen() {
             return;
         }
 
+        setProviderToUnlock(provider);
+        setShowUnlockModal(true);
+    };
+
+    const handleConfirmUnlock = async () => {
+        if (!providerToUnlock) return;
+        setShowUnlockModal(false);
+
         const dynamicPrice = pricingConfig?.unlock_price || 49;
         const durationHours = pricingConfig?.unlock_duration_hours || 5;
-        const resolvedCityName = cityConfig?.name || 'your city';
 
-        Alert.alert(
-            `Unlock Category Pass`,
-            `Unlock all ${name} contacts in ${resolvedCityName} for ₹${dynamicPrice} for ${durationHours} hours.`,
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Proceed to Pay",
-                    onPress: async () => {
-                        try {
-                            setLoading(true);
-                            const success = await handleRazorpayPayment(provider, dynamicPrice);
+        try {
+            setLoading(true);
+            const success = await handleRazorpayPayment(providerToUnlock, dynamicPrice);
 
-                            if (success) {
-                                // 1. Create a row in unlock_passes table
-                                const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
-                                
-                                const { error: passError } = await insforge.database
-                                    .from('unlock_passes')
-                                    .insert([{
-                                        customer_id: user.id,
-                                        profession_id: id,
-                                        city_id: cityConfig?.id || '57b3868e-c554-4ae5-b80f-fb1bd0617542',
-                                        amount_paid: dynamicPrice,
-                                        expires_at: expiresAt,
-                                        payment_status: 'paid'
-                                    }]);
+            if (success) {
+                // 1. Create a row in unlock_passes table
+                const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+                
+                const { error: passError } = await insforge.database
+                    .from('unlock_passes')
+                    .insert([{
+                        customer_id: user.id,
+                        profession_id: id,
+                        city_id: cityConfig?.id || '57b3868e-c554-4ae5-b80f-fb1bd0617542',
+                        amount_paid: dynamicPrice,
+                        expires_at: expiresAt,
+                        payment_status: 'paid'
+                    }]);
 
-                                if (passError) {
-                                    console.error("Failed to insert unlock pass record:", passError);
-                                }
-
-                                // 2. Create lead inside unlock_transactions so worker sees the lead notification!
-                                const { error: txError } = await insforge.database
-                                    .from('unlock_transactions')
-                                    .insert([{
-                                        user_id: user.id,
-                                        provider_id: provider.provider_id,
-                                        amount: dynamicPrice,
-                                        payment_status: 'completed',
-                                        transaction_id: `tx_${Date.now()}`
-                                    }]);
-
-                                if (txError) {
-                                    console.error("Failed to insert unlock lead transaction:", txError);
-                                }
-
-                                // Refresh passes & profile state
-                                if (fetchActivePasses) {
-                                    await fetchActivePasses();
-                                }
-                                await refreshProfile();
-
-                                setTempProviderForSuccess(provider);
-                                setShowSuccessModal(true);
-                            } else {
-                                Alert.alert('Payment Cancelled', 'The payment process was not completed.');
-                            }
-                        } catch (err: any) {
-                            Alert.alert('Payment Error', err.message);
-                        } finally {
-                            setLoading(false);
-                        }
-                    }
+                if (passError) {
+                    console.error("Failed to insert unlock pass record:", passError);
                 }
-            ]
-        );
+
+                // 2. Create lead inside unlock_transactions
+                const { error: txError } = await insforge.database
+                    .from('unlock_transactions')
+                    .insert([{
+                        user_id: user.id,
+                        provider_id: providerToUnlock.provider_id,
+                        amount: dynamicPrice,
+                        payment_status: 'completed',
+                        transaction_id: `tx_${Date.now()}`
+                    }]);
+
+                if (txError) {
+                    console.error("Failed to insert unlock lead transaction:", txError);
+                }
+
+                // Refresh passes & profile state
+                if (fetchActivePasses) {
+                    await fetchActivePasses();
+                }
+                await refreshProfile();
+
+                setTempProviderForSuccess(providerToUnlock);
+                setShowSuccessModal(true);
+            } else {
+                Alert.alert('Payment Cancelled', 'The payment process was not completed.');
+            }
+        } catch (err: any) {
+            Alert.alert('Payment Error', err.message);
+        } finally {
+            setLoading(false);
+            setProviderToUnlock(null);
+        }
     };
 
     const filteredProviders = providers.filter(p => {
@@ -946,6 +1059,20 @@ export default function ServiceDetailScreen() {
                     }
                 }}
                 themeColor={color || '#3B82F6'}
+            />
+
+            <UnlockCategoryPassModal
+                visible={showUnlockModal}
+                onClose={() => {
+                    setShowUnlockModal(false);
+                    setProviderToUnlock(null);
+                }}
+                onConfirm={handleConfirmUnlock}
+                themeColor={color || '#3B82F6'}
+                categoryName={name || 'Service Provider'}
+                cityName={cityConfig?.name || 'Raipur'}
+                price={pricingConfig?.unlock_price || 49}
+                durationHours={pricingConfig?.unlock_duration_hours || 5}
             />
         </View>
     );
