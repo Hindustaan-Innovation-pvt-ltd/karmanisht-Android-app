@@ -13,19 +13,37 @@ import { useEffect } from 'react';
 // Suppress ExpoKeepAwake uncaught promise rejections on Android during startup/activity recreation
 if (__DEV__) {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { LogBox } = require('react-native');
+    LogBox.ignoreLogs([
+      'Unable to activate keep awake',
+      'KeepAwake',
+      'ExpoKeepAwake'
+    ]);
+  } catch {
+    // Ignore LogBox failure
+  }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const rejectionTracking = require('promise/setimmediate/rejection-tracking');
     rejectionTracking.enable({
       allRejections: true,
       onUnhandled: (id, error) => {
-        const message = error?.message || (typeof error === 'string' ? error : '');
-        if (message.includes('ExpoKeepAwake') || message.includes('KeepAwake')) {
+        const message = String(error?.message || error || '');
+        const lowerMessage = message.toLowerCase();
+        if (
+          lowerMessage.includes('keepawake') ||
+          lowerMessage.includes('keep awake') ||
+          lowerMessage.includes('keep-awake')
+        ) {
           return;
         }
         console.warn(`[Unhandled Promise Rejection] ID: ${id}`, error);
       },
       onHandled: () => {},
     });
-  } catch (e) {
+  } catch {
     // Ignore if rejection tracking module is not available
   }
 }

@@ -1,7 +1,7 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather, Octicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
@@ -15,11 +15,25 @@ const MENU_ITEMS = [
 ];
 
 export default function ProfileScreen() {
-    const { colors, isDark } = useTheme();
+    const { isDark } = useTheme();
     const user = useAppStore(state => state.user);
     const signOut = useAppStore(state => state.signOut);
     const unlockedProviders = useAppStore(state => state.unlockedProviders);
     const router = useRouter();
+
+    const menuItems = React.useMemo(() => {
+        const items = [...MENU_ITEMS];
+        if (user?.role === 'admin') {
+            items.unshift({
+                id: 'admin',
+                title: 'Admin Console',
+                description: 'Manage users, categories, tags and audit logs',
+                icon: 'shield-checkmark',
+                library: Ionicons
+            });
+        }
+        return items;
+    }, [user?.role]);
 
     const handleMenuPress = async (id: string) => {
         if (id === 'logout') {
@@ -33,6 +47,8 @@ export default function ProfileScreen() {
             router.push('/(protected)/consumer/profile/payments');
         } else if (id === 'help') {
             router.push('/(protected)/consumer/profile/help');
+        } else if (id === 'admin') {
+            router.push('/admin');
         }
     };
 
@@ -115,7 +131,7 @@ export default function ProfileScreen() {
                     </Text>
                     
                     <View className="border-t border-slate-100 dark:border-slate-900">
-                        {MENU_ITEMS.map((item) => {
+                        {menuItems.map((item) => {
                             const IconLib = item.library;
                             const isDestructive = item.isDestructive;
                             return (

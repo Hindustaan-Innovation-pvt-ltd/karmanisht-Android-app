@@ -201,26 +201,6 @@ export default function SettingsScreen() {
                     </ScalePressable>
 
                     <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
-
-                    {/* Profile details */}
-                    <ScalePressable
-                        onPress={() => router.push('/(protected)/consumer/profile/info')}
-                        hapticType="light"
-                        className="flex-row items-center justify-between p-4 bg-transparent"
-                    >
-                        <View className="flex-row items-center flex-1 pr-4">
-                            <View className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/20 items-center justify-center">
-                                <Feather name="user" size={18} color="#10B981" />
-                            </View>
-                            <View className="ml-4 flex-1">
-                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Profile Details</Text>
-                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
-                                    Name, photo, contact info
-                                </Text>
-                            </View>
-                        </View>
-                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
-                    </ScalePressable>
                 </View>
 
                 {/* ── SECTION 2: APP PREFERENCES ── */}

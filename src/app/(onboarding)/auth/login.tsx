@@ -223,7 +223,7 @@ export default function Login() {
 
                     <View className='flex-col gap-2'>
                         <Text className='text-center text-lg font-medium text-slate-500'>Don&apos;t have an account?</Text>
-                        <ScalePressable 
+                        <ScalePressable
                             onPress={() => router.push('/(onboarding)/auth/register')}
                             hapticType="light"
                             scaleTo={0.98}
