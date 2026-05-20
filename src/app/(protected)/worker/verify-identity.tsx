@@ -1,18 +1,18 @@
-import { useAppStore } from '@/lib/store';
 // @ts-nocheck
+import { useAppStore } from '@/lib/store';
 import React, { useState } from 'react'
-import { ScrollView, Text, TouchableOpacity, View, Alert, ActivityIndicator, Image, Platform } from 'react-native'
+import { ScrollView, Text, TouchableOpacity, View, Alert, ActivityIndicator, Image, Platform, useColorScheme, Modal } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import BackButton from '@/components/back-button'
-import { ShieldIcon, CameraIcon, UploadIcon, CheckCircleIcon, MapPinIcon, StarIcon } from '@/svg/icons'
+import { ShieldIcon, UploadIcon, CheckCircleIcon } from '@/svg/icons'
 import * as ImagePicker from 'expo-image-picker'
 import MediaLibraryPicker from '@/components/media-library-picker'
 import { insforge, uploadToInsForge } from '@/lib/insforge'
 import { Ionicons } from '@expo/vector-icons'
 
 type DocStatus = 'pending' | 'uploaded' | 'verified'
-type UploadType = 'aadhaar_front' | 'aadhaar_back' | 'pan_front' | 'photo'
+type UploadType = 'aadhaar_front' | 'aadhaar_back' | 'pan_front'
 
 export default function VerifyIdentity() {
     const user = useAppStore(state => state.user);
@@ -21,34 +21,33 @@ export default function VerifyIdentity() {
 
     const router = useRouter()
     const params = useLocalSearchParams()
+    const colorScheme = useColorScheme()
+    const isDark = colorScheme === 'dark'
+
     const fromDashboard = params?.from === 'dashboard'
+    const fromSettings = params?.from === 'settings'
 
     // Individual document states
     const [aadhaarFront, setAadhaarFront] = useState<{ uri: string; size?: number } | null>(null)
     const [aadhaarBack, setAadhaarBack] = useState<{ uri: string; size?: number } | null>(null)
     const [panFront, setPanFront] = useState<{ uri: string; size?: number } | null>(null)
-    const [selectedPhoto, setSelectedPhoto] = useState<{ uri: string; size?: number } | null>(null)
 
     const [aadhaarFrontStatus, setAadhaarFrontStatus] = useState<DocStatus>('pending')
     const [aadhaarBackStatus, setAadhaarBackStatus] = useState<DocStatus>('pending')
     const [panFrontStatus, setPanFrontStatus] = useState<DocStatus>('pending')
-    const [photoStatus, setPhotoStatus] = useState<DocStatus>('pending')
 
     const [showMediaPicker, setShowMediaPicker] = useState(false)
     const [activeUploadType, setActiveUploadType] = useState<UploadType | null>(null)
     const [uploading, setUploading] = useState(false)
-
-    const statusColor = (s: DocStatus) =>
-        s === 'verified' ? 'text-green-600' : s === 'uploaded' ? 'text-amber-500' : 'text-slate-400'
-
-    const statusLabel = (s: DocStatus) =>
-        s === 'verified' ? 'Verified ✓' : s === 'uploaded' ? 'Under review' : 'Not uploaded'
+    
+    // Custom Modal States
+    const [showSourceModal, setShowSourceModal] = useState(false)
+    const [showSuccessModal, setShowSuccessModal] = useState(false)
 
     const setDocForType = (type: UploadType, payload: { uri: string; size?: number }) => {
         if (type === 'aadhaar_front') { setAadhaarFront(payload); setAadhaarFrontStatus('uploaded'); }
         else if (type === 'aadhaar_back') { setAadhaarBack(payload); setAadhaarBackStatus('uploaded'); }
         else if (type === 'pan_front') { setPanFront(payload); setPanFrontStatus('uploaded'); }
-        else if (type === 'photo') { setSelectedPhoto(payload); setPhotoStatus('uploaded'); }
     };
 
     const takePhoto = async () => {
@@ -60,7 +59,7 @@ export default function VerifyIdentity() {
             }
             const result = await ImagePicker.launchCameraAsync({
                 allowsEditing: true,
-                aspect: activeUploadType === 'photo' ? [1, 1] : [1.586, 1], // ID card ratio for docs
+                aspect: [1.586, 1], // ID card ratio for docs
                 quality: 0.85,
             });
             if (!result.canceled && result.assets?.length > 0) {
@@ -77,7 +76,7 @@ export default function VerifyIdentity() {
             try {
                 const result = await ImagePicker.launchImageLibraryAsync({
                     allowsEditing: true,
-                    aspect: activeUploadType === 'photo' ? [1, 1] : [1.586, 1],
+                    aspect: [1.586, 1],
                     quality: 0.85,
                 });
                 if (!result.canceled && result.assets?.length > 0) {
@@ -94,24 +93,13 @@ export default function VerifyIdentity() {
 
     const handleSelectPhoto = (type: UploadType) => {
         setActiveUploadType(type);
-        const labels: Record<UploadType, string> = {
-            aadhaar_front: 'Aadhaar Front',
-            aadhaar_back: 'Aadhaar Back',
-            pan_front: 'PAN Card (Front)',
-            photo: 'Profile Photo',
-        };
-        Alert.alert(labels[type], "How would you like to add the image?", [
-            { text: "Take Photo", onPress: takePhoto },
-            { text: "Choose from Library", onPress: chooseFromLibrary },
-            { text: "Cancel", style: "cancel", onPress: () => setActiveUploadType(null) }
-        ]);
+        setShowSourceModal(true);
     };
 
     const handleSubmit = async () => {
         if (!aadhaarFront) { Alert.alert('Missing', 'Please upload the front side of your Aadhaar card.'); return; }
         if (!aadhaarBack) { Alert.alert('Missing', 'Please upload the back side of your Aadhaar card.'); return; }
         if (!panFront) { Alert.alert('Missing', 'Please upload the front side of your PAN card.'); return; }
-        if (!selectedPhoto) { Alert.alert('Missing', 'Please upload your profile photo.'); return; }
 
         setUploading(true);
         try {
@@ -119,20 +107,18 @@ export default function VerifyIdentity() {
 
             const ts = Date.now();
 
-            // Upload all 4 images concurrently
-            const [aadhaarFrontRes, aadhaarBackRes, panFrontRes, photoRes] = await Promise.all([
+            // Upload all 3 images concurrently
+            const [aadhaarFrontRes, aadhaarBackRes, panFrontRes] = await Promise.all([
                 uploadToInsForge('documents', `aadhaar_front_${user.id}_${ts}.jpg`, aadhaarFront),
                 uploadToInsForge('documents', `aadhaar_back_${user.id}_${ts}.jpg`, aadhaarBack),
                 uploadToInsForge('documents', `pan_front_${user.id}_${ts}.jpg`, panFront),
-                uploadToInsForge('avatars', `avatar_${user.id}_${ts}.jpg`, selectedPhoto),
             ]);
 
             const aadhaarFrontUrl = aadhaarFrontRes?.url || '';
             const aadhaarBackUrl = aadhaarBackRes?.url || '';
             const panFrontUrl = panFrontRes?.url || '';
-            const photoUrl = photoRes?.url || '';
 
-            if (!aadhaarFrontUrl || !aadhaarBackUrl || !panFrontUrl || !photoUrl) {
+            if (!aadhaarFrontUrl || !aadhaarBackUrl || !panFrontUrl) {
                 throw new Error('One or more uploads failed. Please try again.');
             }
 
@@ -144,7 +130,6 @@ export default function VerifyIdentity() {
                     aadhaar_front_url: aadhaarFrontUrl,
                     aadhaar_back_url: aadhaarBackUrl,
                     pan_front_url: panFrontUrl,
-                    profile_image: photoUrl,
                     is_kyc_verified: false,
                     is_verified: false,
                 })
@@ -155,26 +140,9 @@ export default function VerifyIdentity() {
                 throw new Error(providerError.message || 'Failed to save documents.');
             }
 
-            // Also sync profile_image to users table
-            await insforge.database
-                .from('users')
-                .update({ profile_image: photoUrl })
-                .eq('id', user.id);
-
-            setUser({ profile_image: photoUrl, hasSpecialties: true });
+            setUser({ hasSpecialties: true });
             await refreshProfile();
-
-            Alert.alert(
-                "Documents Submitted ✓",
-                "Your documents have been submitted successfully. We will review them within 24 hours.",
-                [{
-                    text: "OK",
-                    onPress: () => {
-                        if (fromDashboard) router.replace('/(protected)/worker');
-                        else router.replace('/(onboarding)/all-set');
-                    }
-                }]
-            );
+            setShowSuccessModal(true);
         } catch (err: any) {
             console.error('[VerifyIdentity] Submission error:', err);
             Alert.alert('Submission Failed', err.message || 'An unexpected error occurred.');
@@ -186,7 +154,7 @@ export default function VerifyIdentity() {
     const initials = (user.name ?? '')
         .split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??'
 
-    const allDocsUploaded = !!aadhaarFront && !!aadhaarBack && !!panFront && !!selectedPhoto;
+    const allDocsUploaded = !!aadhaarFront && !!aadhaarBack && !!panFront;
 
     // ── Reusable upload card ──────────────────────────────────────────────────
     const UploadCard = ({
@@ -235,9 +203,158 @@ export default function VerifyIdentity() {
 
     return (
         <SafeAreaProvider>
+            {/* ── Image Source Selection Modal (Bottom Sheet style) ── */}
+            <Modal
+                visible={showSourceModal}
+                transparent
+                animationType="slide"
+                onRequestClose={() => { setShowSourceModal(false); setActiveUploadType(null); }}
+            >
+                <TouchableOpacity 
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                    activeOpacity={1}
+                    onPress={() => { setShowSourceModal(false); setActiveUploadType(null); }}
+                >
+                    <View style={{ 
+                        backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                        borderTopLeftRadius: 28, 
+                        borderTopRightRadius: 28, 
+                        padding: 24, 
+                        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+                        borderWidth: isDark ? 1 : 0,
+                        borderColor: isDark ? '#1e293b' : 'transparent'
+                    }}>
+                        {/* Drag Handle */}
+                        <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? '#334155' : '#cbd5e1', alignSelf: 'center', marginBottom: 20 }} />
+
+                        <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 4 }}>
+                            {activeUploadType === 'aadhaar_front' && 'Aadhaar Card (Front)'}
+                            {activeUploadType === 'aadhaar_back' && 'Aadhaar Card (Back)'}
+                            {activeUploadType === 'pan_front' && 'PAN Card (Front)'}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', marginBottom: 24 }}>
+                            Please choose how you want to upload this document.
+                        </Text>
+
+                        {/* Camera Option */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowSourceModal(false);
+                                setTimeout(takePhoto, 100);
+                            }}
+                            activeOpacity={0.7}
+                            style={{ 
+                                flexDirection: 'row', 
+                                alignItems: 'center', 
+                                backgroundColor: isDark ? '#1e293b' : '#f8fafc', 
+                                padding: 16, 
+                                borderRadius: 16, 
+                                marginBottom: 12, 
+                                borderWidth: 1, 
+                                borderColor: isDark ? '#334155' : '#f1f5f9' 
+                            }}
+                        >
+                            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#172554' : '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                <Ionicons name="camera" size={22} color={isDark ? '#3b82f6' : '#2563eb'} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Take Photo</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>Use your device camera</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
+                        </TouchableOpacity>
+
+                        {/* Gallery Option */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowSourceModal(false);
+                                setTimeout(chooseFromLibrary, 100);
+                            }}
+                            activeOpacity={0.7}
+                            style={{ 
+                                flexDirection: 'row', 
+                                alignItems: 'center', 
+                                backgroundColor: isDark ? '#1e293b' : '#f8fafc', 
+                                padding: 16, 
+                                borderRadius: 16, 
+                                marginBottom: 24, 
+                                borderWidth: 1, 
+                                borderColor: isDark ? '#334155' : '#f1f5f9' 
+                            }}
+                        >
+                            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                <Ionicons name="image" size={22} color={isDark ? '#10b981' : '#16a34a'} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Choose from Gallery</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>Select an existing document photo</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
+                        </TouchableOpacity>
+
+                        {/* Cancel Button */}
+                        <TouchableOpacity
+                            onPress={() => { setShowSourceModal(false); setActiveUploadType(null); }}
+                            activeOpacity={0.8}
+                            style={{ backgroundColor: isDark ? '#334155' : '#f1f5f9', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
+            {/* ── Custom Success Modal ── */}
+            <Modal
+                visible={showSuccessModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => { }}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
+                    <View style={{ 
+                        backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                        borderRadius: 24, 
+                        padding: 32, 
+                        width: '100%', 
+                        alignItems: 'center', 
+                        shadowColor: '#000', 
+                        shadowOpacity: 0.15, 
+                        shadowRadius: 20, 
+                        elevation: 10,
+                        borderWidth: isDark ? 1 : 0,
+                        borderColor: isDark ? '#1e293b' : 'transparent'
+                    }}>
+                        {/* Green circle with checkmark */}
+                        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', borderWidth: 2, borderColor: isDark ? '#059669' : '#bbf7d0', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                            <Ionicons name="checkmark" size={38} color={isDark ? '#34d399' : '#16a34a'} />
+                        </View>
+
+                        <Text style={{ fontSize: 22, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>Documents Submitted!</Text>
+                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>Your documents have been submitted successfully. We will review them within 24 hours.</Text>
+
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowSuccessModal(false);
+                                if (fromSettings) router.replace('/(protected)/worker/settings');
+                                else if (fromDashboard) router.replace('/(protected)/worker');
+                                else router.replace('/(onboarding)/all-set');
+                            }}
+                            activeOpacity={0.85}
+                            style={{ backgroundColor: isDark ? '#2563eb' : '#000000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>OK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
                 <ScrollView className='flex-1' contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-                    <BackButton />
+                    <BackButton onPress={() => {
+                        if (fromSettings) router.replace('/(protected)/worker/settings');
+                        else router.back();
+                    }} />
                     <View className='mb-6 mt-12'>
                         <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Verify your identity</Text>
                         <Text className='text-sm text-slate-500 mt-1'>
@@ -249,9 +366,7 @@ export default function VerifyIdentity() {
                     <View className='bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 mb-6 border border-slate-100 dark:border-slate-800'>
                         <View className='flex-row items-center gap-3'>
                             <View className='size-14 rounded-full bg-slate-200 dark:bg-slate-800 items-center justify-center overflow-hidden'>
-                                {selectedPhoto ? (
-                                    <Image source={{ uri: selectedPhoto.uri }} className='w-full h-full' />
-                                ) : user.profile_image ? (
+                                {user.profile_image ? (
                                     <Image source={{ uri: user.profile_image }} className='w-full h-full' />
                                 ) : (
                                     <Text className='text-xl font-bold text-slate-600 dark:text-slate-400'>{initials}</Text>
@@ -261,7 +376,7 @@ export default function VerifyIdentity() {
                                 <Text className='text-base font-bold text-slate-900 dark:text-slate-100'>{user.name || 'Anonymous'}</Text>
                                 <Text className='text-sm text-slate-500'>{user.profession || 'Provider'}</Text>
                                 <View className='flex-row items-center gap-1 mt-1'>
-                                    <MapPinIcon size={11} color="#9CA3AF" />
+                                    <Ionicons name="location-outline" size={11} color="#9CA3AF" />
                                     <Text className='text-xs text-slate-400'>{user.location || 'Location not set'}</Text>
                                 </View>
                             </View>
@@ -369,14 +484,15 @@ export default function VerifyIdentity() {
                             <>
                                 <Ionicons name="shield-checkmark" size={18} color="white" />
                                 <Text className='text-white text-base font-bold'>
-                                    {allDocsUploaded ? 'Submit for Review' : `${[!!aadhaarFront, !!aadhaarBack, !!panFront, !!selectedPhoto].filter(Boolean).length}/4 documents uploaded`}
+                                    {allDocsUploaded ? 'Submit for Review' : `${[!!aadhaarFront, !!aadhaarBack, !!panFront].filter(Boolean).length}/3 documents uploaded`}
                                 </Text>
                             </>
                         )}
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => {
-                            if (fromDashboard) router.replace('/(protected)/worker');
+                            if (fromSettings) router.replace('/(protected)/worker/settings');
+                            else if (fromDashboard) router.replace('/(protected)/worker');
                             else router.replace('/(onboarding)/all-set');
                         }}
                         activeOpacity={0.7}
