@@ -2,7 +2,7 @@ import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Platform, Dimensions, Modal, Clipboard, Linking, Pressable, Animated } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Platform, Dimensions, Modal, Clipboard, Linking, Pressable, Animated, useColorScheme } from 'react-native';
 
 const { width } = Dimensions.get('window');
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -59,12 +59,12 @@ const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryNa
         >
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
                 <Pressable style={{ flex: 1 }} onPress={onClose} />
-                <View 
-                    style={{ 
-                        backgroundColor: '#FFFFFF', 
-                        borderTopLeftRadius: 30, 
-                        borderTopRightRadius: 30, 
-                        padding: 24, 
+                <View
+                    style={{
+                        backgroundColor: '#FFFFFF',
+                        borderTopLeftRadius: 30,
+                        borderTopRightRadius: 30,
+                        padding: 24,
                         paddingBottom: 40,
                         shadowColor: '#000',
                         shadowOffset: { width: 0, height: -4 },
@@ -98,7 +98,7 @@ const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryNa
                                 <Text className="text-lg font-bold text-slate-800 mt-0.5">{provider.mobile}</Text>
                             </View>
                         </View>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={handleCopy}
                             style={{ backgroundColor: '#F1F5F9', padding: 8, borderRadius: 10 }}
                         >
@@ -189,13 +189,13 @@ const SuccessModal = ({ visible, onClose, themeColor }: SuccessModalProps) => {
                     }}
                 >
                     {/* Animated Checkmark Circle */}
-                    <View 
-                        style={{ 
-                            width: 90, 
-                            height: 90, 
-                            borderRadius: 45, 
-                            backgroundColor: '#DCFCE7', 
-                            alignItems: 'center', 
+                    <View
+                        style={{
+                            width: 90,
+                            height: 90,
+                            borderRadius: 45,
+                            backgroundColor: '#DCFCE7',
+                            alignItems: 'center',
                             justifyContent: 'center',
                             marginBottom: 24,
                             borderWidth: 4,
@@ -258,12 +258,12 @@ const UnlockCategoryPassModal = ({
         >
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
                 <Pressable style={{ flex: 1 }} onPress={onClose} />
-                <View 
-                    style={{ 
-                        backgroundColor: '#FFFFFF', 
-                        borderTopLeftRadius: 30, 
-                        borderTopRightRadius: 30, 
-                        padding: 24, 
+                <View
+                    style={{
+                        backgroundColor: '#FFFFFF',
+                        borderTopLeftRadius: 30,
+                        borderTopRightRadius: 30,
+                        padding: 24,
                         paddingBottom: 40,
                         shadowColor: '#000',
                         shadowOffset: { width: 0, height: -4 },
@@ -343,34 +343,13 @@ const UnlockCategoryPassModal = ({
 
 export default function ServiceDetailScreen() {
     const user = useAppStore(state => state.user);
-    const setUser = useAppStore(state => state.setUser);
-    const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
     const refreshProfile = useAppStore(state => state.refreshProfile);
-    const unlockedContacts = useAppStore(state => state.unlockedContacts);
-    const unlockedProviders = useAppStore(state => state.unlockedProviders);
     const isUnlocked = useAppStore(state => state.isUnlocked);
-    const unlockWorker = useAppStore(state => state.unlockWorker);
-    const isOnline = useAppStore(state => state.isOnline);
-    const setOnline = useAppStore(state => state.setOnline);
-    const toggleOnlineStatus = useAppStore(state => state.toggleOnlineStatus);
-    const isLoading = useAppStore(state => state.isLoading);
-    const hasCheckedAuth = useAppStore(state => state.hasCheckedAuth);
-    const isSessionExpired = useAppStore(state => state.isSessionExpired);
-    const categories = useAppStore(state => state.categories);
     const userLocation = useAppStore(state => state.userLocation);
-    const fetchCategories = useAppStore(state => state.fetchCategories);
-    const sessionToken = useAppStore(state => state.sessionToken);
-    const workerStats = useAppStore(state => state.workerStats);
     const handleRazorpayPayment = useAppStore(state => state.handleRazorpayPayment);
-    const updateProfile = useAppStore(state => state.updateProfile);
-    const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
-    const signOut = useAppStore(state => state.signOut);
-
-    const activePasses = useAppStore(state => (state as any).activePasses);
     const fetchActivePasses = useAppStore(state => (state as any).fetchActivePasses);
 
     const { id, name, color, icon } = useLocalSearchParams<{ id: string, name: string, color: string, icon: string }>();
-    const router = useRouter();
 
     const [providers, setProviders] = useState<any[]>([]);
     const [subCategories, setSubCategories] = useState<any[]>([]);
@@ -440,13 +419,13 @@ export default function ServiceDetailScreen() {
         try {
             let lat = userLocation?.coords?.latitude;
             let lng = userLocation?.coords?.longitude;
-            
+
             if (!lat || !lng) {
                 try {
                     const { status } = await Location.requestForegroundPermissionsAsync();
                     if (status === 'granted') {
                         const loc = await Location.getLastKnownPositionAsync() ??
-                                    await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                            await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                         if (loc?.coords) {
                             lat = loc.coords.latitude;
                             lng = loc.coords.longitude;
@@ -496,7 +475,7 @@ export default function ServiceDetailScreen() {
                 .from('cities')
                 .select('*')
                 .ilike('name', `%${cityName}%`);
-            
+
             let resolvedCity = null;
             if (dbCities && dbCities.length > 0 && !cityError) {
                 resolvedCity = dbCities[0];
@@ -513,7 +492,7 @@ export default function ServiceDetailScreen() {
 
             if (resolvedCity) {
                 setCityConfig(resolvedCity);
-                
+
                 // Fetch pricing config
                 const { data: priceData, error: priceError } = await insforge.database
                     .from('city_pricing_config')
@@ -705,7 +684,7 @@ export default function ServiceDetailScreen() {
             if (success) {
                 // 1. Create a row in unlock_passes table
                 const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
-                
+
                 const { error: passError } = await insforge.database
                     .from('unlock_passes')
                     .insert([{
@@ -777,14 +756,16 @@ export default function ServiceDetailScreen() {
         return matchesSearch && matchesSubCat && matchesLocationRange;
     });
 
+    const colorScheme = useColorScheme()
+    const router = useRouter()
+
     const renderHeader = () => (
         <View className="w-full">
-            {/* Back Button */}
-            <BackButton />
-
             {/* Explore Services Title */}
-            <View className="px-5 mb-4 mt-20">
-                <Text className="text-xl font-bold text-gray-900">Explore Services</Text>
+            <View className="px-5 mb-4 mt-6 flex-row items-center gap-2">
+                <Ionicons name='arrow-back' size={22} color={colorScheme === "dark" ? "#ffffff" : "#000000"}
+                    onPress={() => router.back()} />
+                <Text className="text-xl font-bold text-gray-900">Explore {name}</Text>
             </View>
 
             {/* Category Header Card */}

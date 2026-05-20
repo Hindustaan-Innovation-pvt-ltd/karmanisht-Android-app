@@ -64,6 +64,12 @@ export default function ConsumerLayout() {
             <Feather name="briefcase" size={24} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('services', { screen: 'index' });
+          },
+        })}
       />
       <Tabs.Screen
         name="contact/index"
@@ -82,6 +88,12 @@ export default function ConsumerLayout() {
             <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('profile', { screen: 'index' });
+          },
+        })}
       />
     </Tabs>
   );
