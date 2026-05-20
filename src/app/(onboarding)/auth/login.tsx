@@ -75,12 +75,16 @@ export default function Login() {
             });
 
             if (error || data?.error) {
-                throw new Error(error?.message || data?.error || 'Failed to send OTP');
+                const errMsg = error?.message || data?.error || 'Failed to send OTP';
+                if (errMsg.includes('Spam detected')) {
+                    setCooldown(90);
+                }
+                throw new Error(errMsg);
             }
 
             Alert.alert('OTP Sent', data.message || 'OTP sent successfully!');
-            setCooldown(75); // 1 minute and 15 seconds cooldown
-            router.push({ pathname: '/(onboarding)/auth/otp', params: { mobile } });
+            setCooldown(30); // 30 seconds cooldown
+            router.push({ pathname: '/(onboarding)/auth/otp', params: { mobile, initialCooldown: '30' } });
         } catch (err: any) {
             Alert.alert('Error', err.message || 'Failed to connect to server');
         } finally {

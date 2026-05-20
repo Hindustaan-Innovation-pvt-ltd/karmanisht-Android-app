@@ -83,10 +83,14 @@ export default function Register() {
                 body: { mobile: phone }
             });
             if (error || data?.error) {
-                throw new Error(error?.message || data?.error || 'Failed to send OTP');
+                const errMsg = error?.message || data?.error || 'Failed to send OTP';
+                if (errMsg.includes('Spam detected')) {
+                    setCooldown(90);
+                }
+                throw new Error(errMsg);
             }
             Alert.alert('OTP Sent', data.message || 'OTP sent successfully!');
-            setCooldown(75); // 75 seconds cooldown (1 min 15 sec)
+            setCooldown(30); // 30 seconds cooldown
             setShowOtpModal(true);
         } catch (err: any) {
             Alert.alert('Error', err.message);
@@ -103,10 +107,14 @@ export default function Register() {
                 body: { mobile: phone }
             });
             if (error || data?.error) {
-                throw new Error(error?.message || data?.error || 'Failed to send OTP');
+                const errMsg = error?.message || data?.error || 'Failed to send OTP';
+                if (errMsg.includes('Spam detected')) {
+                    setCooldown(90);
+                }
+                throw new Error(errMsg);
             }
             Alert.alert('OTP Sent', data.message || 'OTP resent successfully!');
-            setCooldown(75);
+            setCooldown(30);
         } catch (err: any) {
             Alert.alert('Error', err.message || 'Failed to resend OTP');
         } finally {
