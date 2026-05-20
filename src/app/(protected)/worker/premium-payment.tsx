@@ -10,6 +10,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { Confetti } from '@/components/Confetti';
 
 const BASE_URL = process.env.EXPO_PUBLIC_INSFORGE_URL;
 const RAZORPAY_KEY = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SpC8XTKEi3eJGe';
@@ -273,6 +274,7 @@ export default function PremiumPayment() {
             {/* ── Premium Success Modal ─────────────────────────────────── */}
             <Modal visible={showSuccess} transparent animationType="fade" onRequestClose={() => {}}>
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 }}>
+                    <Confetti active={showSuccess} />
                     <View style={{ backgroundColor: '#fff', borderRadius: 28, padding: 32, width: '100%', alignItems: 'center', elevation: 12 }}>
 
                         {/* Golden star badge */}
@@ -286,7 +288,7 @@ export default function PremiumPayment() {
                             <Text style={{ color: '#fff', fontWeight: '900', fontSize: 11, letterSpacing: 1.5 }}>PREMIUM MEMBER</Text>
                         </View>
 
-                        <Text style={{ fontSize: 24, fontWeight: '900', color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>You're Premium!</Text>
+                        <Text style={{ fontSize: 24, fontWeight: '900', color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>{"You're Premium!"}</Text>
                         <Text style={{ fontSize: 13, color: '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 8 }}>
                             Your <Text style={{ fontWeight: '800', color: '#0f172a' }}>{plan === 'premium' ? 'Premium' : 'Basic'}</Text> subscription is now active.
                         </Text>

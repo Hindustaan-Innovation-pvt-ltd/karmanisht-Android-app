@@ -39,7 +39,7 @@ export default function VerifyIdentity() {
     const [showMediaPicker, setShowMediaPicker] = useState(false)
     const [activeUploadType, setActiveUploadType] = useState<UploadType | null>(null)
     const [uploading, setUploading] = useState(false)
-    
+
     // Custom Modal States
     const [showSourceModal, setShowSourceModal] = useState(false)
     const [showSuccessModal, setShowSuccessModal] = useState(false)
@@ -210,16 +210,16 @@ export default function VerifyIdentity() {
                 animationType="slide"
                 onRequestClose={() => { setShowSourceModal(false); setActiveUploadType(null); }}
             >
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
                     activeOpacity={1}
                     onPress={() => { setShowSourceModal(false); setActiveUploadType(null); }}
                 >
-                    <View style={{ 
-                        backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                        borderTopLeftRadius: 28, 
-                        borderTopRightRadius: 28, 
-                        padding: 24, 
+                    <View style={{
+                        backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                        borderTopLeftRadius: 28,
+                        borderTopRightRadius: 28,
+                        padding: 24,
                         paddingBottom: Platform.OS === 'ios' ? 40 : 24,
                         borderWidth: isDark ? 1 : 0,
                         borderColor: isDark ? '#1e293b' : 'transparent'
@@ -243,15 +243,15 @@ export default function VerifyIdentity() {
                                 setTimeout(takePhoto, 100);
                             }}
                             activeOpacity={0.7}
-                            style={{ 
-                                flexDirection: 'row', 
-                                alignItems: 'center', 
-                                backgroundColor: isDark ? '#1e293b' : '#f8fafc', 
-                                padding: 16, 
-                                borderRadius: 16, 
-                                marginBottom: 12, 
-                                borderWidth: 1, 
-                                borderColor: isDark ? '#334155' : '#f1f5f9' 
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                                padding: 16,
+                                borderRadius: 16,
+                                marginBottom: 12,
+                                borderWidth: 1,
+                                borderColor: isDark ? '#334155' : '#f1f5f9'
                             }}
                         >
                             <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#172554' : '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
@@ -271,15 +271,15 @@ export default function VerifyIdentity() {
                                 setTimeout(chooseFromLibrary, 100);
                             }}
                             activeOpacity={0.7}
-                            style={{ 
-                                flexDirection: 'row', 
-                                alignItems: 'center', 
-                                backgroundColor: isDark ? '#1e293b' : '#f8fafc', 
-                                padding: 16, 
-                                borderRadius: 16, 
-                                marginBottom: 24, 
-                                borderWidth: 1, 
-                                borderColor: isDark ? '#334155' : '#f1f5f9' 
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                                padding: 16,
+                                borderRadius: 16,
+                                marginBottom: 24,
+                                borderWidth: 1,
+                                borderColor: isDark ? '#334155' : '#f1f5f9'
                             }}
                         >
                             <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
@@ -312,15 +312,15 @@ export default function VerifyIdentity() {
                 onRequestClose={() => { }}
             >
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
-                    <View style={{ 
-                        backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                        borderRadius: 24, 
-                        padding: 32, 
-                        width: '100%', 
-                        alignItems: 'center', 
-                        shadowColor: '#000', 
-                        shadowOpacity: 0.15, 
-                        shadowRadius: 20, 
+                    <View style={{
+                        backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                        borderRadius: 24,
+                        padding: 32,
+                        width: '100%',
+                        alignItems: 'center',
+                        shadowColor: '#000',
+                        shadowOpacity: 0.15,
+                        shadowRadius: 20,
                         elevation: 10,
                         borderWidth: isDark ? 1 : 0,
                         borderColor: isDark ? '#1e293b' : 'transparent'
@@ -351,12 +351,14 @@ export default function VerifyIdentity() {
 
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
                 <ScrollView className='flex-1' contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-                    <BackButton onPress={() => {
-                        if (fromSettings) router.replace('/(protected)/worker/settings');
-                        else router.back();
-                    }} />
-                    <View className='mb-6 mt-12'>
-                        <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Verify your identity</Text>
+                    <View className='mb-6 mt-12 flex-col gap-4'>
+                        <View className='flex-row items-center gap-6 justify-start'>
+                            <Ionicons name='arrow-back' size={22} color="#000" onPress={() => {
+                                if (fromSettings) router.replace('/(protected)/worker/settings');
+                                else router.back();
+                            }} />
+                            <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Verify your identity</Text>
+                        </View>
                         <Text className='text-sm text-slate-500 mt-1'>
                             Required to list your profile. Documents are reviewed within 24 hours.
                         </Text>

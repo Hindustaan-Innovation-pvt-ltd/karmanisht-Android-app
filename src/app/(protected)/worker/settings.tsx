@@ -233,26 +233,6 @@ export default function WorkerSettings() {
                             </View>
                             <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
                         </TouchableOpacity>
-
-                        {/* Edit Profile Details */}
-                        <TouchableOpacity
-                            onPress={() => router.push('/(protected)/worker/edit-profile?from=settings')}
-                            activeOpacity={0.7}
-                            className="flex-row items-center justify-between p-4"
-                        >
-                            <View className="flex-row items-center flex-1 pr-4">
-                                <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
-                                    <Feather name="user" size={20} color={colors.tint} />
-                                </View>
-                                <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Edit profile details</Text>
-                                    <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                                        Name, photo, experience
-                                    </Text>
-                                </View>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
-                        </TouchableOpacity>
                     </View>
 
                     {/* ACCOUNT SECTION */}
