@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto';
 import * as Crypto from 'expo-crypto';
 
 // Polyfill Web Crypto API for React Native environment to support PKCE flows in InsForge SDK
@@ -48,6 +49,7 @@ if (typeof globalThis.crypto === 'undefined') {
   (globalThis as any).crypto = global.crypto;
 }
 
+// eslint-disable-next-line import/first
 import { createClient } from '@insforge/sdk';
 
 const insforgeUrl = process.env.EXPO_PUBLIC_INSFORGE_URL;
@@ -123,7 +125,7 @@ export async function uploadToInsForge(bucketName: string, path: string, selecte
     let responseText = '';
     try {
       responseText = await uploadResponse.text();
-    } catch (_readError) {
+    } catch {
       responseText = '(could not read response text)';
     }
     console.error('[uploadToInsForge] S3 upload rejected. Status:', uploadResponse.status, 'Response:', responseText);

@@ -1,50 +1,113 @@
-# Welcome to your Expo app 👋
+# 🛠️ Karmanisht — Hyperlocal Service Discovery Platform
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Karmanisht is a premium, full-featured hyperlocal marketplace application built with **React Native (Expo)**, **NativeWind (TailwindCSS)**, and the **InsForge Serverless Cloud Stack**. It bridges the gap between local consumers and service professionals (plumbers, electricians, technicians) utilizing geospatial tracking, secure OTP authentication, digital identity verification (KYC), and integrated payment checkouts.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Key Features
 
-   ```bash
-   npm install
-   ```
+### 👤 Consumer Module (Customers)
+* **Hyperlocal Discovery**: Discover nearby service providers dynamically matched by category, ratings, and real-time distance using spatial PostGIS queries.
+* **OTP Sign-in**: Secure passwordless onboarding and authentication using custom mobile OTP verification.
+* **Unlock Passes**: Purchase 5-hour contact unlock passes to view provider details and contact coordinates.
+* **Review System**: Rate and write reviews to build provider reputation.
 
-2. Start the app
+### 💼 Provider Module (Workers / Professionals)
+* **Onboarding & Profile Setup**: Build professional profiles indicating business name, experience, biography, and base coordinates.
+* **KYC Verification**: Securely submit Aadhaar and PAN documents for administrator review.
+* **Skills Management**: Configure offered services from a taxonomy of categories and sub-service tags.
+* **Monetization (Basic/Premium)**: Upgrade subscription tiers via Razorpay integration. Features a premium golden star badge and interactive custom **confetti celebrations** upon checkout.
 
-   ```bash
-   npx expo start
-   ```
+### 🛡️ Admin Console (Management Panel)
+* **Catalog Control**: Create, update, and manage global service categories and sub-service tags.
+* **Provider Approval**: Review and verify pending provider profiles and KYC submissions.
+* **Platform Configurations**: Fine-tune operational parameters and monitor payment ledgers.
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🛠️ Technology Stack & Architecture
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+* **Core Framework**: Expo (React Native 0.81.5) with TSX.
+* **Styling**: NativeWind (Tailwind CSS v4) for responsive utility-first styling.
+* **State Management**: Zustand store split into decoupled slices (`authSlice`, `commonSlice`, `mapSlice`).
+* **Backend Platform**: InsForge SDK (`@insforge/sdk`) for serverless storage buckets, Postgres database tables, and Edge Functions.
+* **Spatial Tracking**: PostgreSQL PostGIS spatial indexing (`geo_location`) and mutual-radius RPC queries.
+* **Payments**: Integrated Razorpay Checkout (`react-native-razorpay`).
+* **Animations**: Native-driven `Animated` and `react-native-reanimated` animations including 60fps full-screen celebrate confetti.
+* **Compatibility Polyfills**: Integrated `react-native-url-polyfill/auto` to ensure perfect network routing compliance across standard JS URL operations in Hermes.
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## 📂 Project Structure
 
-```bash
-npm run reset-project
+```
+new/
+├── .env                  # Local environment configuration (ignored in git)
+├── app.json              # Expo configuration (permissions, package info, scheme)
+├── eas.json              # EAS Build settings (profiles for dev, preview, production)
+├── package.json          # Node dependencies
+└── src/
+    ├── app/              # File-based routing (Expo Router)
+    │   ├── index.tsx     # Application entrypoint & session-routing gate
+    │   ├── _layout.tsx   # Root layout, theme provider, and global polyfills
+    │   ├── (onboarding)/ # Login, sign-up, and OTP verifications
+    │   ├── (location)/   # Geolocation picker screens
+    │   ├── (protected)/  # Protected screens (Consumer & Worker sections)
+    │   └── admin/        # Admin console screens
+    ├── components/       # Reusable components (Confetti, Map, Input, Button)
+    ├── lib/              # Shared helper libraries
+    │   ├── insforge.ts   # InsForge database client wrapper & S3 upload helpers
+    │   └── store/        # Zustand global store configuration
+    └── assets/           # Application images and font resources
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## ⚙️ Local Development Setup
 
-To learn more about developing your project with Expo, look at the following resources:
+### 1. Prerequisites
+Ensure you have the following installed on your developer machine:
+* [Node.js](https://nodejs.org) (v18+ recommended)
+* [Expo CLI](https://docs.expo.dev/)
+* Android Studio Emulator or Xcode Simulator
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-## Join the community
+### 3. Environment Configuration
+Create a `.env` file in the root directory (based on `.env.example`):
+```ini
+EXPO_PUBLIC_INSFORGE_URL=https://[your-subdomain].insforge.app
+EXPO_PUBLIC_INSFORGE_ANON_KEY=[your-anon-jwt-token]
+EXPO_PUBLIC_RAZORPAY_KEY_ID=rzp_test_[your-razorpay-key]
+```
 
-Join our community of developers creating universal apps.
+### 4. Start Development Server
+```bash
+# Start the Metro bundler
+npm run start
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Run directly on an Android device/emulator
+npm run android
+
+# Run directly on an iOS device/simulator
+npm run ios
+```
+
+---
+
+## 📦 Building and Publishing (EAS)
+
+The build environment is fully configured via `eas.json` for remote compilations:
+
+### Build Preview Release (Internal Distribution APK)
+```bash
+eas build -p android --profile preview
+```
+
+### Build Production Release (App Store / Play Store AAB)
+```bash
+eas build -p android --profile production
+```
