@@ -222,7 +222,7 @@ export default function Register() {
 
                     {/* Profile Photo Selection */}
                     <View className="items-center my-2">
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={handleSelectPhoto}
                             activeOpacity={0.8}
                             className="relative w-28 h-28 rounded-[28px] border-4 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shadow-md items-center justify-center overflow-hidden"

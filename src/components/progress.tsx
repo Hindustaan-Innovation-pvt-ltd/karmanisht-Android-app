@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 
 interface Step {
   id: number;
@@ -16,17 +16,30 @@ interface StepperProps {
 }
 
 const Stepper: React.FC<StepperProps> = ({ steps, currentStep, onStepPress, totalSteps }) => {
-  // If totalSteps is provided, render a simple linear progress bar
+  const isDark = useColorScheme() === 'dark';
+
+  // If totalSteps is provided, render a premium segmented progress bar
   if (totalSteps) {
+    const activeColor = isDark ? '#3B82F6' : '#000000'; // Blue in dark mode, Black in light mode
+    const inactiveColor = isDark ? '#1E293B' : '#E2E8F0'; // slate-800 in dark, slate-200 in light
+
     return (
       <View style={styles.progressBarContainer}>
-        <View style={styles.track}>
-          <View 
-            style={[
-              styles.fill, 
-              { width: `${(currentStep / totalSteps) * 100}%` }
-            ]} 
-          />
+        <View style={styles.segmentedTrack}>
+          {Array.from({ length: totalSteps }).map((_, index) => {
+            const isActive = index < currentStep;
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.segment,
+                  {
+                    backgroundColor: isActive ? activeColor : inactiveColor,
+                  },
+                ]}
+              />
+            );
+          })}
         </View>
       </View>
     );
@@ -74,13 +87,7 @@ const Stepper: React.FC<StepperProps> = ({ steps, currentStep, onStepPress, tota
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: '#fff',
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   progressBarContainer: {
     paddingHorizontal: 20,
@@ -97,6 +104,17 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#000000',
     borderRadius: 2,
+  },
+  segmentedTrack: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 6,
+    height: 5,
+  },
+  segment: {
+    flex: 1,
+    height: '100%',
+    borderRadius: 2.5,
   },
   indicatorsContainer: {
     flexDirection: 'row',

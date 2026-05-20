@@ -1,11 +1,12 @@
 // @ts-nocheck
 import React, { useEffect } from 'react'
-import { ActivityIndicator, Image, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Image, Platform, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppStore } from '@/lib/store'
 import { getOnboardingRoute } from '@/lib/utils'
 import { LinearGradient } from 'expo-linear-gradient'
+
 
 const BackgroundPattern = () => {
     return (
@@ -39,7 +40,7 @@ const BackgroundPattern = () => {
             </View>
 
             {/* Blue Track - Middle Right (third.png) */}
-            <View style={{ position: 'absolute', top: '52%', left: 50, right: 1, height: 400 }}>
+            <View style={{ position: 'absolute', top: '32%', left: 70, right: 1, height: 400 }}>
                 <Image
                     source={require('@assets/images/third.png')}
                     style={{ width: '100%', height: '100%' }}
@@ -53,7 +54,7 @@ const BackgroundPattern = () => {
             </View>
 
             {/* Yellow Track - Lower Left (forth.png) */}
-            <View style={{ position: 'absolute', top: '75%', left: 0, width: '74%', height: 350 }}>
+            <View style={{ position: 'absolute', top: '45%', left: 0, width: '74%', height: 350 }}>
                 <Image
                     source={require('@assets/images/forth.png')}
                     style={{ width: '100%', height: '100%' }}
@@ -103,17 +104,16 @@ export default function Index() {
 
     return (
         <SafeAreaView className='flex-1 relative bg-white dark:bg-slate-950'>
-            <View className='flex-1 opacity-90 dark:opacity-60'>
-                <BackgroundPattern />
-            </View>
-            <View className='p-6'>
+            <BackgroundPattern />
+            <View className='p-6 absolute bottom-0 w-full justify-center'>
                 <View className='items-center mb-8'>
                     <Image
                         source={require('@assets/images/logo.png')}
-                        className='size-24'
+                        style={{ width: 150, height: 150 }}
                         resizeMode="contain"
                     />
-                    <Text className='text-[5rem] font-black text-center text-slate-900 dark:text-slate-100'>Karma<Text className='text-orange-500'>nisht</Text></Text>
+
+                    <Text className='text-[3rem] font-black text-center text-slate-900 dark:text-slate-100'>Karma<Text className='text-orange-500'>nisht</Text></Text>
                     <Text className='text-base font-bold text-center text-slate-500 dark:text-slate-400 mt-2'>Every service you need, at your screen</Text>
                 </View>
 
