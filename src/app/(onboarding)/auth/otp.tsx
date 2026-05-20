@@ -113,7 +113,7 @@ export default function Otp() {
 
     return (
         <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
-            <BackButton />
+            <View className='absolute top-12 left-2 z-10'><BackButton /></View>
             <View className='flex-1'>
                 <Image source={require('@assets/images/background.png')} className='w-full h-full' />
             </View>
@@ -148,7 +148,7 @@ export default function Otp() {
                         <Text className='text-center text-slate-400 dark:text-slate-500 text-xs'>
                             Hint: Use <Text className='font-bold'>123456</Text> if you didn&apos;t receive an SMS.
                         </Text>
-                        
+
                         <View className='flex-row justify-center items-center h-6'>
                             {cooldown > 0 ? (
                                 <Text className='text-slate-500 dark:text-slate-400 text-sm font-medium'>

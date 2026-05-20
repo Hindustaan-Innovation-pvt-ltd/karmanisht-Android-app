@@ -11,7 +11,7 @@ import { insforge } from '@/lib/insforge';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
-type TabType = 'accounts' | 'audit' | 'requests';
+type TabType = 'accounts' | 'audit' | 'requests' | 'categories';
 type UserType = 'consumer' | 'worker';
 
 interface ConsumerUser {
@@ -99,7 +99,7 @@ const shadow2xl = Platform.OS === 'web'
 
 export default function AdminConsole() {
     const router = useRouter();
-    const { signOut } = useAppStore();
+    const { signOut, fetchCategories } = useAppStore();
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState<TabType>('accounts');
@@ -112,6 +112,18 @@ export default function AdminConsole() {
     const [workers, setWorkers] = useState<WorkerUser[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [deletionRequests, setDeletionRequests] = useState<DeletionRequest[]>([]);
+    const [categoriesList, setCategoriesList] = useState<any[]>([]);
+    const [tagsList, setTagsList] = useState<any[]>([]);
+
+    // Category and Tag management inputs
+    const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryIcon, setNewCategoryIcon] = useState('lightning-bolt');
+    const [submittingCategory, setSubmittingCategory] = useState(false);
+
+    const [activeAddTagCategoryId, setActiveAddTagCategoryId] = useState<string | null>(null);
+    const [newTagName, setNewTagName] = useState('');
+    const [submittingTag, setSubmittingTag] = useState(false);
 
     // Modal state for deletion
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -148,6 +160,20 @@ export default function AdminConsole() {
                 .select('*')
                 .order('requested_at', { ascending: false });
             setDeletionRequests(requestData || []);
+
+            // Fetch categories
+            const { data: catData } = await insforge.database
+                .from('service_categories')
+                .select('*')
+                .order('name', { ascending: true });
+            setCategoriesList(catData || []);
+
+            // Fetch tags
+            const { data: tagData } = await insforge.database
+                .from('service_tags')
+                .select('*')
+                .order('name', { ascending: true });
+            setTagsList(tagData || []);
 
         } catch (err) {
             console.error(err);
@@ -311,6 +337,109 @@ export default function AdminConsole() {
         }
     };
 
+    const handleCreateCategory = async () => {
+        if (!newCategoryName.trim()) {
+            Alert.alert("Input Error", "Please enter a category name.");
+            return;
+        }
+        setSubmittingCategory(true);
+        try {
+            const { error } = await insforge.database
+                .from('service_categories')
+                .insert([
+                    {
+                        name: newCategoryName.trim(),
+                        icon: newCategoryIcon.trim() || 'lightning-bolt',
+                        is_active: true
+                    }
+                ]);
+            if (error) throw error;
+
+            Alert.alert("Success", "Category created successfully!");
+            setNewCategoryName('');
+            setNewCategoryIcon('lightning-bolt');
+            setShowAddCategoryForm(false);
+            
+            await fetchAllData();
+            await fetchCategories(true);
+        } catch (err: any) {
+            console.error(err);
+            Alert.alert("Database Error", err.message || "Failed to insert new category.");
+        } finally {
+            setSubmittingCategory(false);
+        }
+    };
+
+    const handleCreateTag = async (categoryId: string) => {
+        if (!newTagName.trim()) {
+            Alert.alert("Input Error", "Please enter a tag name.");
+            return;
+        }
+        setSubmittingTag(true);
+        try {
+            const { error } = await insforge.database
+                .from('service_tags')
+                .insert([
+                    {
+                        category_id: categoryId,
+                        name: newTagName.trim()
+                    }
+                ]);
+            if (error) throw error;
+
+            Alert.alert("Success", "Tag created successfully!");
+            setNewTagName('');
+            setActiveAddTagCategoryId(null);
+
+            await fetchAllData();
+        } catch (err: any) {
+            console.error(err);
+            Alert.alert("Database Error", err.message || "Failed to insert new tag.");
+        } finally {
+            setSubmittingTag(false);
+        }
+    };
+
+    const toggleCategoryActive = async (categoryId: string, currentStatus: boolean) => {
+        try {
+            const { error } = await insforge.database
+                .from('service_categories')
+                .update({ is_active: !currentStatus })
+                .eq('id', categoryId);
+            if (error) throw error;
+            await fetchAllData();
+            await fetchCategories(true);
+        } catch (err: any) {
+            Alert.alert("Error", err.message || "Failed to update category status.");
+        }
+    };
+
+    const deleteTag = async (tagId: string) => {
+        Alert.alert(
+            "Confirm Delete",
+            "Are you sure you want to delete this tag?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const { error } = await insforge.database
+                                .from('service_tags')
+                                .delete()
+                                .eq('id', tagId);
+                            if (error) throw error;
+                            await fetchAllData();
+                        } catch (err: any) {
+                            Alert.alert("Error", err.message || "Failed to delete tag.");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     // Filter accounts based on search
     const getFilteredAccounts = () => {
         const query = searchQuery.toLowerCase();
@@ -326,6 +455,16 @@ export default function AdminConsole() {
                 (w.mobile || '').includes(query)
             );
         }
+    };
+
+    // Filter categories based on search
+    const getFilteredCategories = () => {
+        const query = searchQuery.toLowerCase();
+        if (!query) return categoriesList;
+        return categoriesList.filter(c => 
+            (c.name || '').toLowerCase().includes(query) ||
+            tagsList.some(t => t.category_id === c.id && (t.name || '').toLowerCase().includes(query))
+        );
     };
 
     // Filter audit logs based on search
@@ -473,21 +612,28 @@ export default function AdminConsole() {
                         className={`flex-1 py-3 rounded-2xl items-center ${activeTab === 'accounts' ? (isDark ? 'bg-slate-800 border' : 'bg-white') : ''}`}
                         style={activeTab === 'accounts' ? (isDark ? { ...shadowSm, borderColor: 'rgba(71, 85, 105, 0.4)' } : shadowSm) : {}}
                     >
-                        <Text className={`text-xs font-black uppercase tracking-wider ${activeTab === 'accounts' ? 'text-indigo-600 dark:text-indigo-400' : textSubClass}`}>Active Accounts</Text>
+                        <Text className={`text-[10px] font-black uppercase tracking-wider ${activeTab === 'accounts' ? 'text-indigo-600 dark:text-indigo-400' : textSubClass}`}>Accounts</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                         onPress={() => handleTabChange('audit')}
                         className={`flex-1 py-3 rounded-2xl items-center ${activeTab === 'audit' ? (isDark ? 'bg-slate-800 border' : 'bg-white') : ''}`}
                         style={activeTab === 'audit' ? (isDark ? { ...shadowSm, borderColor: 'rgba(71, 85, 105, 0.4)' } : shadowSm) : {}}
                     >
-                        <Text className={`text-xs font-black uppercase tracking-wider ${activeTab === 'audit' ? 'text-indigo-600 dark:text-indigo-400' : textSubClass}`}>Audit Trail</Text>
+                        <Text className={`text-[10px] font-black uppercase tracking-wider ${activeTab === 'audit' ? 'text-indigo-600 dark:text-indigo-400' : textSubClass}`}>Audit</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                         onPress={() => handleTabChange('requests')}
                         className={`flex-1 py-3 rounded-2xl items-center ${activeTab === 'requests' ? (isDark ? 'bg-slate-800 border' : 'bg-white') : ''}`}
                         style={activeTab === 'requests' ? (isDark ? { ...shadowSm, borderColor: 'rgba(71, 85, 105, 0.4)' } : shadowSm) : {}}
                     >
-                        <Text className={`text-xs font-black uppercase tracking-wider ${activeTab === 'requests' ? 'text-indigo-600 dark:text-indigo-400' : textSubClass}`}>Requests</Text>
+                        <Text className={`text-[10px] font-black uppercase tracking-wider ${activeTab === 'requests' ? 'text-indigo-600 dark:text-indigo-400' : textSubClass}`}>Requests</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => handleTabChange('categories')}
+                        className={`flex-1 py-3 rounded-2xl items-center ${activeTab === 'categories' ? (isDark ? 'bg-slate-800 border' : 'bg-white') : ''}`}
+                        style={activeTab === 'categories' ? (isDark ? { ...shadowSm, borderColor: 'rgba(71, 85, 105, 0.4)' } : shadowSm) : {}}
+                    >
+                        <Text className={`text-[10px] font-black uppercase tracking-wider ${activeTab === 'categories' ? 'text-indigo-600 dark:text-indigo-400' : textSubClass}`}>Categories</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -742,6 +888,212 @@ export default function AdminConsole() {
                                                 </View>
                                             </View>
                                         ))
+                                    )}
+                                    <View className="h-10" />
+                                </ScrollView>
+                            </View>
+                        )}
+
+                        {activeTab === 'categories' && (
+                            <View className="flex-1">
+                                {/* Add New Category Header Trigger / Form */}
+                                {showAddCategoryForm ? (
+                                    <View className={`p-5 rounded-[24px] mb-4 border ${cardBgClass}`} style={shadowSm}>
+                                        <Text className={`text-base font-bold mb-3 ${textMainClass}`}>Add New Category</Text>
+                                        <View className="gap-3">
+                                            <View>
+                                                <Text className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Category Name</Text>
+                                                <TextInput
+                                                    value={newCategoryName}
+                                                    onChangeText={setNewCategoryName}
+                                                    placeholder="e.g. Painter, Beautician, Electrician..."
+                                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+                                                    className={`px-4 py-2.5 text-sm font-semibold rounded-xl border ${
+                                                        isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-50 text-slate-800 border-slate-200'
+                                                    }`}
+                                                />
+                                            </View>
+                                            <View>
+                                                <Text className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Icon Name (Feather icon)</Text>
+                                                <TextInput
+                                                    value={newCategoryIcon}
+                                                    onChangeText={setNewCategoryIcon}
+                                                    placeholder="e.g. tool, scissors, brush, car..."
+                                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+                                                    className={`px-4 py-2.5 text-sm font-semibold rounded-xl border ${
+                                                        isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-50 text-slate-800 border-slate-200'
+                                                    }`}
+                                                />
+                                            </View>
+                                            <View className="flex-row gap-3 mt-2">
+                                                <TouchableOpacity
+                                                    onPress={handleCreateCategory}
+                                                    className="flex-1 bg-indigo-600 py-3 rounded-xl items-center"
+                                                    disabled={submittingCategory}
+                                                >
+                                                    {submittingCategory ? (
+                                                        <ActivityIndicator size="small" color="white" />
+                                                    ) : (
+                                                        <Text className="text-xs font-bold text-white uppercase tracking-wider">Create Category</Text>
+                                                    )}
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        setShowAddCategoryForm(false);
+                                                        setNewCategoryName('');
+                                                        setNewCategoryIcon('lightning-bolt');
+                                                    }}
+                                                    className={`flex-1 py-3 rounded-xl items-center border ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-100'}`}
+                                                >
+                                                    <Text className={`text-xs font-bold uppercase tracking-wider ${textSubClass}`}>Cancel</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity
+                                        onPress={() => setShowAddCategoryForm(true)}
+                                        className="flex-row items-center justify-center py-3.5 rounded-[22px] border border-dashed border-indigo-500/50 bg-indigo-500/5 mb-4 active:scale-98"
+                                    >
+                                        <Feather name="plus-circle" size={18} color="#6366F1" />
+                                        <Text className="text-sm font-black text-indigo-600 dark:text-indigo-400 ml-2 uppercase tracking-wider">Add New Category</Text>
+                                    </TouchableOpacity>
+                                )}
+
+                                {/* Search Bar for Categories & Tags */}
+                                <View className={`flex-row items-center px-4 py-3 rounded-2xl mb-4 border ${searchBgClass}`}>
+                                    <Feather name="search" size={18} color="#64748B" />
+                                    <TextInput 
+                                        value={searchQuery}
+                                        onChangeText={setSearchQuery}
+                                        placeholder="Search categories or sub-tags..."
+                                        placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+                                        className={`flex-1 ml-3 text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}
+                                    />
+                                </View>
+
+                                <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                                    {getFilteredCategories().length === 0 ? (
+                                        <View className="py-20 items-center justify-center">
+                                            <MaterialCommunityIcons name="tag-multiple-outline" size={48} color="#64748B" />
+                                            <Text className="text-xs font-bold text-slate-400 mt-4 tracking-widest">NO MATCHING CATEGORIES</Text>
+                                        </View>
+                                    ) : (
+                                        getFilteredCategories().map((cat) => {
+                                            const categoryTags = tagsList.filter(t => t.category_id === cat.id);
+                                            return (
+                                                <View 
+                                                    key={cat.id} 
+                                                    className={`p-5 rounded-[24px] mb-3 border ${cardBgClass}`}
+                                                    style={shadowSm}
+                                                >
+                                                    <View className="flex-row justify-between items-center">
+                                                        <View className="flex-row items-center flex-1 pr-2">
+                                                            <View 
+                                                                className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+                                                                style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
+                                                            >
+                                                                <Feather name={cat.icon || 'lightning-bolt'} size={18} color="#6366F1" />
+                                                            </View>
+                                                            <View className="flex-1">
+                                                                <Text className={`text-base font-bold ${textMainClass}`}>{cat.name}</Text>
+                                                                <Text className={`text-[10px] font-medium ${textSubClass}`}>Icon: {cat.icon || 'default'}</Text>
+                                                            </View>
+                                                        </View>
+                                                        
+                                                        {/* Active Status toggle */}
+                                                        <TouchableOpacity 
+                                                            onPress={() => toggleCategoryActive(cat.id, cat.is_active !== false)}
+                                                            className="px-3 py-1.5 rounded-xl border"
+                                                            style={{ 
+                                                                backgroundColor: cat.is_active !== false ? 'rgba(34, 197, 94, 0.08)' : 'rgba(100, 116, 139, 0.08)',
+                                                                borderColor: cat.is_active !== false ? 'rgba(34, 197, 94, 0.15)' : 'rgba(100, 116, 139, 0.15)'
+                                                            }}
+                                                        >
+                                                            <Text className={`text-[9px] font-black uppercase tracking-wider ${
+                                                                cat.is_active !== false ? 'text-green-600 dark:text-green-400' : 'text-slate-500'
+                                                            }`}>
+                                                                {cat.is_active !== false ? 'Active' : 'Disabled'}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+
+                                                    {/* Sub-tags list */}
+                                                    <View className="mt-4 pt-3.5 border-t" style={isDark ? { borderTopColor: 'rgba(30, 41, 59, 0.8)' } : { borderTopColor: '#F1F5F9' }}>
+                                                        <Text className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Sub-tags / Specialties</Text>
+                                                        
+                                                        <View className="flex-row flex-wrap gap-2">
+                                                            {categoryTags.length === 0 ? (
+                                                                <Text className="text-xs text-slate-400 italic">No sub-tags added yet.</Text>
+                                                            ) : (
+                                                                categoryTags.map((tag) => (
+                                                                    <View 
+                                                                        key={tag.id}
+                                                                        className={`flex-row items-center pl-3 pr-2 py-1 rounded-full border ${
+                                                                            isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                                                                        }`}
+                                                                    >
+                                                                        <Text className={`text-xs font-semibold ${textMainClass}`}>{tag.name}</Text>
+                                                                        <TouchableOpacity 
+                                                                            onPress={() => deleteTag(tag.id)}
+                                                                            className="ml-1.5 p-0.5 rounded-full"
+                                                                        >
+                                                                            <Ionicons name="close-circle" size={14} color="#EF4444" />
+                                                                        </TouchableOpacity>
+                                                                    </View>
+                                                                ))
+                                                            )}
+                                                        </View>
+
+                                                        {/* Add Tag Inline Form */}
+                                                        {activeAddTagCategoryId === cat.id ? (
+                                                            <View className="flex-row items-center mt-3 gap-2">
+                                                                <TextInput
+                                                                    value={newTagName}
+                                                                    onChangeText={setNewTagName}
+                                                                    placeholder="Enter new tag / specialty name..."
+                                                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+                                                                    className={`flex-1 px-3 py-2 text-xs font-semibold rounded-xl border ${
+                                                                        isDark ? 'bg-slate-950 text-slate-100 border-slate-800' : 'bg-slate-50 text-slate-800 border-slate-200'
+                                                                    }`}
+                                                                />
+                                                                <TouchableOpacity
+                                                                    onPress={() => handleCreateTag(cat.id)}
+                                                                    className="bg-indigo-600 px-3 py-2 rounded-xl"
+                                                                    disabled={submittingTag}
+                                                                >
+                                                                    {submittingTag ? (
+                                                                        <ActivityIndicator size="small" color="white" />
+                                                                    ) : (
+                                                                        <Text className="text-[10px] font-black text-white uppercase tracking-wider">Save</Text>
+                                                                    )}
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity
+                                                                    onPress={() => {
+                                                                        setActiveAddTagCategoryId(null);
+                                                                        setNewTagName('');
+                                                                    }}
+                                                                    className={`px-3 py-2 rounded-xl border ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-100'}`}
+                                                                >
+                                                                    <Text className={`text-[10px] font-black uppercase tracking-wider ${textSubClass}`}>Cancel</Text>
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        ) : (
+                                                            <TouchableOpacity
+                                                                onPress={() => {
+                                                                    setActiveAddTagCategoryId(cat.id);
+                                                                    setNewTagName('');
+                                                                }}
+                                                                className="flex-row items-center mt-3.5 self-start px-3 py-1.5 rounded-xl border border-dashed border-indigo-500/40 bg-indigo-500/5 active:scale-95"
+                                                            >
+                                                                <Feather name="plus" size={12} color="#6366F1" />
+                                                                <Text className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 ml-1.5 uppercase tracking-wider">Add Tag</Text>
+                                                            </TouchableOpacity>
+                                                        )}
+                                                    </View>
+                                                </View>
+                                            );
+                                        })
                                     )}
                                     <View className="h-10" />
                                 </ScrollView>
