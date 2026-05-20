@@ -1,10 +1,11 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React from 'react'
-import { Text, TouchableOpacity, View, Image } from 'react-native'
+import { Text, View, Image } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { UsersIcon, BriefcaseIcon, ChevronRightIcon } from '@/svg/icons'
+import ScalePressable from '@/components/scale-pressable'
 
 export default function RoleSelection() {
         const user = useAppStore(state => state.user);
@@ -51,9 +52,10 @@ export default function RoleSelection() {
 
                 <View className='flex-1 px-6 justify-center gap-6'>
                     {/* Consumer Option */}
-                    <TouchableOpacity
+                    <ScalePressable
                         onPress={() => handleSelectRole('consumer')}
-                        activeOpacity={0.8}
+                        hapticType="medium"
+                        scaleTo={0.96}
                         className='bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 flex-row items-center gap-4'
                     >
                         <View className='bg-blue-100 dark:bg-blue-900/35 p-4 rounded-2xl'>
@@ -64,12 +66,13 @@ export default function RoleSelection() {
                             <Text className='text-sm text-slate-500 dark:text-slate-400 mt-1'>Find skilled professionals for your home or office services.</Text>
                         </View>
                         <ChevronRightIcon size={20} color="#94A3B8" />
-                    </TouchableOpacity>
+                    </ScalePressable>
 
                     {/* Worker Option */}
-                    <TouchableOpacity
+                    <ScalePressable
                         onPress={() => handleSelectRole('worker')}
-                        activeOpacity={0.8}
+                        hapticType="medium"
+                        scaleTo={0.96}
                         className='bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 flex-row items-center gap-4'
                     >
                         <View className='bg-green-100 dark:bg-green-900/35 p-4 rounded-2xl'>
@@ -80,8 +83,9 @@ export default function RoleSelection() {
                             <Text className='text-sm text-slate-500 dark:text-slate-400 mt-1'>List your services and get hired by customers in your area.</Text>
                         </View>
                         <ChevronRightIcon size={20} color="#94A3B8" />
-                    </TouchableOpacity>
+                    </ScalePressable>
                 </View>
+
 
                 <View className='p-6 items-center'>
                     <Text className='text-slate-400 text-sm text-center dark:text-slate-500'>

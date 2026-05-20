@@ -340,14 +340,14 @@ export default function VerifyIdentity() {
                             <Text className='text-white text-base font-bold'>Submit for review</Text>
                         )}
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => {
                             if (fromDashboard) {
                                 router.replace('/(protected)/worker');
                             } else {
                                 router.replace('/(onboarding)/all-set');
                             }
-                        }} 
+                        }}
                         activeOpacity={0.7}
                     >
                         <Text className='text-center text-sm text-slate-400 font-medium'>Skip, I&apos;ll do this later</Text>

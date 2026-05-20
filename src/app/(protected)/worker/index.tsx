@@ -7,6 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StarIcon, MapPinIcon, EditIcon, UploadIcon, ShieldIcon, ClockIcon } from '@/svg/icons';
 import { Ionicons } from '@expo/vector-icons';
+import Animated from 'react-native-reanimated';
 
 export default function WorkerDashboard() {
     const { user, isOnline, toggleOnlineStatus, workerStats } = useAppStore();
@@ -68,6 +69,7 @@ export default function WorkerDashboard() {
                         <Text className={`text-xs font-bold ${isOnline ? 'text-green-600' : 'text-slate-400'}`}>
                             {isOnline ? 'ONLINE' : 'OFFLINE'}
                         </Text>
+
                         <Switch
                             value={isOnline}
                             onValueChange={toggleOnlineStatus}
@@ -165,15 +167,13 @@ export default function WorkerDashboard() {
                 {/* Premium Subscription Nudge */}
                 <TouchableOpacity
                     onPress={() => router.push('/(protected)/worker/premium-plans')}
-                    className={`flex-row items-center gap-3 mt-3 rounded-2xl p-4 border ${
-                        user?.isPremium 
-                            ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30' 
-                            : 'bg-indigo-50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30'
-                    }`}
+                    className={`flex-row items-center gap-3 mt-3 rounded-2xl p-4 border ${user?.isPremium
+                        ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30'
+                        : 'bg-indigo-50 border-indigo-100 dark:bg-indigo-950/20 dark:border-indigo-900/30'
+                        }`}
                 >
-                    <View className={`size-8 rounded-full items-center justify-center ${
-                        user?.isPremium ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-indigo-100 dark:bg-indigo-900/40'
-                    }`}>
+                    <View className={`size-8 rounded-full items-center justify-center ${user?.isPremium ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-indigo-100 dark:bg-indigo-900/40'
+                        }`}>
                         <Ionicons name="ribbon" size={16} color={user?.isPremium ? '#10B981' : '#6366F1'} />
                     </View>
                     <View className="flex-1">
@@ -181,8 +181,8 @@ export default function WorkerDashboard() {
                             {user?.isPremium ? 'Premium Active' : 'Upgrade to Premium'}
                         </Text>
                         <Text className={`text-[10px] ${user?.isPremium ? 'text-emerald-700 dark:text-emerald-400' : 'text-indigo-700 dark:text-indigo-400'}`}>
-                            {user?.isPremium 
-                                ? 'Enjoying top search ranking, verified badge & unlimited leads!' 
+                            {user?.isPremium
+                                ? 'Enjoying top search ranking, verified badge & unlimited leads!'
                                 : 'Boost ranking, get verified premium badge & unlimited leads'}
                         </Text>
                     </View>

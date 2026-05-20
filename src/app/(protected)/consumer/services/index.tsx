@@ -165,7 +165,7 @@ export default function ServicesScreen() {
                     const cardColor = getVibrantColor(service);
                     return (
                         <Animated.View
-                            entering={FadeInDown.delay(index * 25).springify().damping(12)}
+                            entering={FadeInDown.delay(index * 25).springify(20).damping(5)}
                             className="w-[31%] aspect-square mb-4"
                         >
                             <TouchableOpacity

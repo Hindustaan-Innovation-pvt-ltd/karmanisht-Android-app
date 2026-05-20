@@ -1,18 +1,26 @@
 // @ts-nocheck
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, View, Linking, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
+
 import { insforge } from '@/lib/insforge';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, ScrollView, Text, TouchableOpacity, View, Linking } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScalePressable from '@/components/scale-pressable';
+import StickySwitch from '@/components/sticky-switch';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const { user, signOut, updateDatabaseProfile, refreshProfile } = useAppStore();
+
+    const { colorScheme, setColorScheme } = useColorScheme();
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [shareLocation, setShareLocation] = useState(true);
 
     const [radiusKm, setRadiusKm] = useState(user?.searchRadiusKm || 5);
     const [updatingRadius, setUpdatingRadius] = useState(false);
@@ -106,154 +114,308 @@ export default function SettingsScreen() {
         );
     };
 
-    // Helper setting row component aligned with mockup style
-    const SettingItem = ({ 
-        icon, 
-        label, 
-        value, 
-        onPress, 
-        iconColor = "#64748B", 
-        isDestructive = false,
-        showDivider = true
-    }: { 
-        icon: string; 
-        label: string; 
-        value?: string; 
-        onPress: () => void; 
-        iconColor?: string; 
-        isDestructive?: boolean;
-        showDivider?: boolean;
-    }) => (
-        <TouchableOpacity
-            onPress={onPress}
-            activeOpacity={0.5}
-            className="flex-row items-center justify-between py-4"
-        >
-            <View className="flex-row items-center flex-1 pr-4">
-                {/* Light gray circle icon matching mockup */}
-                <View className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-900 items-center justify-center border border-slate-100/50 dark:border-slate-800/50">
-                    <Feather name={icon as any} size={20} color={iconColor} />
-                </View>
-                <View className="ml-4 flex-1">
-                    <Text className={`text-base font-bold ${isDestructive ? 'text-red-500' : 'text-slate-900 dark:text-slate-100'}`}>{label}</Text>
-                    {value && (
-                        <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5" numberOfLines={1}>
-                            {value}
-                        </Text>
-                    )}
-                </View>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={isDestructive ? '#FCA5A5' : '#CBD5E1'} />
-            {showDivider && (
-                <View className="absolute bottom-0 left-16 right-0 h-[1px] bg-slate-100/80 dark:bg-slate-800/50" />
-            )}
-        </TouchableOpacity>
-    );
+    const userAvatar = user?.profile_image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user?.name || "User");
 
     return (
         <View className="flex-1 bg-white dark:bg-slate-950">
-            {/* Minimal Header with Back Button */}
+            {/* Minimal Header */}
             <View 
                 style={{ paddingTop: Math.max(insets.top, 12) }} 
-                className="pb-2 px-6 flex-row items-center bg-white dark:bg-slate-950"
+                className="pb-4 px-6 flex-row items-center justify-between bg-white dark:bg-slate-950 border-b border-slate-50 dark:border-slate-900/50"
             >
-                <TouchableOpacity
+                <ScalePressable
                     onPress={() => router.back()}
+                    hapticType="light"
                     className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl items-center justify-center border border-slate-100 dark:border-slate-800"
                 >
                     <Ionicons name="chevron-back" size={20} color={colors.text} />
-                </TouchableOpacity>
+                </ScalePressable>
+                <Text className="text-lg font-black text-slate-900 dark:text-white">Settings</Text>
+                <View className="w-10" />
             </View>
 
-            <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
-                
-                {/* Bold Settings Title */}
-                <Text className="text-3xl font-black text-slate-950 dark:text-white mt-2 mb-8">
-                    Settings
-                </Text>
-
-                {/* SERVICE CONFIGURATION */}
-                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
-                    Service Configuration
-                </Text>
-                <View className="mb-8">
-                    <SettingItem 
-                        icon="map-pin"
-                        label="Edit search location"
-                        value={`Currently: ${user?.location || 'Not configured'}`}
-                        onPress={() => router.push('/(location)/locationinfo')}
-                        showDivider={true}
-                    />
-                    <SettingItem 
-                        icon="compass"
-                        label="Edit service radius"
-                        value={`Currently: ${radiusKm} km`}
-                        onPress={() => setRadiusModalVisible(true)}
-                        showDivider={true}
-                    />
-                    <SettingItem 
-                        icon="user"
-                        label="Edit profile details"
-                        value="Name, photo, experience"
-                        onPress={() => router.push('/(protected)/consumer/profile/info')}
-                        showDivider={false}
-                    />
+            <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+                {/* ── PROFILE PROFILE CARD ── */}
+                <View className="my-6 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/80 rounded-[28px] p-5 flex-row items-center gap-4">
+                    <Image source={{ uri: userAvatar }} className="w-16 h-16 rounded-full border border-slate-200 dark:border-slate-800" />
+                    <View className="flex-1">
+                        <Text className="text-xl font-bold text-slate-900 dark:text-slate-100" numberOfLines={1}>
+                            {user?.name || 'Consumer Profile'}
+                        </Text>
+                        <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5" numberOfLines={1}>
+                            {user?.phone || user?.email || 'No contact details'}
+                        </Text>
+                        <View className="self-start mt-2 px-2.5 py-0.5 bg-blue-100 dark:bg-blue-900/35 rounded-full border border-blue-200 dark:border-blue-900/30">
+                            <Text className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-wide">
+                                Consumer Account
+                            </Text>
+                        </View>
+                    </View>
                 </View>
 
-                {/* ACCOUNT */}
-                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
-                    Account
+                {/* ── SECTION 1: SERVICE CONFIGURATION ── */}
+                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-2">
+                    Service Config
                 </Text>
-                <View className="mb-10">
-                    <SettingItem 
-                        icon="lock"
-                        label="Privacy policy"
-                        value="How we use your data"
+                <View className="mb-6 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/80 rounded-[28px] overflow-hidden">
+                    {/* Location Row */}
+                    <ScalePressable
+                        onPress={() => router.push('/(location)/locationinfo')}
+                        hapticType="light"
+                        className="flex-row items-center justify-between p-4 bg-transparent"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/20 items-center justify-center">
+                                <Feather name="map-pin" size={18} color="#3B82F6" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Search Location</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5" numberOfLines={1}>
+                                    {user?.location || 'Not configured'}
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                    </ScalePressable>
+
+                    <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
+
+                    {/* Radius Row */}
+                    <ScalePressable
+                        onPress={() => setRadiusModalVisible(true)}
+                        hapticType="light"
+                        className="flex-row items-center justify-between p-4 bg-transparent"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-950/20 items-center justify-center">
+                                <Feather name="compass" size={18} color="#6366F1" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Search Radius</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                                    {radiusKm} km radius
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                    </ScalePressable>
+
+                    <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
+
+                    {/* Profile details */}
+                    <ScalePressable
+                        onPress={() => router.push('/(protected)/consumer/profile/info')}
+                        hapticType="light"
+                        className="flex-row items-center justify-between p-4 bg-transparent"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/20 items-center justify-center">
+                                <Feather name="user" size={18} color="#10B981" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Profile Details</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                                    Name, photo, contact info
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                    </ScalePressable>
+                </View>
+
+                {/* ── SECTION 2: APP PREFERENCES ── */}
+                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-2">
+                    Preferences
+                </Text>
+                <View className="mb-6 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/80 rounded-[28px] overflow-hidden">
+                    {/* Dark Mode Row */}
+                    <View className="flex-row items-center justify-between p-4 bg-transparent">
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-950/20 items-center justify-center">
+                                <Feather name="moon" size={18} color="#8B5CF6" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Dark Mode</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                                    Toggle theme preference
+                                </Text>
+                            </View>
+                        </View>
+                        <StickySwitch
+                            value={colorScheme === 'dark'}
+                            onValueChange={(val) => setColorScheme(val ? 'dark' : 'light')}
+                            activeColor="#8B5CF6"
+                        />
+                    </View>
+
+                    <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
+
+                    {/* Notifications Row */}
+                    <View className="flex-row items-center justify-between p-4 bg-transparent">
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/20 items-center justify-center">
+                                <Feather name="bell" size={18} color="#F59E0B" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Push Notifications</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                                    Alerts on service updates
+                                </Text>
+                            </View>
+                        </View>
+                        <StickySwitch
+                            value={notificationsEnabled}
+                            onValueChange={setNotificationsEnabled}
+                            activeColor="#F59E0B"
+                        />
+                    </View>
+
+                    <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
+
+                    {/* Location Sharing Row */}
+                    <View className="flex-row items-center justify-between p-4 bg-transparent">
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-950/20 items-center justify-center">
+                                <Feather name="navigation" size={18} color="#06B6D4" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Share Coordinates</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                                    Let workers view location
+                                </Text>
+                            </View>
+                        </View>
+                        <StickySwitch
+                            value={shareLocation}
+                            onValueChange={setShareLocation}
+                            activeColor="#06B6D4"
+                        />
+                    </View>
+                </View>
+
+                {/* ── SECTION 3: LEGAL & SUPPORT ── */}
+                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-2">
+                    Legal & Support
+                </Text>
+                <View className="mb-6 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/80 rounded-[28px] overflow-hidden">
+                    {/* Privacy Row */}
+                    <ScalePressable
                         onPress={() => {
                             setPolicyType('privacy');
                             setPolicyVisible(true);
                         }}
-                        showDivider={true}
-                    />
-                    <SettingItem 
-                        icon="file-text"
-                        label="Terms of Service"
-                        value="User agreements & rules"
+                        hapticType="light"
+                        className="flex-row items-center justify-between p-4 bg-transparent"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center">
+                                <Feather name="lock" size={18} color="#64748B" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Privacy Policy</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium">How we handle telemetry data</Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                    </ScalePressable>
+
+                    <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
+
+                    {/* Terms Row */}
+                    <ScalePressable
                         onPress={() => {
                             setPolicyType('terms');
                             setPolicyVisible(true);
                         }}
-                        showDivider={true}
-                    />
-                    <SettingItem 
-                        icon="help-circle"
-                        label="Help and support"
-                        value="Contact the team"
+                        hapticType="light"
+                        className="flex-row items-center justify-between p-4 bg-transparent"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center">
+                                <Feather name="file-text" size={18} color="#64748B" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Terms of Service</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium">Platform user agreement rules</Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                    </ScalePressable>
+
+                    <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
+
+                    {/* Help Support */}
+                    <ScalePressable
                         onPress={() => setSupportModalVisible(true)}
-                        showDivider={true}
-                    />
-                    <SettingItem 
-                        icon="log-out"
-                        label="Logout"
-                        value="Sign out of your session"
+                        hapticType="light"
+                        className="flex-row items-center justify-between p-4 bg-transparent"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center">
+                                <Feather name="help-circle" size={18} color="#64748B" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Help & Support</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium">Reach our dedicated support</Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                    </ScalePressable>
+                </View>
+
+                {/* ── SECTION 4: ACTIONS ── */}
+                <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-2">
+                    Account
+                </Text>
+                <View className="mb-10 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/80 rounded-[28px] overflow-hidden">
+                    {/* Logout Row */}
+                    <ScalePressable
                         onPress={async () => {
                             await signOut();
                             router.replace('/');
                         }}
-                        showDivider={true}
-                    />
-                    <SettingItem 
-                        icon="trash-2"
-                        label="Delete Account"
-                        value="Permanently delete your profile"
+                        hapticType="medium"
+                        className="flex-row items-center justify-between p-4 bg-transparent"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-950/20 items-center justify-center">
+                                <Feather name="log-out" size={18} color="#F97316" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Logout</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
+                                    Sign out of your session
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="#FDBA74" />
+                    </ScalePressable>
+
+                    <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
+
+                    {/* Delete Account Row */}
+                    <ScalePressable
                         onPress={handleDeleteAccount}
-                        iconColor="#EF4444"
-                        isDestructive={true}
-                        showDivider={false}
-                    />
+                        hapticType="heavy"
+                        className="flex-row items-center justify-between p-4 bg-transparent"
+                    >
+                        <View className="flex-row items-center flex-1 pr-4">
+                            <View className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-950/20 items-center justify-center">
+                                <Feather name="trash-2" size={18} color="#EF4444" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-base font-bold text-red-500">Delete Account</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 font-semibold mt-0.5">
+                                    Permanently wipe your profile
+                                </Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color="#FCA5A5" />
+                    </ScalePressable>
                 </View>
 
-                <Text className="text-center text-slate-300 dark:text-slate-700 text-[10px] font-black mb-16 tracking-widest uppercase">
+                {/* Footer Brand */}
+                <Text className="text-center text-slate-350 dark:text-slate-700 text-[10px] font-black mb-16 tracking-widest uppercase">
                     HINDUSTAN INNOVATIONS • V1.0.4
                 </Text>
             </ScrollView>
@@ -270,22 +432,24 @@ export default function SettingsScreen() {
                         <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full self-center mb-6" />
                         <View className="flex-row justify-between items-center mb-4">
                             <Text className="text-xl font-bold text-slate-950 dark:text-slate-100">Search Radius</Text>
-                            <TouchableOpacity
+                            <ScalePressable
                                 onPress={() => setRadiusModalVisible(false)}
+                                hapticType="light"
                                 className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center border border-slate-100 dark:border-slate-700"
                             >
                                 <Ionicons name="close" size={18} color={colors.text} />
-                            </TouchableOpacity>
+                            </ScalePressable>
                         </View>
-                        <Text className="text-slate-450 dark:text-slate-550 text-xs font-semibold mb-6">
+                        <Text className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-6">
                             Select the maximum distance (in kilometers) to discover local service providers around you.
                         </Text>
 
                         <View className="flex-row flex-wrap justify-between">
                             {[2, 5, 10, 15, 20, 30, 50].map((opt) => (
-                                <TouchableOpacity
+                                <ScalePressable
                                     key={opt}
                                     onPress={() => handleRadiusChange(opt)}
+                                    hapticType="selection"
                                     className={`w-[31%] py-3.5 rounded-xl items-center justify-center mb-3.5 border ${radiusKm === opt
                                             ? 'bg-blue-600 border-blue-600 dark:bg-blue-600 dark:border-blue-600'
                                             : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
@@ -294,7 +458,7 @@ export default function SettingsScreen() {
                                     <Text className={`font-bold text-sm ${radiusKm === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>
                                         {opt} KM
                                     </Text>
-                                </TouchableOpacity>
+                                </ScalePressable>
                             ))}
                         </View>
                         {updatingRadius && (
@@ -320,21 +484,22 @@ export default function SettingsScreen() {
                         
                         <View className="flex-row justify-between items-center mb-2">
                             <Text className="text-xl font-bold text-slate-950 dark:text-slate-100">Help & Support</Text>
-                            <TouchableOpacity
+                            <ScalePressable
                                 onPress={() => setSupportModalVisible(false)}
+                                hapticType="light"
                                 className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center border border-slate-100 dark:border-slate-700"
                             >
                                 <Ionicons name="close" size={18} color={colors.text} />
-                            </TouchableOpacity>
+                            </ScalePressable>
                         </View>
-                        <Text className="text-slate-450 dark:text-slate-550 text-xs font-semibold mb-6">
+                        <Text className="text-slate-400 dark:text-slate-550 text-xs font-semibold mb-6">
                             We are here to assist you. Select a channel to get in touch with our team.
                         </Text>
 
                         {/* Channels */}
-                        <TouchableOpacity
+                        <ScalePressable
                             onPress={handleCallSupport}
-                            activeOpacity={0.7}
+                            hapticType="medium"
                             className="flex-row items-center bg-slate-50 dark:bg-slate-850 border border-slate-100 dark:border-slate-800 p-4 rounded-xl mb-4"
                         >
                             <View className="w-10 h-10 rounded-full bg-green-50 dark:bg-green-950/30 items-center justify-center">
@@ -342,14 +507,14 @@ export default function SettingsScreen() {
                             </View>
                             <View className="ml-4 flex-1">
                                 <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Call Helpline</Text>
-                                <Text className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">+91 98765 43210</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">+91 98765 43210</Text>
                             </View>
                             <Feather name="external-link" size={16} color="#CBD5E1" />
-                        </TouchableOpacity>
+                        </ScalePressable>
 
-                        <TouchableOpacity
+                        <ScalePressable
                             onPress={handleEmailSupport}
-                            activeOpacity={0.7}
+                            hapticType="medium"
                             className="flex-row items-center bg-slate-50 dark:bg-slate-850 border border-slate-100 dark:border-slate-800 p-4 rounded-xl mb-6"
                         >
                             <View className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/30 items-center justify-center">
@@ -357,10 +522,10 @@ export default function SettingsScreen() {
                             </View>
                             <View className="ml-4 flex-1">
                                 <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Email Support</Text>
-                                <Text className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">support@hindustaninnovations.com</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">support@hindustaninnovations.com</Text>
                             </View>
                             <Feather name="external-link" size={16} color="#CBD5E1" />
-                        </TouchableOpacity>
+                        </ScalePressable>
 
                         <Text className="text-center text-slate-400 dark:text-slate-550 text-[10px] font-bold">
                             TIMINGS: 9 AM - 6 PM (MON - SAT)
@@ -384,17 +549,18 @@ export default function SettingsScreen() {
                         <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                             {policyType === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
                         </Text>
-                        <TouchableOpacity
+                        <ScalePressable
                             onPress={() => setPolicyVisible(false)}
+                            hapticType="light"
                             className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl items-center justify-center border border-slate-100 dark:border-slate-800"
                         >
                             <Ionicons name="close" size={24} color={colors.text} />
-                        </TouchableOpacity>
+                        </ScalePressable>
                     </View>
                     <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
                         {policyType === 'privacy' ? (
                             <View className="space-y-4">
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">1. Data We Collect</Text>
+                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 font-sans">1. Data We Collect</Text>
                                 <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
                                     We collect basic registration information such as your name, mobile phone number, location details, and distance search radius to successfully match you with nearby service workers.
                                 </Text>

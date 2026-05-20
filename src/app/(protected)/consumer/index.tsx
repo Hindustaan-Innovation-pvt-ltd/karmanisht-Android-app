@@ -12,6 +12,7 @@ import React, { useEffect, useState } from 'react';
 import { Dimensions, FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Platform, Keyboard } from 'react-native';
 import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScalePressable from '@/components/scale-pressable';
 
 const { width } = Dimensions.get('window');
 
@@ -169,26 +170,29 @@ export default function ConsumerHome() {
 
                     <View className="absolute left-0 top-0 w-full bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center justify-between px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none">
                         {/* Centered Location Bar */}
-                        <TouchableOpacity
+                        <ScalePressable
                             onPress={() => router.push('/(location)/select-location' as any)}
+                            hapticType="selection"
+                            scaleTo={0.97}
                             style={{ top: topOffset }}
                             className='w-[40%] flex-row items-center bg-white shadow-md rounded-lg p-2 '
-                            activeOpacity={0.8}
                         >
                             <Ionicons name="location" size={24} color="#3B82F6" />
                             <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-sm" numberOfLines={1}>
                                 {locationName}
                             </Text>
-                        </TouchableOpacity>
+                        </ScalePressable>
 
                         {/* Profile Icon */}
-                        <TouchableOpacity
+                        <ScalePressable
                             onPress={() => router.push('/(protected)/consumer/profile' as any)}
+                            hapticType="selection"
+                            scaleTo={0.92}
                             style={{ top: topOffset }}
                             className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
                         >
                             <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
-                        </TouchableOpacity>
+                        </ScalePressable>
                     </View>
                 </View>)}
 
@@ -427,14 +431,16 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 30).springify().damping(12)}
+            entering={FadeInDown.delay(index * 30).springify().damping(10)}
             className="w-[31%] aspect-square mb-4"
         >
-            <TouchableOpacity
+            <ScalePressable
                 onPress={() => router.push({
                     pathname: '/(protected)/consumer/services/[id]',
                     params: { id: service.id, name: service.name, color: color, icon: icon }
                 } as any)}
+                hapticType="light"
+                scaleTo={0.93}
                 className="w-full h-full rounded-[20px] items-center justify-center shadow-sm"
                 style={{ backgroundColor: color }}
             >
@@ -442,7 +448,7 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
                 <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
                     {service.name}
                 </Text>
-            </TouchableOpacity>
+            </ScalePressable>
         </Animated.View>
     );
 };

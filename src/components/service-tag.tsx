@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { Text } from 'react-native';
+import ScalePressable from './scale-pressable';
 
 interface ServiceTagProps {
     label: string;
@@ -10,9 +11,10 @@ interface ServiceTagProps {
 
 export default function ServiceTag({ label, selected, onPress }: ServiceTagProps) {
     return (
-        <TouchableOpacity
+        <ScalePressable
             onPress={onPress}
-            activeOpacity={0.7}
+            hapticType="selection"
+            scaleTo={0.95}
             className={`px-3 py-1.5 rounded-full border mr-2 mb-2 ${selected
                 ? 'bg-black dark:bg-blue-600 border-black dark:border-blue-600'
                 : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-800'
@@ -21,6 +23,7 @@ export default function ServiceTag({ label, selected, onPress }: ServiceTagProps
             <Text className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-700 dark:text-slate-350'}`}>
                 {label}
             </Text>
-        </TouchableOpacity>
+        </ScalePressable>
     );
 }
+
