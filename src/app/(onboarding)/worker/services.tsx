@@ -41,10 +41,7 @@ export default function Services() {
     // Fetch subcategories (service tags) directly from InsForge matching category ID
     useEffect(() => {
         async function fetchTags() {
-            console.log('[Services] fetchTags started. Raw parameters:', { paramProfessionId, paramProfessionName });
-            console.log('[Services] Zustand store state:', { storeProfessionId: storeUser?.professionId, storeProfessionName: storeUser?.profession });
-            console.log('[Services] Resolved values:', { professionId, professionName });
-
+           
             if (!professionId || professionId === 'undefined' || professionId === 'null') {
                 console.warn('[Services] Invalid or missing professionId. Cannot fetch tags.');
                 setLoading(false);
@@ -53,7 +50,6 @@ export default function Services() {
 
             try {
                 setLoading(true)
-                console.log('[Services] Fetching service_tags from database for category_id:', professionId);
                 const { data, error } = await insforge.database
                     .from('service_tags')
                     .select('*')
@@ -64,7 +60,6 @@ export default function Services() {
                 }
 
                 if (data && !error) {
-                    console.log(`[Services] Successfully fetched ${data.length} service tags.`);
                     // Sort alphabetically
                     const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
                     setTags(sorted)
