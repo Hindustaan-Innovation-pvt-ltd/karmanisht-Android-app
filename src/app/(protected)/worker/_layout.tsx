@@ -67,6 +67,12 @@ export default function WorkerProtectedLayout() {
                 }}
             />
             <Tabs.Screen
+                name="edit-profession"
+                options={{
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
                 name="premium-plans"
                 options={{
                     href: null,

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal, Platform, Linking } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -30,6 +30,9 @@ export default function WorkerSettings() {
     // Radius Modal States
     const [radiusModalVisible, setRadiusModalVisible] = useState(false);
     const [updatingRadius, setUpdatingRadius] = useState(false);
+    
+    // Support Modal States
+    const [supportVisible, setSupportVisible] = useState(false);
 
     useEffect(() => {
         fetchCategories();
@@ -172,20 +175,20 @@ export default function WorkerSettings() {
                         icon="user" 
                         label="Personal Details" 
                         value={user?.name || "Provider"}
-                        onPress={() => router.push('/(protected)/worker/edit-profile')} 
+                        onPress={() => router.push('/(protected)/worker/edit-profile?from=settings')} 
                     />
                     <SettingItem 
                         icon="map-pin" 
                         label="Service Area" 
                         value={user.location}
-                        onPress={() => router.push('/(location)/locationinfo?from=dashboard')} 
+                        onPress={() => router.push('/(location)/locationinfo?from=settings')} 
                     />
                     <SettingItem 
                         icon="shield" 
                         label="Identity Verification" 
                         value="Pending"
                         iconColor="#D97706"
-                        onPress={() => router.push('/(protected)/worker/verify-identity?from=dashboard')} 
+                        onPress={() => router.push('/(protected)/worker/verify-identity?from=settings')} 
                     />
                     {/* SERVICE CONFIGURATION SECTION */}
                     <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Service Configuration</Text>
@@ -193,7 +196,7 @@ export default function WorkerSettings() {
                         
                         {/* Edit Profession & Services */}
                         <TouchableOpacity
-                            onPress={() => router.push('/(protected)/worker/edit-profile')}
+                            onPress={() => router.push('/(protected)/worker/edit-profession?from=settings')}
                             activeOpacity={0.7}
                             className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
                         >
@@ -233,7 +236,7 @@ export default function WorkerSettings() {
 
                         {/* Edit Profile Details */}
                         <TouchableOpacity
-                            onPress={() => router.push('/(protected)/worker/edit-profile')}
+                            onPress={() => router.push('/(protected)/worker/edit-profile?from=settings')}
                             activeOpacity={0.7}
                             className="flex-row items-center justify-between p-4"
                         >
@@ -258,7 +261,7 @@ export default function WorkerSettings() {
                         
                         {/* Verification Documents (KYC) */}
                         <TouchableOpacity
-                            onPress={() => router.push('/(protected)/worker/verify-identity?from=dashboard')}
+                            onPress={() => router.push('/(protected)/worker/verify-identity?from=settings')}
                             activeOpacity={0.7}
                             className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
                         >
@@ -302,7 +305,7 @@ export default function WorkerSettings() {
                         {/* Help and Support */}
                         <TouchableOpacity
                             onPress={() => {
-                                Alert.alert("Support Team", "Reach out to us at: support@hindustaninnovations.com\nPhone: +91 98765 43210");
+                                setSupportVisible(true);
                             }}
                             activeOpacity={0.7}
                             className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
@@ -426,16 +429,16 @@ export default function WorkerSettings() {
                     onRequestClose={() => setPolicyVisible(false)}
                 >
                     <View className="flex-1 bg-white dark:bg-slate-950">
-                        <View className="pt-14 pb-6 px-6 flex-row items-center justify-between border-b border-slate-50 dark:border-slate-800">
-                            <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                                {policyType === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
-                            </Text>
+                        <View className="pt-14 pb-6 px-4 flex-row items-center border-b border-slate-50 dark:border-slate-800">
                             <TouchableOpacity 
                                 onPress={() => setPolicyVisible(false)}
-                                className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl items-center justify-center border border-slate-100 dark:border-slate-800"
+                                className="p-2 mr-2"
                             >
-                                <Ionicons name="close" size={24} color={colors.text} />
+                                <Ionicons name="arrow-back" size={24} color={isDark ? '#f8fafc' : '#0f172a'} />
                             </TouchableOpacity>
+                            <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">
+                                {policyType === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
+                            </Text>
                         </View>
                         <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
                             <View className="space-y-4">
@@ -455,6 +458,109 @@ export default function WorkerSettings() {
                             <View className="h-20" />
                         </ScrollView>
                     </View>
+                </Modal>
+
+                {/* Support Modal View */}
+                <Modal
+                    visible={supportVisible}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setSupportVisible(false)}
+                >
+                    <TouchableOpacity 
+                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                        activeOpacity={1}
+                        onPress={() => setSupportVisible(false)}
+                    >
+                        <View style={{ 
+                            backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                            borderTopLeftRadius: 28, 
+                            borderTopRightRadius: 28, 
+                            padding: 24, 
+                            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+                            borderWidth: isDark ? 1 : 0,
+                            borderColor: isDark ? '#1e293b' : 'transparent'
+                        }}>
+                            {/* Drag Handle */}
+                            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? '#334155' : '#cbd5e1', alignSelf: 'center', marginBottom: 20 }} />
+
+                            <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 4 }}>
+                                Support Team
+                            </Text>
+                            <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', marginBottom: 24 }}>
+                                Reach out to us via any of these channels for quick assistance.
+                            </Text>
+
+                            {/* Email Support */}
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setSupportVisible(false);
+                                    Linking.openURL('mailto:support@hindustaninnovations.com').catch(() => {
+                                        Alert.alert("Error", "Could not open mail app.");
+                                    });
+                                }}
+                                activeOpacity={0.7}
+                                style={{ 
+                                    flexDirection: 'row', 
+                                    alignItems: 'center', 
+                                    backgroundColor: isDark ? '#1e293b' : '#f8fafc', 
+                                    padding: 16, 
+                                    borderRadius: 16, 
+                                    marginBottom: 12, 
+                                    borderWidth: 1, 
+                                    borderColor: isDark ? '#334155' : '#f1f5f9' 
+                                }}
+                            >
+                                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#1e1b4b' : '#e0e7ff', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                    <Ionicons name="mail" size={22} color={isDark ? '#818cf8' : '#4f46e5'} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Email Us</Text>
+                                    <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>support@hindustaninnovations.com</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
+                            </TouchableOpacity>
+
+                            {/* Phone Support */}
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setSupportVisible(false);
+                                    Linking.openURL('tel:+919876543210').catch(() => {
+                                        Alert.alert("Error", "Could not place phone call.");
+                                    });
+                                }}
+                                activeOpacity={0.7}
+                                style={{ 
+                                    flexDirection: 'row', 
+                                    alignItems: 'center', 
+                                    backgroundColor: isDark ? '#1e293b' : '#f8fafc', 
+                                    padding: 16, 
+                                    borderRadius: 16, 
+                                    marginBottom: 24, 
+                                    borderWidth: 1, 
+                                    borderColor: isDark ? '#334155' : '#f1f5f9' 
+                                }}
+                            >
+                                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                    <Ionicons name="call" size={22} color={isDark ? '#34d399' : '#16a34a'} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Phone / WhatsApp</Text>
+                                    <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>+91 98765 43210</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
+                            </TouchableOpacity>
+
+                            {/* Cancel Button */}
+                            <TouchableOpacity
+                                onPress={() => setSupportVisible(false)}
+                                activeOpacity={0.8}
+                                style={{ backgroundColor: isDark ? '#334155' : '#f1f5f9', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
+                            >
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableOpacity>
                 </Modal>
             </SafeAreaView>
         </SafeAreaProvider>

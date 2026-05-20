@@ -1,31 +1,28 @@
 // @ts-nocheck
 import { useAppStore } from '@/lib/store';
 import { insforge, uploadToInsForge } from '@/lib/insforge';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
     ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Image,
-    Modal
+    Modal, useColorScheme
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import MediaLibraryPicker from '@/components/media-library-picker';
 
 export default function EditProfile() {
     const user = useAppStore(state => state.user);
-    const categories = useAppStore(state => state.categories);
-    const fetchCategories = useAppStore(state => state.fetchCategories);
     const updateProfile = useAppStore(state => state.updateProfile);
-    const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
     const refreshProfile = useAppStore(state => state.refreshProfile);
 
     const router = useRouter();
-
-    useEffect(() => {
-        fetchCategories();
-    }, [fetchCategories]);
+    const params = useLocalSearchParams();
+    const fromSettings = params?.from === 'settings';
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
     const [fullName, setFullName] = useState(user?.name || '');
     const [bio, setBio] = useState(user?.bio || '');
@@ -34,110 +31,14 @@ export default function EditProfile() {
     const [fetching, setFetching] = useState(true);
     const [showMediaPicker, setShowMediaPicker] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showSourceModal, setShowSourceModal] = useState(false);
 
-    // --- Profession state (saved) ---
-    const [savedCategoryId, setSavedCategoryId] = useState('');
-    const [savedTagIds, setSavedTagIds] = useState<string[]>([]);
-    // Full tag objects for view-mode display (so names show without opening modal)
-    const [savedTagObjects, setSavedTagObjects] = useState<any[]>([]);
-
-    // --- Inline dropdown state ---
-    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-    const [availableTags, setAvailableTags] = useState<any[]>([]);
-    const [tagsLoading, setTagsLoading] = useState(false);
-
-    // Fetch saved profession (category + tags) from DB
+    // Fetch saved details from user store
     useEffect(() => {
-        async function fetchDetails() {
-            setFetching(true);
-            setFullName(user?.name || '');
-            setBio(user?.bio || '');
-            try {
-                if (user?.id) {
-                    const { data, error } = await insforge.database
-                        .from('provider_services')
-                        .select('category_id, tag_id')
-                        .eq('provider_id', user.id);
-
-                    if (data && data.length > 0 && !error) {
-                        const catId = data[0].category_id;
-                        const tagIds = data.map(r => r.tag_id).filter(Boolean);
-                        setSavedCategoryId(catId);
-                        setSavedTagIds(tagIds);
-
-                        // Fetch full tag objects so view-mode names are shown immediately
-                        if (tagIds.length > 0) {
-                            try {
-                                const { data: tagData } = await insforge.database
-                                    .from('service_tags')
-                                    .select('*')
-                                    .in('id', tagIds);
-                                if (tagData) setSavedTagObjects(tagData);
-                            } catch (_) { }
-                        }
-
-                        // Pre-load ALL available tags for the category so badges render without dropdown open
-                        fetchTagsForCategory(catId);
-                    } else if (categories.length > 0) {
-                        setSavedCategoryId(categories[0].id);
-                        fetchTagsForCategory(categories[0].id);
-                    }
-                } else if (categories.length > 0) {
-                    setSavedCategoryId(categories[0].id);
-                    fetchTagsForCategory(categories[0].id);
-                }
-            } catch (err) {
-                console.error("Failed to load provider services:", err);
-            } finally {
-                setFetching(false);
-            }
-        }
-        fetchDetails();
-    }, [user?.id, categories]);
-
-    // Fetch tags when editCategoryId changes inside modal
-    const fetchTagsForCategory = useCallback(async (categoryId: string) => {
-        if (!categoryId) return;
-        setTagsLoading(true);
-        try {
-            const { data, error } = await insforge.database
-                .from('service_tags')
-                .select('*')
-                .eq('category_id', categoryId);
-            if (data && !error) {
-                const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
-                setAvailableTags(sorted);
-            } else {
-                setAvailableTags([]);
-            }
-        } catch (err) {
-            console.error('Failed to fetch tags:', err);
-            setAvailableTags([]);
-        } finally {
-            setTagsLoading(false);
-        }
-    }, []);
-
-    // Inline category select — clear tags & re-fetch
-    const handleCategoryChange = (catId: string) => {
-        setSavedCategoryId(catId);
-        setSavedTagIds([]);
-        setSavedTagObjects([]);
-        setShowCategoryDropdown(false);
-        fetchTagsForCategory(catId);
-    };
-
-    const toggleTag = (tagId: string) => {
-        const tagObj = availableTags.find(t => t.id === tagId);
-        setSavedTagIds(prev => {
-            if (prev.includes(tagId)) return prev.filter(id => id !== tagId);
-            return [...prev, tagId];
-        });
-        setSavedTagObjects(prev => {
-            if (prev.find(t => t.id === tagId)) return prev.filter(t => t.id !== tagId);
-            return tagObj ? [...prev, tagObj] : prev;
-        });
-    };
+        setFullName(user?.name || '');
+        setBio(user?.bio || '');
+        setFetching(false);
+    }, [user?.id]);
 
     // Photo handlers
     const takePhoto = async () => {
@@ -162,15 +63,7 @@ export default function EditProfile() {
     };
 
     const handleSelectPhoto = () => {
-        Alert.alert(
-            "Profile Photo",
-            "Select an option to add your photo",
-            [
-                { text: "Take Photo", onPress: takePhoto },
-                { text: "Choose from Library", onPress: () => setShowMediaPicker(true) },
-                { text: "Cancel", style: "cancel" }
-            ]
-        );
+        setShowSourceModal(true);
     };
 
     const handleSave = async () => {
@@ -195,23 +88,16 @@ export default function EditProfile() {
                 }
             }
 
-            const selectedCategory = categories.find(c => c.id === savedCategoryId);
             const profileSuccess = await updateProfile({
                 name: fullName,
                 bio: bio,
                 profile_image: uploadedImageUrl !== undefined ? uploadedImageUrl : user?.profile_image,
-                profession: selectedCategory ? selectedCategory.name : undefined
             });
 
-            let specialtySuccess = true;
-            if (savedCategoryId) {
-                specialtySuccess = await updateWorkerSpecialties([savedCategoryId], savedTagIds);
-            }
-
-            if (profileSuccess && specialtySuccess) {
+            if (profileSuccess) {
                 setShowSuccessModal(true);
             } else {
-                Alert.alert('Error', 'Failed to update some details.');
+                Alert.alert('Error', 'Failed to update profile details.');
             }
         } catch (err) {
             Alert.alert('Error', 'An unexpected error occurred.');
@@ -220,17 +106,117 @@ export default function EditProfile() {
         }
     };
 
-    // Derive display names
-    const savedCategoryName = categories.find(c => c.id === savedCategoryId)?.name;
-
     const handleSuccessOk = async () => {
         setShowSuccessModal(false);
         await refreshProfile();
-        router.back();
+        if (fromSettings) {
+            router.replace('/(protected)/worker/settings');
+        } else {
+            router.back();
+        }
     };
 
     return (
         <SafeAreaProvider>
+            {/* ── Image Source Selection Modal (Bottom Sheet style) ── */}
+            <Modal
+                visible={showSourceModal}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowSourceModal(false)}
+            >
+                <TouchableOpacity 
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                    activeOpacity={1}
+                    onPress={() => setShowSourceModal(false)}
+                >
+                    <View style={{ 
+                        backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                        borderTopLeftRadius: 28, 
+                        borderTopRightRadius: 28, 
+                        padding: 24, 
+                        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+                        borderWidth: isDark ? 1 : 0,
+                        borderColor: isDark ? '#1e293b' : 'transparent'
+                    }}>
+                        {/* Drag Handle */}
+                        <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? '#334155' : '#cbd5e1', alignSelf: 'center', marginBottom: 20 }} />
+
+                        <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 4 }}>
+                            Profile Photo
+                        </Text>
+                        <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', marginBottom: 24 }}>
+                            Select how you want to update your profile photo.
+                        </Text>
+
+                        {/* Camera Option */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowSourceModal(false);
+                                setTimeout(takePhoto, 100);
+                            }}
+                            activeOpacity={0.7}
+                            style={{ 
+                                flexDirection: 'row', 
+                                alignItems: 'center', 
+                                backgroundColor: isDark ? '#1e293b' : '#f8fafc', 
+                                padding: 16, 
+                                borderRadius: 16, 
+                                marginBottom: 12, 
+                                borderWidth: 1, 
+                                borderColor: isDark ? '#334155' : '#f1f5f9' 
+                            }}
+                        >
+                            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#172554' : '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                <Ionicons name="camera" size={22} color={isDark ? '#3b82f6' : '#2563eb'} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Take Photo</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>Capture using camera</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
+                        </TouchableOpacity>
+
+                        {/* Gallery Option */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowSourceModal(false);
+                                setTimeout(() => setShowMediaPicker(true), 100);
+                            }}
+                            activeOpacity={0.7}
+                            style={{ 
+                                flexDirection: 'row', 
+                                alignItems: 'center', 
+                                backgroundColor: isDark ? '#1e293b' : '#f8fafc', 
+                                padding: 16, 
+                                borderRadius: 16, 
+                                marginBottom: 24, 
+                                borderWidth: 1, 
+                                borderColor: isDark ? '#334155' : '#f1f5f9' 
+                            }}
+                        >
+                            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                <Ionicons name="image" size={22} color={isDark ? '#10b981' : '#16a34a'} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Choose from Library</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>Select from your photos</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
+                        </TouchableOpacity>
+
+                        {/* Cancel Button */}
+                        <TouchableOpacity
+                            onPress={() => setShowSourceModal(false)}
+                            activeOpacity={0.8}
+                            style={{ backgroundColor: isDark ? '#334155' : '#f1f5f9', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
+                        >
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
             {/* ── Custom Success Modal ── */}
             <Modal
                 visible={showSuccessModal}
@@ -238,29 +224,48 @@ export default function EditProfile() {
                 animationType="fade"
                 onRequestClose={() => { }}
             >
-                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
-                    <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
+                    <View style={{ 
+                        backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                        borderRadius: 24, 
+                        padding: 32, 
+                        width: '100%', 
+                        alignItems: 'center', 
+                        shadowColor: '#000', 
+                        shadowOpacity: 0.15, 
+                        shadowRadius: 20, 
+                        elevation: 10,
+                        borderWidth: isDark ? 1 : 0,
+                        borderColor: isDark ? '#1e293b' : 'transparent'
+                    }}>
                         {/* Green circle with checkmark */}
-                        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#f0fdf4', borderWidth: 2, borderColor: '#bbf7d0', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                            <Ionicons name="checkmark" size={38} color="#16a34a" />
+                        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', borderWidth: 2, borderColor: isDark ? '#059669' : '#bbf7d0', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                            <Ionicons name="checkmark" size={38} color={isDark ? '#34d399' : '#16a34a'} />
                         </View>
 
-                        <Text style={{ fontSize: 22, fontWeight: '800', color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>Profile Updated!</Text>
-                        <Text style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>Your profile has been saved successfully.</Text>
+                        <Text style={{ fontSize: 22, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>Profile Updated!</Text>
+                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>Your profile has been saved successfully.</Text>
 
                         <TouchableOpacity
                             onPress={handleSuccessOk}
                             activeOpacity={0.85}
-                            style={{ backgroundColor: '#000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
+                            style={{ backgroundColor: isDark ? '#2563eb' : '#000000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
                         >
                             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>OK</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
+
             <SafeAreaView className="flex-1 bg-white">
                 <View className="flex-row items-center px-5 py-4 border-b border-slate-100">
-                    <TouchableOpacity onPress={() => router.back()} className="p-2">
+                    <TouchableOpacity onPress={() => {
+                        if (fromSettings) {
+                            router.replace('/(protected)/worker/settings');
+                        } else {
+                            router.back();
+                        }
+                    }} className="p-2">
                         <Ionicons name="arrow-back" size={24} color="black" />
                     </TouchableOpacity>
                     <Text className="text-xl font-bold ml-4">Edit Profile</Text>
@@ -318,117 +323,6 @@ export default function EditProfile() {
                                 />
                             </View>
 
-                            {/* ── Profession & Services — Inline Dropdown + Tags ── */}
-                            <View className="mb-8">
-                                <Text className="text-sm font-bold text-slate-500 uppercase mb-3">Profession & Services</Text>
-
-                                {/* Category Dropdown Trigger */}
-                                <TouchableOpacity
-                                    onPress={() => setShowCategoryDropdown(v => !v)}
-                                    className="flex-row items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 mb-1"
-                                    activeOpacity={0.7}
-                                >
-                                    <View className="flex-row items-center gap-2 flex-1">
-                                        <Feather name="briefcase" size={16} color="#475569" />
-                                        <Text className={`text-base font-semibold flex-1 ${savedCategoryId ? 'text-slate-900' : 'text-slate-400'
-                                            }`}>
-                                            {savedCategoryId
-                                                ? (categories.find(c => c.id === savedCategoryId)?.name || 'Select profession')
-                                                : 'Select your profession'
-                                            }
-                                        </Text>
-                                    </View>
-                                    <Ionicons
-                                        name={showCategoryDropdown ? 'chevron-up' : 'chevron-down'}
-                                        size={18}
-                                        color="#94a3b8"
-                                    />
-                                </TouchableOpacity>
-
-                                {/* Dropdown List */}
-                                {showCategoryDropdown && (
-                                    <View
-                                        className="border border-slate-200 rounded-2xl bg-white mb-4 overflow-hidden"
-                                        style={{ maxHeight: 280 }}
-                                    >
-                                        <ScrollView
-                                            nestedScrollEnabled
-                                            showsVerticalScrollIndicator={false}
-                                            keyboardShouldPersistTaps="handled"
-                                        >
-                                            {categories.map((cat, idx) => (
-                                                <TouchableOpacity
-                                                    key={cat.id}
-                                                    onPress={() => handleCategoryChange(cat.id)}
-                                                    className={`flex-row items-center px-4 py-3.5 ${idx !== categories.length - 1 ? 'border-b border-slate-100' : ''
-                                                        } ${savedCategoryId === cat.id ? 'bg-slate-50' : 'bg-white'}`}
-                                                    activeOpacity={0.6}
-                                                >
-                                                    <Text className={`flex-1 text-sm font-medium ${savedCategoryId === cat.id ? 'text-black font-bold' : 'text-slate-700'
-                                                        }`}>
-                                                        {cat.name}
-                                                    </Text>
-                                                    {savedCategoryId === cat.id && (
-                                                        <Ionicons name="checkmark-circle" size={18} color="#000" />
-                                                    )}
-                                                </TouchableOpacity>
-                                            ))}
-                                        </ScrollView>
-                                    </View>
-                                )}
-
-                                {/* Tags — shown once a category is selected */}
-                                {savedCategoryId ? (
-                                    <View className="mt-4">
-                                        <View className="flex-row items-center justify-between mb-3">
-                                            <Text className="text-xs font-bold text-slate-500 uppercase">Services / Specialities</Text>
-                                            {savedTagIds.length > 0 && (
-                                                <TouchableOpacity onPress={() => { setSavedTagIds([]); setSavedTagObjects([]); }}>
-                                                    <Text className="text-xs text-red-400 font-semibold">Clear all</Text>
-                                                </TouchableOpacity>
-                                            )}
-                                        </View>
-
-                                        {tagsLoading ? (
-                                            <ActivityIndicator color="#000" size="small" />
-                                        ) : availableTags.length === 0 ? (
-                                            <Text className="text-sm text-slate-400 italic">No sub-services for this category yet.</Text>
-                                        ) : (
-                                            <View className="flex-row flex-wrap">
-                                                {availableTags.map(tag => {
-                                                    const selected = savedTagIds.includes(tag.id);
-                                                    return (
-                                                        <TouchableOpacity
-                                                            key={tag.id}
-                                                            onPress={() => toggleTag(tag.id)}
-                                                            activeOpacity={0.75}
-                                                            className={`flex-row items-center px-3 py-1.5 rounded-full border mr-2 mb-2 ${selected
-                                                                    ? 'bg-black border-black'
-                                                                    : 'bg-white border-slate-300'
-                                                                }`}
-                                                        >
-                                                            {selected && (
-                                                                <Ionicons name="checkmark" size={12} color="#fff" style={{ marginRight: 4 }} />
-                                                            )}
-                                                            <Text className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-700'
-                                                                }`}>
-                                                                {tag.name}
-                                                            </Text>
-                                                        </TouchableOpacity>
-                                                    );
-                                                })}
-                                            </View>
-                                        )}
-
-                                        {!tagsLoading && (
-                                            <Text className="text-xs text-slate-400 mt-2">
-                                                {savedTagIds.length} service{savedTagIds.length !== 1 ? 's' : ''} selected
-                                            </Text>
-                                        )}
-                                    </View>
-                                ) : null}
-                            </View>
-
                             {/* Save Button */}
                             <TouchableOpacity
                                 onPress={handleSave}
@@ -444,8 +338,6 @@ export default function EditProfile() {
                         </ScrollView>
                     )}
                 </KeyboardAvoidingView>
-
-                {/* Modal removed — profession & tags are now inline on the page */}
 
                 <MediaLibraryPicker
                     visible={showMediaPicker}

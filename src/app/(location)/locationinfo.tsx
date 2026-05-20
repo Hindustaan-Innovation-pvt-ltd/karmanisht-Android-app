@@ -24,6 +24,7 @@ export default function LocationInfo() {
     const router = useRouter()
     const params = useLocalSearchParams()
     const fromDashboard = params?.from === 'dashboard'
+    const fromSettings = params?.from === 'settings'
 
     const [radiusKm, setRadiusKm] = React.useState(user?.searchRadiusKm || 5)
     const [locationLabel, setLocationLabel] = React.useState(user?.location || 'Shankar Nagar, Raipur')
@@ -55,7 +56,9 @@ export default function LocationInfo() {
             searchRadiusKm: finalRadius
         });
 
-        if (fromDashboard) {
+        if (fromSettings) {
+            router.replace('/(protected)/worker/settings')
+        } else if (fromDashboard) {
             router.back()
         } else if (user?.role === 'worker') {
             router.push('/(onboarding)/worker/profession')
@@ -108,7 +111,13 @@ export default function LocationInfo() {
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
                 {/* Header Back Button */}
                 <View className="px-4 py-2 flex-row items-center">
-                    <TouchableOpacity onPress={() => router.back()} className="p-1">
+                    <TouchableOpacity onPress={() => {
+                        if (fromSettings) {
+                            router.replace('/(protected)/worker/settings')
+                        } else {
+                            router.back()
+                        }
+                    }} className="p-1">
                         <Ionicons name="arrow-back" size={24} color={isDark ? "#F8FAFC" : "#0F172A"} />
                     </TouchableOpacity>
                 </View>
