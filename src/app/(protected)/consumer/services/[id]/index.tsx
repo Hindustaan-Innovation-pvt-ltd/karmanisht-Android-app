@@ -2,7 +2,7 @@ import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Platform, Dimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Platform, Dimensions, Modal, Clipboard, Linking, Pressable, Animated } from 'react-native';
 
 const { width } = Dimensions.get('window');
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -22,6 +22,208 @@ function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
+
+interface ContactDetailModalProps {
+    visible: boolean;
+    provider: any;
+    onClose: () => void;
+    themeColor: string;
+    categoryName: string;
+}
+
+const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryName }: ContactDetailModalProps) => {
+    if (!provider) return null;
+
+    const handleCall = () => {
+        if (provider.mobile) {
+            Linking.openURL(`tel:${provider.mobile}`);
+        } else {
+            Alert.alert('Error', 'Phone number not available');
+        }
+    };
+
+    const handleCopy = () => {
+        if (provider.mobile) {
+            Clipboard.setString(provider.mobile);
+            Alert.alert('Copied', 'Phone number copied to clipboard!');
+        }
+    };
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={onClose}
+        >
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+                <Pressable style={{ flex: 1 }} onPress={onClose} />
+                <View 
+                    style={{ 
+                        backgroundColor: '#FFFFFF', 
+                        borderTopLeftRadius: 30, 
+                        borderTopRightRadius: 30, 
+                        padding: 24, 
+                        paddingBottom: 40,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: -4 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 10,
+                        elevation: 10
+                    }}
+                >
+                    {/* Header Handle */}
+                    <View style={{ width: 40, height: 5, backgroundColor: '#E2E8F0', borderRadius: 3, alignSelf: 'center', marginBottom: 20 }} />
+
+                    {/* Content */}
+                    <View className="items-center mb-6">
+                        <Image
+                            source={{ uri: provider.profile_image }}
+                            style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 12, borderWidth: 3, borderColor: themeColor }}
+                            resizeMode="cover"
+                        />
+                        <Text className="text-2xl font-bold text-slate-800">{provider.full_name}</Text>
+                        <Text className="text-sm font-semibold text-slate-400 mt-1">{categoryName} Specialist</Text>
+                    </View>
+
+                    {/* Phone Number Field */}
+                    <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex-row items-center justify-between mb-6">
+                        <View className="flex-row items-center">
+                            <View style={{ backgroundColor: `${themeColor}20`, padding: 10, borderRadius: 12 }}>
+                                <Ionicons name="call" size={24} color={themeColor} />
+                            </View>
+                            <View className="ml-3">
+                                <Text className="text-xs text-slate-400 font-bold uppercase tracking-wider">Phone Number</Text>
+                                <Text className="text-lg font-bold text-slate-800 mt-0.5">{provider.mobile}</Text>
+                            </View>
+                        </View>
+                        <TouchableOpacity 
+                            onPress={handleCopy}
+                            style={{ backgroundColor: '#F1F5F9', padding: 8, borderRadius: 10 }}
+                        >
+                            <Ionicons name="copy-outline" size={20} color="#475569" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Buttons */}
+                    <View className="flex-row gap-4">
+                        <TouchableOpacity
+                            onPress={onClose}
+                            style={{ flex: 1 }}
+                            className="bg-slate-100 py-4 rounded-2xl items-center justify-center border border-slate-200"
+                        >
+                            <Text className="text-base font-bold text-slate-600">Cancel</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={handleCall}
+                            style={{ backgroundColor: themeColor, flex: 2 }}
+                            className="py-4 rounded-2xl items-center justify-center flex-row"
+                        >
+                            <Ionicons name="call" size={20} color="white" style={{ marginRight: 8 }} />
+                            <Text className="text-base font-bold text-white">Call Now</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
+interface SuccessModalProps {
+    visible: boolean;
+    onClose: () => void;
+    themeColor: string;
+}
+
+const SuccessModal = ({ visible, onClose, themeColor }: SuccessModalProps) => {
+    const scaleAnim = React.useRef(new Animated.Value(0)).current;
+    const opacityAnim = React.useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (visible) {
+            scaleAnim.setValue(0);
+            opacityAnim.setValue(0);
+            Animated.parallel([
+                Animated.spring(scaleAnim, {
+                    toValue: 1,
+                    tension: 40,
+                    friction: 6,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacityAnim, {
+                    toValue: 1,
+                    duration: 350,
+                    useNativeDriver: true,
+                })
+            ]).start();
+        }
+    }, [visible]);
+
+    if (!visible) return null;
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.75)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+                <Animated.View
+                    style={{
+                        transform: [{ scale: scaleAnim }],
+                        opacity: opacityAnim,
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: 32,
+                        padding: 30,
+                        width: '100%',
+                        maxWidth: 340,
+                        alignItems: 'center',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 20 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 25,
+                        elevation: 15
+                    }}
+                >
+                    {/* Animated Checkmark Circle */}
+                    <View 
+                        style={{ 
+                            width: 90, 
+                            height: 90, 
+                            borderRadius: 45, 
+                            backgroundColor: '#DCFCE7', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            marginBottom: 24,
+                            borderWidth: 4,
+                            borderColor: '#86EFAC'
+                        }}
+                    >
+                        <Ionicons name="checkmark-circle" size={54} color="#16A34A" />
+                    </View>
+
+                    {/* Success message */}
+                    <Text className="text-2xl font-bold text-slate-800 text-center">Unlock Successful!</Text>
+                    <Text className="text-sm text-slate-500 text-center mt-3 leading-relaxed">
+                        Contact unlocked! You can now call and message this service professional.
+                    </Text>
+
+                    {/* Button */}
+                    <TouchableOpacity
+                        onPress={onClose}
+                        style={{ backgroundColor: themeColor, width: '100%', borderRadius: 18, marginTop: 28 }}
+                        className="py-4 items-center justify-center flex-row"
+                    >
+                        <Text className="text-base font-bold text-white">View Contact</Text>
+                        <Ionicons name="arrow-forward-outline" size={20} color="white" style={{ marginLeft: 8 }} />
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+        </Modal>
+    );
+};
 
 export default function ServiceDetailScreen() {
     const user = useAppStore(state => state.user);
@@ -58,6 +260,10 @@ export default function ServiceDetailScreen() {
     const [loading, setLoading] = useState(true);
     const [loadingTags, setLoadingTags] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedContact, setSelectedContact] = useState<any | null>(null);
+    const [showContactModal, setShowContactModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [tempProviderForSuccess, setTempProviderForSuccess] = useState<any | null>(null);
 
     useEffect(() => {
         fetchProviders();
@@ -226,7 +432,8 @@ export default function ServiceDetailScreen() {
         }
 
         if (isUnlocked(provider.provider_id)) {
-            Alert.alert('Contact', `Phone: ${provider.mobile || 'Not available'}`);
+            setSelectedContact(provider);
+            setShowContactModal(true);
             return;
         }
 
@@ -235,16 +442,9 @@ export default function ServiceDetailScreen() {
             const success = await handleRazorpayPayment(provider);
 
             if (success) {
-                Alert.alert(
-                    'Unlock Successful',
-                    'Contact unlocked! You can now call this professional.',
-                    [{
-                        text: 'OK',
-                        onPress: async () => {
-                            await unlockWorker(provider.provider_id);
-                        }
-                    }]
-                );
+                await unlockWorker(provider.provider_id);
+                setTempProviderForSuccess(provider);
+                setShowSuccessModal(true);
             } else {
                 Alert.alert('Payment Cancelled', 'The payment process was not completed.');
             }
@@ -256,7 +456,12 @@ export default function ServiceDetailScreen() {
     };
 
     const filteredProviders = providers.filter(p => {
-        const matchesSearch = p.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+        const query = searchQuery.toLowerCase().trim();
+        const matchesSearch = query === '' ||
+            p.full_name.toLowerCase().includes(query) ||
+            p.description?.toLowerCase().includes(query) ||
+            p.tags?.some((t: string) => t.toLowerCase().includes(query));
+
         const matchesSubCat = selectedSubCategories.length > 0
             ? selectedSubCategories.some(tag =>
                 p.description?.toLowerCase().includes(tag.toLowerCase()) ||
@@ -325,6 +530,11 @@ export default function ServiceDetailScreen() {
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery('')} className="p-1">
+                            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
 
@@ -510,6 +720,29 @@ export default function ServiceDetailScreen() {
                         </TouchableOpacity>
                     </View>
                 )}
+            />
+
+            <ContactDetailModal
+                visible={showContactModal}
+                provider={selectedContact}
+                onClose={() => {
+                    setShowContactModal(false);
+                    setSelectedContact(null);
+                }}
+                themeColor={color || '#3B82F6'}
+                categoryName={name}
+            />
+
+            <SuccessModal
+                visible={showSuccessModal}
+                onClose={() => {
+                    setShowSuccessModal(false);
+                    if (tempProviderForSuccess) {
+                        setSelectedContact(tempProviderForSuccess);
+                        setShowContactModal(true);
+                    }
+                }}
+                themeColor={color || '#3B82F6'}
             />
         </View>
     );
