@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput, useColorScheme, Linking, LayoutAnimation, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, useColorScheme, Linking, LayoutAnimation, Platform, Keyboard } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -154,7 +154,7 @@ export default function ContactScreen() {
 
     const renderHeader = () => (
         <View className="w-full mb-6">
-            <View className="px-5 flex-row items-center justify-between min-h-12">
+            <View className="px-5 flex-row items-center justify-between min-h-12" onTouchStart={(e) => e.stopPropagation()}>
                 <Text className="text-3xl font-black text-slate-800 dark:text-slate-100 flex-1 mr-2">Your Contacts</Text>
                 {isSearchExpanded ? (
                     <View className="w-[50%] flex-row items-center rounded-xl px-2.5 py-1.5 border-2 border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900">
@@ -214,7 +214,17 @@ export default function ContactScreen() {
     );
 
     return (
-        <View className="flex-1 bg-white dark:bg-slate-950">
+        <View
+            className="flex-1 bg-white dark:bg-slate-950"
+            onTouchStart={() => {
+                if (isSearchExpanded) {
+                    Keyboard.dismiss();
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setIsSearchExpanded(false);
+                    setSearchQuery('');
+                }
+            }}
+        >
             <FlatList
                 className="flex-1"
                 showsVerticalScrollIndicator={false}

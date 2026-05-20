@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Platform } from 'react-native';
+import { Dimensions, FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Platform, Keyboard } from 'react-native';
 import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -220,7 +220,7 @@ export default function ConsumerHome() {
 
 
             {/* Explore Services Header */}
-            <View className="mt-8 px-5 mb-6 flex-row items-center justify-between h-12">
+            <View className="mt-8 px-5 mb-6 flex-row items-center justify-between h-12" onTouchStart={(e) => e.stopPropagation()}>
                 <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">Explore Services</Text>
                 {isSearchExpanded ? (
                     <View className="w-[50%] flex-row items-center rounded-xl px-2.5 py-1.5 border-2 border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900">
@@ -266,7 +266,17 @@ export default function ConsumerHome() {
     );
 
     return (
-        <View className="flex-1 bg-white dark:bg-slate-950">
+        <View
+            className="flex-1 bg-white dark:bg-slate-950"
+            onTouchStart={() => {
+                if (isSearchExpanded) {
+                    Keyboard.dismiss();
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setIsSearchExpanded(false);
+                    setSearchQuery('');
+                }
+            }}
+        >
             {showSolidBar && (
                 <View
                     style={{
