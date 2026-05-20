@@ -142,9 +142,11 @@ export default function Register() {
                 }
                 if (authData.accessToken) {
                     await AsyncStorage.setItem('@@app_token', authData.accessToken);
+                    insforge.setAccessToken(authData.accessToken);
                 }
                 if (authData.refreshToken) {
                     await AsyncStorage.setItem('@@app_refresh_token', authData.refreshToken);
+                    insforge.getHttpClient().setRefreshToken(authData.refreshToken);
                 }
                 finalUserId = authData.user.id;
             }

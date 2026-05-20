@@ -121,9 +121,11 @@ export default function Login() {
 
                 if (sessionData?.accessToken) {
                     await AsyncStorage.setItem('@@app_token', sessionData.accessToken);
+                    insforge.setAccessToken(sessionData.accessToken);
                 }
                 if (sessionData?.refreshToken) {
                     await AsyncStorage.setItem('@@app_refresh_token', sessionData.refreshToken);
+                    insforge.getHttpClient().setRefreshToken(sessionData.refreshToken);
                 }
 
                 // Get the authenticated user

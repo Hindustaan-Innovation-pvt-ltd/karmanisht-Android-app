@@ -35,6 +35,15 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             return null;
         }
         try {
+            // Ensure token is set on insforge client instance before executing database requests
+            const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+            const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+            if (token) {
+                insforge.setAccessToken(token);
+            }
+            if (refreshToken) {
+                insforge.getHttpClient().setRefreshToken(refreshToken);
+            }
             // 1. Check service providers (workers) table first
             const { data: workerData } = await insforge.database
                 .from('service_providers')
@@ -87,7 +96,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     }
                 });
                 await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
-                get().refreshProfile().catch(err => console.error('[processUserSession] refreshProfile error:', err));
+                await get().refreshProfile();
                 return profile;
             }
 
@@ -110,7 +119,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 };
                 set({ user: profile });
                 await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
-                get().refreshProfile().catch(err => console.error('[processUserSession] refreshProfile error:', err));
+                await get().refreshProfile();
                 return profile;
             }
 
@@ -150,148 +159,154 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             }
 
             // Immediately fetch categories in parallel
-            const categoriesPromise = get().fetchCategories().catch(() => {});
+            let categoriesPromise = get().fetchCategories().catch(() => {});
+            let hasToken = !!token;
+
+            if (refreshToken && !token) {
+                try {
+                    const { data: refreshed } = await insforge.auth.refreshSession({ refreshToken });
+                    if (refreshed?.accessToken) {
+                        insforge.setAccessToken(refreshed.accessToken);
+                        await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, refreshed.accessToken);
+                        hasToken = true;
+                    }
+                    if (refreshed?.refreshToken) {
+                        insforge.getHttpClient().setRefreshToken(refreshed.refreshToken);
+                        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshed.refreshToken);
+                    }
+                } catch {
+                    // Refresh failed
+                }
+            }
+
+            // If we have an active access token, force-fetch the full database categories list
+            if (hasToken) {
+                categoriesPromise = get().fetchCategories(true).catch(() => {});
+            }
+
+            // A. Revalidate User Profile from DB
+            const activeUser = get().user;
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (activeUser && activeUser.id && !activeUser.id.startsWith('local_') && uuidRegex.test(activeUser.id)) {
+                const tableName = activeUser.role === 'worker' ? 'service_providers' : 'users';
+                const { data, error } = await insforge.database
+                    .from(tableName)
+                    .select('*')
+                    .eq('id', activeUser.id)
+                    .maybeSingle();
+
+                if (data && !error) {
+                    const updatedUser: UserProfile = {
+                        ...activeUser,
+                        name: data.full_name || activeUser.name,
+                        phone: data.mobile || activeUser.phone,
+                        isOnline: data.is_active ?? activeUser.isOnline,
+                        searchRadiusKm: data.search_radius_km || activeUser.searchRadiusKm,
+                        profile_image: data.profile_image || activeUser.profile_image,
+                        // isPremium is only valid for workers — read from service_providers.is_premium
+                        isPremium: activeUser.role === 'worker'
+                            ? (data.is_premium ?? activeUser.isPremium ?? false)
+                            : undefined,
+                    };
+
+                    if (activeUser.role === 'worker') {
+                        updatedUser.profession = data.business_name || activeUser.profession;
+                        updatedUser.bio = data.bio || activeUser.bio;
+                        updatedUser.experienceYears = data.experience_years || activeUser.experienceYears;
+                        updatedUser.experience = `${data.experience_years || 0} yrs`;
+
+                        const { data: locData } = await insforge.database
+                            .from('provider_locations')
+                            .select('service_radius_km, area_name')
+                            .eq('provider_id', activeUser.id)
+                            .maybeSingle();
+                        if (locData) {
+                            updatedUser.searchRadiusKm = locData.service_radius_km || 5;
+                            updatedUser.location = locData.area_name || activeUser.location;
+                        }
+
+                        const { data: servicesData } = await insforge.database
+                            .from('provider_services')
+                            .select('category_id')
+                            .eq('provider_id', activeUser.id);
+
+                        updatedUser.hasSpecialties = (servicesData && servicesData.length > 0) || false;
+                        if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
+                            updatedUser.professionId = servicesData[0].category_id;
+                        }
+
+                        set({
+                            workerStats: {
+                                rating: data.average_rating ? Number(data.average_rating) : 0.0,
+                                jobsDone: data.total_jobs_completed || 0,
+                                responseTime: 'Fast'
+                            }
+                        });
+                    } else {
+                        updatedUser.role = data.role || activeUser.role;
+                    }
+
+                    set({ user: updatedUser });
+                    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+                } else if (error || !data) {
+                    // Account no longer exists in DB or call failed with no record
+                    if (!error || (error as any).status === 404 || error.code === 'P0001') {
+                        await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+                        set({ user: defaultUser });
+                    }
+                }
+            }
+
+            // B. Sync Unlocked Contacts & Active Passes for Consumers
+            const latestUser = get().user;
+            if (latestUser && latestUser.id && latestUser.role === 'consumer' && uuidRegex.test(latestUser.id)) {
+                // Fetch active passes
+                await get().fetchActivePasses().catch(err => console.error('[refreshProfile] fetchActivePasses error:', err));
+
+                const { data: txs, error: txError } = await insforge.database
+                    .from('unlock_transactions')
+                    .select('provider_id')
+                    .eq('user_id', latestUser.id);
+
+                if (txs && !txError) {
+                    const providerIds = txs.map(t => t.provider_id).filter(id => id && uuidRegex.test(id));
+                    set({ unlockedContacts: providerIds });
+
+                    if (providerIds.length > 0) {
+                        const { data: providers, error: providersError } = await insforge.database
+                            .from('service_providers')
+                            .select('*')
+                            .in('id', providerIds);
+
+                        if (providers && !providersError) {
+                            const { data: pServices } = await insforge.database
+                                .from('provider_services')
+                                .select('provider_id, category_id')
+                                .in('provider_id', providerIds);
+
+                            const providersWithCat = providers.map(p => {
+                                const match = pServices?.find(ps => ps.provider_id === p.id);
+                                return { ...p, category_id: match ? match.category_id : null };
+                            });
+                            set({ unlockedProviders: providersWithCat });
+                        }
+                    } else {
+                        set({ unlockedProviders: [] });
+                    }
+                }
+            } else {
+                set({ unlockedContacts: [], unlockedProviders: [] });
+            }
+
+            // C. Await Categories Load
+            await categoriesPromise;
 
             // Instantly clear the boot loader spinner so app transitions are lightning-fast
             set({ isLoading: false, hasCheckedAuth: true });
 
-            // Run database revalidation, token refresh, geocoding and location updates concurrently in the background
+            // D. Sync GPS location in background
             (async () => {
                 try {
-                    if (refreshToken && !token) {
-                        try {
-                            const { data: refreshed } = await insforge.auth.refreshSession({ refreshToken });
-                            if (refreshed?.accessToken) {
-                                insforge.setAccessToken(refreshed.accessToken);
-                                await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, refreshed.accessToken);
-                            }
-                            if (refreshed?.refreshToken) {
-                                insforge.getHttpClient().setRefreshToken(refreshed.refreshToken);
-                                await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshed.refreshToken);
-                            }
-                        } catch {
-                            // Refresh failed
-                        }
-                    }
-
-                    // A. Revalidate User Profile from DB
-                    const activeUser = get().user;
-                    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                    if (activeUser && activeUser.id && !activeUser.id.startsWith('local_') && uuidRegex.test(activeUser.id)) {
-                        const tableName = activeUser.role === 'worker' ? 'service_providers' : 'users';
-                        const { data, error } = await insforge.database
-                            .from(tableName)
-                            .select('*')
-                            .eq('id', activeUser.id)
-                            .maybeSingle();
-
-                        if (data && !error) {
-                            const updatedUser: UserProfile = {
-                                ...activeUser,
-                                name: data.full_name || activeUser.name,
-                                phone: data.mobile || activeUser.phone,
-                                isOnline: data.is_active ?? activeUser.isOnline,
-                                searchRadiusKm: data.search_radius_km || activeUser.searchRadiusKm,
-                                profile_image: data.profile_image || activeUser.profile_image,
-                                // isPremium is only valid for workers — read from service_providers.is_premium
-                                isPremium: activeUser.role === 'worker'
-                                    ? (data.is_premium ?? activeUser.isPremium ?? false)
-                                    : undefined,
-                            };
-
-                            if (activeUser.role === 'worker') {
-                                updatedUser.profession = data.business_name || activeUser.profession;
-                                updatedUser.bio = data.bio || activeUser.bio;
-                                updatedUser.experienceYears = data.experience_years || activeUser.experienceYears;
-                                updatedUser.experience = `${data.experience_years || 0} yrs`;
-
-                                const { data: locData } = await insforge.database
-                                    .from('provider_locations')
-                                    .select('service_radius_km, area_name')
-                                    .eq('provider_id', activeUser.id)
-                                    .maybeSingle();
-                                if (locData) {
-                                    updatedUser.searchRadiusKm = locData.service_radius_km || 5;
-                                    updatedUser.location = locData.area_name || activeUser.location;
-                                }
-
-                                const { data: servicesData } = await insforge.database
-                                    .from('provider_services')
-                                    .select('category_id')
-                                    .eq('provider_id', activeUser.id);
-
-                                updatedUser.hasSpecialties = (servicesData && servicesData.length > 0) || false;
-                                if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
-                                    updatedUser.professionId = servicesData[0].category_id;
-                                }
-
-                                set({
-                                    workerStats: {
-                                        rating: data.average_rating ? Number(data.average_rating) : 0.0,
-                                        jobsDone: data.total_jobs_completed || 0,
-                                        responseTime: 'Fast'
-                                    }
-                                });
-                            } else {
-                                updatedUser.role = data.role || activeUser.role;
-                            }
-
-                            set({ user: updatedUser });
-                            await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
-                        } else if (error || !data) {
-                            // Account no longer exists in DB or call failed with no record
-                            if (!error || (error as any).status === 404 || error.code === 'P0001') {
-                                await AsyncStorage.removeItem(STORAGE_KEYS.USER);
-                                set({ user: defaultUser });
-                            }
-                        }
-                    }
-
-                    // B. Sync Unlocked Contacts & Active Passes for Consumers
-                    const latestUser = get().user;
-                    if (latestUser && latestUser.id && latestUser.role === 'consumer' && uuidRegex.test(latestUser.id)) {
-                        // Fetch active passes in parallel
-                        get().fetchActivePasses().catch(err => console.error('[refreshProfile] fetchActivePasses error:', err));
-
-                        const { data: txs, error: txError } = await insforge.database
-                            .from('unlock_transactions')
-                            .select('provider_id')
-                            .eq('user_id', latestUser.id);
-
-                        if (txs && !txError) {
-                            const providerIds = txs.map(t => t.provider_id).filter(id => id && uuidRegex.test(id));
-                            set({ unlockedContacts: providerIds });
-
-                            if (providerIds.length > 0) {
-                                const { data: providers, error: providersError } = await insforge.database
-                                    .from('service_providers')
-                                    .select('*')
-                                    .in('id', providerIds);
-
-                                if (providers && !providersError) {
-                                    const { data: pServices } = await insforge.database
-                                        .from('provider_services')
-                                        .select('provider_id, category_id')
-                                        .in('provider_id', providerIds);
-
-                                    const providersWithCat = providers.map(p => {
-                                        const match = pServices?.find(ps => ps.provider_id === p.id);
-                                        return { ...p, category_id: match ? match.category_id : null };
-                                    });
-                                    set({ unlockedProviders: providersWithCat });
-                                }
-                            } else {
-                                set({ unlockedProviders: [] });
-                            }
-                        }
-                    } else {
-                        set({ unlockedContacts: [], unlockedProviders: [] });
-                    }
-
-                    // C. Await Categories Load
-                    await categoriesPromise;
-
-                    // D. Sync GPS location in background
                     const { status } = await Location.requestForegroundPermissionsAsync();
                     if (status === 'granted') {
                         const loc = (await Location.getLastKnownPositionAsync()) ??
@@ -328,8 +343,8 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                             }
                         }
                     }
-                } catch (bgError) {
-                    console.error('[refreshProfile] Background Sync Error:', bgError);
+                } catch (gpsError) {
+                    console.warn('[refreshProfile] Background location sync error:', gpsError);
                 }
             })();
         } catch (err) {
@@ -523,6 +538,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             sessionToken: null,
             isLoading: false,
             hasCheckedAuth: true,
+            categories: [],
         });
     },
 });
