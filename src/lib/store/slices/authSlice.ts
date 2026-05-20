@@ -140,14 +140,10 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             }
 
             let cachedUser = null;
-            let currentUserId = null;
-            let currentUserRole = null;
 
             if (cachedUserStr) {
                 cachedUser = JSON.parse(cachedUserStr);
                 if (cachedUser && cachedUser.id) {
-                    currentUserId = cachedUser.id;
-                    currentUserRole = cachedUser.role;
                     // Immediately set user to enable instant routing and render cached profile UI
                     set({ user: cachedUser });
                 }

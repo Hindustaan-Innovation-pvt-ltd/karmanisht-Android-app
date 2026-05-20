@@ -7,18 +7,17 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
 
 const MENU_ITEMS = [
-    { id: 'profile', title: 'Profile Info', icon: 'person', library: Octicons, color: '#6366F1', bg: '#EEF2FF', darkBg: '#312E81' },
-    { id: 'payments', title: 'Payment History', icon: 'currency-rupee', library: MaterialCommunityIcons, color: '#10B981', bg: '#ECFDF5', darkBg: '#064E3B' },
-    { id: 'help', title: 'Help and Support', icon: 'headphones', library: Feather, color: '#3B82F6', bg: '#EFF6FF', darkBg: '#1E3A8A' },
-    { id: 'settings', title: 'Settings', icon: 'settings', library: Ionicons, color: '#64748B', bg: '#F8FAFC', darkBg: '#334155' },
-    { id: 'logout', title: 'Logout', icon: 'logout', library: MaterialCommunityIcons, color: '#EF4444', bg: '#FEF2F2', darkBg: '#7F1D1D' },
+    { id: 'profile', title: 'Profile Info', description: 'Name, photo, and account details', icon: 'person', library: Octicons },
+    { id: 'payments', title: 'Payment History', description: 'View transaction and unlock records', icon: 'currency-rupee', library: MaterialCommunityIcons },
+    { id: 'help', title: 'Help and Support', description: 'Contact our support team', icon: 'headphones', library: Feather },
+    { id: 'settings', title: 'Settings', description: 'Manage language and visual options', icon: 'settings', library: Ionicons },
+    { id: 'logout', title: 'Logout', description: 'Sign out of your session', icon: 'logout', library: MaterialCommunityIcons, isDestructive: true },
 ];
 
 export default function ProfileScreen() {
     const { colors, isDark } = useTheme();
     const user = useAppStore(state => state.user);
     const signOut = useAppStore(state => state.signOut);
-    const unlockedContacts = useAppStore(state => state.unlockedContacts || []);
     const router = useRouter();
 
     const handleMenuPress = async (id: string) => {
@@ -42,70 +41,74 @@ export default function ProfileScreen() {
     return (
         <View className="flex-1 bg-white dark:bg-slate-950">
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-                {/* Header Background */}
-                <View className="h-56 bg-slate-900 dark:bg-slate-900 w-full justify-end px-8 pb-16">
-                    <Text className="text-white text-3xl font-black tracking-tight">Your Account</Text>
-                    <Text className="text-slate-400 font-medium text-sm mt-1">Manage profiles, transactions, and settings</Text>
+                {/* Profile Header Section */}
+                <View className="pt-16 px-6 pb-6">
+                    <Text className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Profile</Text>
                 </View>
 
-                {/* Profile Section */}
-                <View className="px-6 -mt-12">
-                    <View className="bg-white dark:bg-slate-900 rounded-[32px] p-6 border border-slate-100 dark:border-slate-800 shadow-xl flex-row items-center">
-                        <View className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-slate-100 dark:border-slate-800 shadow-md">
+                {/* Consumer Account Info (Clean Flat Row) */}
+                <View className="px-6 pb-6">
+                    <View className="flex-row items-center p-4 bg-slate-50 dark:bg-slate-905 rounded-[24px] border border-slate-100 dark:border-slate-900">
+                        <View className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 dark:border-slate-800">
                             <Image
                                 source={{ uri: profileImage }}
                                 className="w-full h-full"
                                 resizeMode="cover"
                             />
                         </View>
-                        <View className="ml-5 flex-1 justify-center">
-                            <View className="flex-row items-center flex-wrap">
-                                <Text className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight mr-2" numberOfLines={1}>
-                                    {user?.name || 'User'}
-                                </Text>
-                            </View>
-                            <Text className="text-slate-500 dark:text-slate-400 font-bold text-sm mt-0.5">
+                        <View className="ml-4 flex-1 justify-center">
+                            <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                                {user?.name || 'User'}
+                            </Text>
+                            <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-0.5">
                                 {user?.phone || 'No mobile linked'}
                             </Text>
-                            <View className="flex-row mt-2.5">
-                                <View className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/30 px-2.5 py-1 rounded-lg">
-                                    <Text className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                                        {user?.role || 'Consumer'}
-                                    </Text>
-                                </View>
-                            </View>
+                        </View>
+                        <View className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-3 py-1 rounded-full">
+                            <Text className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                {user?.role || 'Consumer'}
+                            </Text>
                         </View>
                     </View>
                 </View>
 
-
-                {/* Menu List Card */}
-                <View className="px-6 mt-8">
-                    <Text className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 ml-1">Account Options</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm p-2">
-                        {MENU_ITEMS.map((item, idx) => {
+                {/* Account Options List */}
+                <View className="px-6 mt-4">
+                    <Text className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">
+                        Account Options
+                    </Text>
+                    
+                    <View className="border-t border-slate-100 dark:border-slate-900">
+                        {MENU_ITEMS.map((item) => {
                             const IconLib = item.library;
+                            const isDestructive = item.isDestructive;
                             return (
                                 <TouchableOpacity 
                                     key={item.id} 
                                     onPress={() => handleMenuPress(item.id)}
-                                    className={`flex-row items-center justify-between py-5 px-4 ${idx !== MENU_ITEMS.length - 1 ? 'border-b border-slate-150 dark:border-slate-800/80' : ''}`}
+                                    className="flex-row items-center justify-between py-4 border-b border-slate-100 dark:border-slate-900"
                                 >
-                                    <View className="flex-row items-center">
-                                        <View 
-                                            style={{ backgroundColor: isDark ? item.darkBg : item.bg }} 
-                                            className="w-11 h-11 rounded-2xl items-center justify-center"
-                                        >
-                                            <IconLib name={item.icon as any} size={20} color={item.color} />
+                                    <View className="flex-row items-center flex-1 mr-4">
+                                        <View className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 items-center justify-center border border-slate-100/50 dark:border-slate-800/30">
+                                            <IconLib 
+                                                name={item.icon as any} 
+                                                size={18} 
+                                                color={isDestructive ? '#EF4444' : (isDark ? '#94A3B8' : '#475569')} 
+                                            />
                                         </View>
-                                        <Text className={`ml-4 text-base font-bold ${item.id === 'logout' ? 'text-red-500' : 'text-slate-800 dark:text-slate-100'}`}>
-                                            {item.title}
-                                        </Text>
+                                        <View className="ml-3 flex-1">
+                                            <Text className={`text-base font-semibold ${isDestructive ? 'text-red-500' : 'text-slate-800 dark:text-slate-100'}`}>
+                                                {item.title}
+                                            </Text>
+                                            <Text className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                                {item.description}
+                                            </Text>
+                                        </View>
                                     </View>
                                     <Ionicons 
                                         name="chevron-forward" 
-                                        size={18} 
-                                        color={item.id === 'logout' ? '#EF4444' : colors.inactive} 
+                                        size={16} 
+                                        color={isDestructive ? '#EF4444' : (isDark ? '#475569' : '#CBD5E1')} 
                                     />
                                 </TouchableOpacity>
                             );
@@ -119,4 +122,3 @@ export default function ProfileScreen() {
         </View>
     );
 }
-

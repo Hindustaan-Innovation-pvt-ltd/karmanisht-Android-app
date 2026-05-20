@@ -123,7 +123,7 @@ export async function uploadToInsForge(bucketName: string, path: string, selecte
     let responseText = '';
     try {
       responseText = await uploadResponse.text();
-    } catch (readError) {
+    } catch (_readError) {
       responseText = '(could not read response text)';
     }
     console.error('[uploadToInsForge] S3 upload rejected. Status:', uploadResponse.status, 'Response:', responseText);
@@ -133,7 +133,7 @@ export async function uploadToInsForge(bucketName: string, path: string, selecte
   if (strategyResponse.confirmRequired && strategyResponse.confirmUrl) {
     console.log('[uploadToInsForge] Confirming upload at:', strategyResponse.confirmUrl);
     try {
-      const confirmResponse = await httpClient.post(
+      await httpClient.post(
         strategyResponse.confirmUrl,
         {
           size,

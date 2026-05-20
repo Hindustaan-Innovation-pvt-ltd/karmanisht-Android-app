@@ -119,8 +119,8 @@ export default function SettingsScreen() {
     return (
         <View className="flex-1 bg-white dark:bg-slate-950">
             {/* Minimal Header */}
-            <View 
-                style={{ paddingTop: Math.max(insets.top, 12) }} 
+            <View
+                style={{ paddingTop: Math.max(insets.top, 12) }}
                 className="pb-4 px-6 flex-row items-center justify-between bg-white dark:bg-slate-950 border-b border-slate-50 dark:border-slate-900/50"
             >
                 <ScalePressable
@@ -368,29 +368,6 @@ export default function SettingsScreen() {
                     Account
                 </Text>
                 <View className="mb-10 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/80 rounded-[28px] overflow-hidden">
-                    {/* Logout Row */}
-                    <ScalePressable
-                        onPress={async () => {
-                            await signOut();
-                            router.replace('/');
-                        }}
-                        hapticType="medium"
-                        className="flex-row items-center justify-between p-4 bg-transparent"
-                    >
-                        <View className="flex-row items-center flex-1 pr-4">
-                            <View className="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-950/20 items-center justify-center">
-                                <Feather name="log-out" size={18} color="#F97316" />
-                            </View>
-                            <View className="ml-4 flex-1">
-                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Logout</Text>
-                                <Text className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
-                                    Sign out of your session
-                                </Text>
-                            </View>
-                        </View>
-                        <Ionicons name="chevron-forward" size={16} color="#FDBA74" />
-                    </ScalePressable>
-
                     <View className="h-[1px] bg-slate-100 dark:bg-slate-800/50 mx-4" />
 
                     {/* Delete Account Row */}
@@ -451,8 +428,8 @@ export default function SettingsScreen() {
                                     onPress={() => handleRadiusChange(opt)}
                                     hapticType="selection"
                                     className={`w-[31%] py-3.5 rounded-xl items-center justify-center mb-3.5 border ${radiusKm === opt
-                                            ? 'bg-blue-600 border-blue-600 dark:bg-blue-600 dark:border-blue-600'
-                                            : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
+                                        ? 'bg-blue-600 border-blue-600 dark:bg-blue-600 dark:border-blue-600'
+                                        : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
                                         }`}
                                 >
                                     <Text className={`font-bold text-sm ${radiusKm === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>
@@ -481,7 +458,7 @@ export default function SettingsScreen() {
                 <View className="flex-1 justify-end bg-black/40">
                     <View className="bg-white dark:bg-slate-900 rounded-t-[28px] p-6 pb-8 border-t border-slate-100 dark:border-slate-800 shadow-xl">
                         <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full self-center mb-6" />
-                        
+
                         <View className="flex-row justify-between items-center mb-2">
                             <Text className="text-xl font-bold text-slate-950 dark:text-slate-100">Help & Support</Text>
                             <ScalePressable
@@ -542,7 +519,7 @@ export default function SettingsScreen() {
                 onRequestClose={() => setPolicyVisible(false)}
             >
                 <View className="flex-1 bg-white dark:bg-slate-950">
-                    <View 
+                    <View
                         style={{ paddingTop: Math.max(insets.top, 16) }}
                         className="pb-6 px-6 flex-row items-center justify-between border-b border-slate-50 dark:border-slate-900"
                     >
