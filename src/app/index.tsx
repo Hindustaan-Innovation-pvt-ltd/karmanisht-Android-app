@@ -25,7 +25,7 @@ const BackgroundPattern = () => {
             </View>
 
             {/* Red Track - Upper Middle Left (second.png) */}
-            <View style={{ position: 'absolute', top: '2%', left: 0, width: '68%', height: 220}}>
+            <View style={{ position: 'absolute', top: '2%', left: 0, width: '68%', height: 220 }}>
                 <Image
                     source={require('@assets/images/second.png')}
                     style={{ width: '100%', height: '100%' }}
@@ -109,7 +109,7 @@ export default function Index() {
             <View className='p-6'>
                 <View className='items-center mb-8'>
                     <Image
-                        source={require('@assets/images/logo.png')}
+                        source={require('@assets/images/icon.png')}
                         style={{ width: 100, height: 100, marginBottom: 16 }}
                         resizeMode="contain"
                     />
@@ -124,15 +124,7 @@ export default function Index() {
                         activeOpacity={0.8}
                         onPress={() => router.push('/(onboarding)/auth/login')}
                     >
-                        <Text className='text-xl font-bold text-white'>Log In</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        className='bg-white border-2 border-black dark:border-slate-700 py-5 rounded-2xl items-center'
-                        activeOpacity={0.8}
-                        onPress={() => router.push('/(onboarding)/auth/register')}
-                    >
-                        <Text className='text-xl font-bold text-black dark:text-white'>Sign Up</Text>
+                        <Text className='text-xl font-bold text-white'>Get Started</Text>
                     </TouchableOpacity>
                 </View>
             </View>
