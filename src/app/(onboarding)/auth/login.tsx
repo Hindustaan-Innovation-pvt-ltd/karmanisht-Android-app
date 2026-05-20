@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react'
-import { Text, TextInput, TouchableOpacity, View, Platform, KeyboardAvoidingView, Image, Alert, ActivityIndicator, useColorScheme } from 'react-native'
+import { Text, TextInput, View, Platform, KeyboardAvoidingView, Image, Alert, ActivityIndicator, useColorScheme } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Google } from '@/svg/Google'
 import { useRouter } from 'expo-router'
@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { insforge } from '@/lib/insforge'
 import { useAppStore } from '@/lib/store'
 import { getOnboardingRoute } from '@/lib/utils'
+import ScalePressable from '@/components/scale-pressable'
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -160,17 +161,18 @@ export default function Login() {
             >
                 <View className='p-4 flex-col gap-6'>
                     <View className='flex-col gap-4 items-center'>
-                        <TouchableOpacity
+                        <ScalePressable
                             className='flex-row px-4 items-center border border-slate-300 dark:border-slate-700 w-full py-3 rounded-lg relative bg-white dark:bg-slate-900'
-                            activeOpacity={0.7}
                             onPress={handleGoogleSignIn}
                             disabled={loading}
+                            hapticType="light"
+                            scaleTo={0.97}
                         >
                             <Google className='absolute left-4' />
                             <Text className='w-full text-lg font-semibold text-center text-slate-900 dark:text-slate-100'>
                                 Sign in with Google
                             </Text>
-                        </TouchableOpacity>
+                        </ScalePressable>
                         <Text className='text-center font-semibold text-slate-900 dark:text-slate-100'>OR</Text>
                     </View>
 
@@ -184,28 +186,34 @@ export default function Login() {
                             onChangeText={setMobile}
                             maxLength={10}
                         />
-                        <TouchableOpacity
+                        <ScalePressable
                             className='bg-black dark:bg-slate-800 py-4 rounded-lg items-center'
-                            activeOpacity={0.7}
                             onPress={handleGetOtp}
                             disabled={loading}
+                            hapticType="medium"
+                            scaleTo={0.96}
                         >
                             {loading ? (
                                 <ActivityIndicator color="white" />
                             ) : (
                                 <Text className='text-white font-bold text-lg'>Get OTP</Text>
                             )}
-                        </TouchableOpacity>
+                        </ScalePressable>
                     </View>
 
                     <View className='flex-col gap-2'>
                         <Text className='text-center text-lg font-medium text-slate-500'>Don&apos;t have an account?</Text>
-                        <TouchableOpacity onPress={() => router.push('/(onboarding)/auth/register')}>
+                        <ScalePressable 
+                            onPress={() => router.push('/(onboarding)/auth/register')}
+                            hapticType="light"
+                            scaleTo={0.98}
+                        >
                             <Text className='text-center text-black dark:text-white font-bold'>Create new account</Text>
-                        </TouchableOpacity>
+                        </ScalePressable>
                     </View>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     )
 }
+

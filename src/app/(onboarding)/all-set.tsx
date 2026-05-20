@@ -1,16 +1,24 @@
 // @ts-nocheck
-import React from 'react';
-import { Text, TouchableOpacity, View, StyleSheet, useColorScheme } from 'react-native';
+import React, { useEffect } from 'react';
+import { Text, View, StyleSheet, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
+import Animated, { ZoomIn } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import ScalePressable from '@/components/scale-pressable';
 
 export default function AllSet() {
     const router = useRouter();
     const { user } = useAppStore();
     const colorScheme = useColorScheme();
     const isWorker = user?.role === 'worker';
+
+    useEffect(() => {
+        // Trigger success haptic notification on mount
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }, []);
 
     const handleGoToDashboard = () => {
         if (isWorker) {
@@ -24,9 +32,12 @@ export default function AllSet() {
         <SafeAreaView className="flex-1 bg-white dark:bg-slate-950 items-center justify-between p-6">
             <View className="w-full items-center mt-12 flex-1 justify-center">
                 {/* Large Checkmark Icon */}
-                <View className="size-24 rounded-full bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500 items-center justify-center mb-8">
+                <Animated.View 
+                    entering={ZoomIn.springify().damping(12).stiffness(100)}
+                    className="size-24 rounded-full bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500 items-center justify-center mb-8"
+                >
                     <Feather name="check" size={44} color="#10B981" />
-                </View>
+                </Animated.View>
 
                 {/* Main Titles */}
                 <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2 text-center">
@@ -102,16 +113,18 @@ export default function AllSet() {
 
             {/* Bottom CTA Button */}
             <View className="w-full mb-4">
-                <TouchableOpacity
+                <ScalePressable
                     onPress={handleGoToDashboard}
-                    activeOpacity={0.8}
-                    className="w-full bg-[#18181B] dark:bg-slate-100 py-4 rounded-2xl items-center justify-center"
+                    hapticType="medium"
+                    scaleTo={0.96}
+                    className="w-full bg-[#18181B] dark:bg-slate-100 py-4 rounded-2xl items-center justify-center animate-bounce"
                 >
                     <Text className="text-white dark:text-slate-950 font-black text-base">
                         Go to dashboard
                     </Text>
-                </TouchableOpacity>
+                </ScalePressable>
             </View>
         </SafeAreaView>
     );
 }
+
