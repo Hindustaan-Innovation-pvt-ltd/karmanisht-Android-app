@@ -258,7 +258,7 @@ export default function WorkerSettings() {
                         
                         {/* Verification Documents (KYC) */}
                         <TouchableOpacity
-                            onPress={() => router.push('/(onboarding)/worker/verify-identity?from=dashboard')}
+                            onPress={() => router.push('/(protected)/worker/verify-identity?from=dashboard')}
                             activeOpacity={0.7}
                             className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
                         >

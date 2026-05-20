@@ -1,11 +1,19 @@
 // @ts-nocheck
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import React from 'react';
 import { HomeIcon, BriefcaseIcon, SettingsIcon } from '@/svg/icons';
 import { useTheme } from '@/lib/theme';
 
 export default function WorkerProtectedLayout() {
     const { colors } = useTheme();
+    const pathname = usePathname();
+
+    const isMainTab = pathname === '/worker' || 
+                      pathname === '/worker/' ||
+                      pathname === '/worker/leads' || 
+                      pathname === '/worker/leads/' || 
+                      pathname === '/worker/settings' ||
+                      pathname === '/worker/settings/';
 
     return (
         <Tabs
@@ -15,12 +23,12 @@ export default function WorkerProtectedLayout() {
                 tabBarInactiveTintColor: colors.inactive,
                 tabBarStyle: {
                     borderTopWidth: 1,
-
                     borderTopColor: colors.border,
                     backgroundColor: colors.background,
                     height: 100,
                     paddingBottom: 16,
                     paddingTop: 16,
+                    display: isMainTab ? 'flex' : 'none',
                 },
                 tabBarLabelStyle: {
                     fontSize: 10,

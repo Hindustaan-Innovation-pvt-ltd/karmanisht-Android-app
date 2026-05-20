@@ -94,7 +94,7 @@ export default function Services() {
         try {
             const success = await updateWorkerSpecialties([professionId], Array.from(selected))
             if (success) {
-                router.push('/(onboarding)/worker/verify-identity')
+                router.push('/(protected)/worker/verify-identity')
             } else {
                 Alert.alert('Error', 'Failed to save your selections.')
             }

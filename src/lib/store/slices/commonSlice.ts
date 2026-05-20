@@ -10,9 +10,9 @@ export const createCommonSlice: StateCreator<AppStoreType, [], [], CommonSlice> 
     fetchCategories: async () => {
         // Skip only if a fetch is already in-flight
         if (get().isCategoriesLoading) return;
-        // Skip if we already have a full list (more than 8 = came from DB, not fallback)
+        // Skip if we already have a full list
         const existing = get().categories;
-        if (existing && existing.length > 8) return;
+        if (existing && existing.length > 0) return;
         set({ isCategoriesLoading: true });
         const fallbacks = [
             { id: '3489b160-1ea8-42cb-808f-7279e35cc717', name: 'Electrician', icon: 'zap', color: '#fbbf24' },

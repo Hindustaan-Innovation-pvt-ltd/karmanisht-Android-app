@@ -873,7 +873,7 @@ export default function ServiceDetailScreen() {
                                 <Text className="text-2xl font-bold text-white mr-2" numberOfLines={1}>{provider.full_name}</Text>
                                 {provider.is_premium && (
                                     <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}>
-                                        <Ionicons name="crown" size={12} color="#D97706" />
+                                        <MaterialCommunityIcons name="crown" size={12} color="#D97706" />
                                         <Text style={{ color: '#D97706', fontSize: 9, fontWeight: 'bold', marginLeft: 2 }}>PREMIUM</Text>
                                     </View>
                                 )}
@@ -896,7 +896,7 @@ export default function ServiceDetailScreen() {
                                 </View>
                                 {provider.is_premium && (
                                     <View style={{ backgroundColor: '#FBBF24' }} className="px-2 py-1 rounded-full mr-2 mb-2 flex-row items-center">
-                                        <MaterialCommunityIcons name="sparkles" size={10} color="#78350F" />
+                                        <Ionicons name="sparkles" size={10} color="#78350F" />
                                         <Text style={{ color: '#78350F', fontSize: 10, fontWeight: 'bold', marginLeft: 2 }}>Top Verified</Text>
                                     </View>
                                 )}
