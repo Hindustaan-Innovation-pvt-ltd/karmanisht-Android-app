@@ -109,7 +109,7 @@ export default function Index() {
             <View className='p-6'>
                 <View className='items-center mb-8'>
                     <Image
-                        source={require('@assets/images/icon.png')}
+                        source={require('@assets/images/logo.png')}
                         style={{ width: 100, height: 100, marginBottom: 16 }}
                         resizeMode="contain"
                     />
