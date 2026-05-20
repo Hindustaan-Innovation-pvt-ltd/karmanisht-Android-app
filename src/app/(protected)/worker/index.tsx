@@ -10,12 +10,16 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 
 export default function WorkerDashboard() {
-    const { user, isOnline, toggleOnlineStatus, workerStats } = useAppStore();
+    const { user, isOnline, toggleOnlineStatus, workerStats, refreshProfile } = useAppStore();
     const router = useRouter();
     const [reviews, setReviews] = React.useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = React.useState(true);
     const [subExpiry, setSubExpiry] = React.useState<string | null>(null);
     const [daysLeft, setDaysLeft] = React.useState<number>(0);
+
+    React.useEffect(() => {
+        refreshProfile().catch(err => console.error('[WorkerDashboard] refreshProfile error:', err));
+    }, [refreshProfile]);
 
     const initials = user?.name
         ? user.name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()

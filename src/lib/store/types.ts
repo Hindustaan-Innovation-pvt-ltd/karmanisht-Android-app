@@ -55,7 +55,7 @@ export interface CommonSlice {
     isCategoriesLoading: boolean;
     userLocation: Location.LocationObject | null;
 
-    fetchCategories: () => Promise<void>;
+    fetchCategories: (force?: boolean) => Promise<void>;
     updateProfile: (data: any) => Promise<boolean>;
 }
 
@@ -63,6 +63,7 @@ export interface ConsumerSlice {
     unlockedContacts: string[];
     unlockedProviders: any[];
     activePasses: any[];
+    
 
     isUnlocked: (id: string, categoryId?: string) => boolean;
     unlockWorker: (id: string) => Promise<void>;

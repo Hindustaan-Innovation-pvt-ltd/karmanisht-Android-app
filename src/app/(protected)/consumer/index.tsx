@@ -23,6 +23,7 @@ export default function ConsumerHome() {
     const categories = useAppStore(state => state.categories);
     const userLocation = useAppStore(state => state.userLocation);
     const fetchCategories = useAppStore(state => state.fetchCategories);
+    const refreshProfile = useAppStore(state => state.refreshProfile);
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const topOffset = Math.max(insets.top, 16);
@@ -34,7 +35,8 @@ export default function ConsumerHome() {
 
     useEffect(() => {
         fetchCategories();
-    }, [fetchCategories]);
+        refreshProfile().catch(err => console.error('[ConsumerHome] refreshProfile error:', err));
+    }, [fetchCategories, refreshProfile]);
 
     useEffect(() => {
         if (params?.showMap === 'true') {
