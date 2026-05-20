@@ -78,8 +78,16 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     profile.professionId = servicesData[0].category_id;
                 }
 
-                set({ user: profile });
+                set({ 
+                    user: profile,
+                    workerStats: {
+                        rating: workerData.average_rating ? Number(workerData.average_rating) : 0.0,
+                        jobsDone: workerData.total_jobs_completed || 0,
+                        responseTime: 'Fast'
+                    }
+                });
                 await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                get().refreshProfile().catch(err => console.error('[processUserSession] refreshProfile error:', err));
                 return profile;
             }
 
@@ -102,6 +110,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 };
                 set({ user: profile });
                 await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                get().refreshProfile().catch(err => console.error('[processUserSession] refreshProfile error:', err));
                 return profile;
             }
 
@@ -131,14 +140,10 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             }
 
             let cachedUser = null;
-            let currentUserId = null;
-            let currentUserRole = null;
 
             if (cachedUserStr) {
                 cachedUser = JSON.parse(cachedUserStr);
                 if (cachedUser && cachedUser.id) {
-                    currentUserId = cachedUser.id;
-                    currentUserRole = cachedUser.role;
                     // Immediately set user to enable instant routing and render cached profile UI
                     set({ user: cachedUser });
                 }
@@ -195,6 +200,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                                 updatedUser.profession = data.business_name || activeUser.profession;
                                 updatedUser.bio = data.bio || activeUser.bio;
                                 updatedUser.experienceYears = data.experience_years || activeUser.experienceYears;
+                                updatedUser.experience = `${data.experience_years || 0} yrs`;
 
                                 const { data: locData } = await insforge.database
                                     .from('provider_locations')
@@ -215,6 +221,14 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                                 if (servicesData && servicesData.length > 0 && servicesData[0].category_id) {
                                     updatedUser.professionId = servicesData[0].category_id;
                                 }
+
+                                set({
+                                    workerStats: {
+                                        rating: data.average_rating ? Number(data.average_rating) : 0.0,
+                                        jobsDone: data.total_jobs_completed || 0,
+                                        responseTime: 'Fast'
+                                    }
+                                });
                             } else {
                                 updatedUser.role = data.role || activeUser.role;
                             }
@@ -499,6 +513,8 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             user: defaultUser,
             unlockedContacts: [],
             unlockedProviders: [],
+            workerStats: { rating: 0, jobsDone: 0, responseTime: 'Fast' },
+            sessionToken: null,
             isLoading: false,
             hasCheckedAuth: true,
         });

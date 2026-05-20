@@ -32,8 +32,15 @@ export default function AuthCallback() {
                 const codeVerifier = await AsyncStorage.getItem('@@insforge_code_verifier') || undefined;
 
                 // Exchange code for session
-                const { error: sessionError } = await insforge.auth.exchangeOAuthCode(code, codeVerifier);
+                const { data: sessionData, error: sessionError } = await insforge.auth.exchangeOAuthCode(code, codeVerifier);
                 if (sessionError) throw sessionError;
+
+                if (sessionData?.accessToken) {
+                    await AsyncStorage.setItem('@@app_token', sessionData.accessToken);
+                }
+                if (sessionData?.refreshToken) {
+                    await AsyncStorage.setItem('@@app_refresh_token', sessionData.refreshToken);
+                }
 
                 // Get authenticated user
                 const { data: userData, error: userError } = await insforge.auth.getCurrentUser();
