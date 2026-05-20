@@ -445,7 +445,7 @@ export default function WorkerSettings() {
                                 </Text>
                                 <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">2. Profile Visibility</Text>
                                 <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    Your professional details, specialties, ratings, and active location are visible to customers who request services within your radius when you toggle your availability to "online".
+                                    Your professional details, specialties, ratings, and active location are visible to customers who request services within your radius when you toggle your availability to &quot;online&quot;.
                                 </Text>
                                 <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">3. Verification & Compliance</Text>
                                 <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8">

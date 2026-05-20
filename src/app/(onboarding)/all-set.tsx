@@ -41,7 +41,7 @@ export default function AllSet() {
 
                 {/* Main Titles */}
                 <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2 text-center">
-                    You're all set!
+                    You&apos;re all set!
                 </Text>
                 <Text className="text-slate-400 dark:text-slate-500 font-semibold mb-8 text-center">
                     Profile created!
