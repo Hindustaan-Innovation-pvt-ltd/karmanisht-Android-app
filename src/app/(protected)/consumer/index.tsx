@@ -19,29 +19,10 @@ const { width } = Dimensions.get('window');
 
 export default function ConsumerHome() {
     const user = useAppStore(state => state.user);
-    const setUser = useAppStore(state => state.setUser);
-    const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
-    const refreshProfile = useAppStore(state => state.refreshProfile);
-    const unlockedContacts = useAppStore(state => state.unlockedContacts);
     const unlockedProviders = useAppStore(state => state.unlockedProviders);
-    const isUnlocked = useAppStore(state => state.isUnlocked);
-    const unlockWorker = useAppStore(state => state.unlockWorker);
-    const isOnline = useAppStore(state => state.isOnline);
-    const setOnline = useAppStore(state => state.setOnline);
-    const toggleOnlineStatus = useAppStore(state => state.toggleOnlineStatus);
-    const isLoading = useAppStore(state => state.isLoading);
-    const hasCheckedAuth = useAppStore(state => state.hasCheckedAuth);
-    const isSessionExpired = useAppStore(state => state.isSessionExpired);
     const categories = useAppStore(state => state.categories);
     const userLocation = useAppStore(state => state.userLocation);
     const fetchCategories = useAppStore(state => state.fetchCategories);
-    const sessionToken = useAppStore(state => state.sessionToken);
-    const workerStats = useAppStore(state => state.workerStats);
-    const handleRazorpayPayment = useAppStore(state => state.handleRazorpayPayment);
-    const updateProfile = useAppStore(state => state.updateProfile);
-    const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
-    const signOut = useAppStore(state => state.signOut);
-
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const topOffset = Math.max(insets.top, 16);
@@ -74,8 +55,6 @@ export default function ConsumerHome() {
         if (typeof name !== 'string') return false;
         return name.toLowerCase().includes((searchQuery || '').toLowerCase());
     });
-
-    console.log('[ConsumerHome] categories count:', categories?.length, 'filtered count:', filteredCategories?.length, 'searchQuery:', JSON.stringify(searchQuery));
 
     // Fetch the user's most recent saved address from DB to show in the location pill
     useEffect(() => {
