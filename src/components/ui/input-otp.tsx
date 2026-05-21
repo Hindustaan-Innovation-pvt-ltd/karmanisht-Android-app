@@ -1,9 +1,19 @@
 // @ts-nocheck
 import * as React from "react"
-import { View, TextInput, Pressable, Platform, Text } from "react-native"
+import {
+    View,
+    TextInput,
+    Pressable,
+    Platform,
+    Animated,
+    Easing,
+    useColorScheme,
+} from "react-native"
 import { Minus } from "lucide-react-native"
 
 import { cn } from "@/lib/utils"
+
+// ─── Context ─────────────────────────────────────────────────────────────────
 
 interface OTPContextType {
     value: string
@@ -18,6 +28,8 @@ const OTPContext = React.createContext<OTPContextType>({
 })
 
 export const OTPInputContext = OTPContext
+
+// ─── InputOTP (container) ────────────────────────────────────────────────────
 
 interface InputOTPProps extends React.ComponentProps<typeof TextInput> {
     containerClassName?: string
@@ -58,10 +70,10 @@ function InputOTP({
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
                     className="absolute inset-0"
-                    style={{ 
-                        opacity: 0.01, 
+                    style={{
+                        opacity: 0.01,
                         zIndex: 100,
-                        ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {})
+                        ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}),
                     }}
                     caretHidden
                     {...props}
@@ -70,6 +82,8 @@ function InputOTP({
         </OTPContext.Provider>
     )
 }
+
+// ─── InputOTPGroup ───────────────────────────────────────────────────────────
 
 function InputOTPGroup({ className, ...props }: React.ComponentProps<typeof View>) {
     return (
@@ -80,47 +94,243 @@ function InputOTPGroup({ className, ...props }: React.ComponentProps<typeof View
     )
 }
 
+// ─── BlinkingCaret ───────────────────────────────────────────────────────────
+
+function BlinkingCaret() {
+    const opacity = React.useRef(new Animated.Value(1)).current
+
+    React.useEffect(() => {
+        const blink = Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacity, {
+                    toValue: 0,
+                    duration: 530,
+                    easing: Easing.inOut(Easing.quad),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacity, {
+                    toValue: 1,
+                    duration: 530,
+                    easing: Easing.inOut(Easing.quad),
+                    useNativeDriver: true,
+                }),
+            ])
+        )
+        blink.start()
+        return () => blink.stop()
+    }, [])
+
+    return (
+        <Animated.View
+            pointerEvents="none"
+            style={{
+                position: 'absolute',
+                width: 2,
+                height: 24,
+                borderRadius: 1,
+                backgroundColor: '#6366F1',
+                opacity,
+            }}
+        />
+    )
+}
+
+// ─── InputOTPSlot ─────────────────────────────────────────────────────────────
+
 function InputOTPSlot({
     index,
     className,
     ...props
-}: React.ComponentProps<typeof View> & {
-    index: number
-}) {
+}: React.ComponentProps<typeof View> & { index: number }) {
     const context = React.useContext(OTPContext)
+    const scheme = useColorScheme()
+    const isDark = scheme === 'dark'
+
     const char = context.value[index]
     const isActive = context.focused && context.value.length === index
-    const isFilled = context.focused && index === context.maxLength - 1 && context.value.length === context.maxLength
-
+    const isFilled =
+        context.focused &&
+        index === context.maxLength - 1 &&
+        context.value.length === context.maxLength
     const showActive = isActive || isFilled
 
+    // ── Scale animation ───────────────────────────────────────────────────────
+    // Single Animated.Value + single effect to prevent competing animations.
+    // We always stop the current animation before starting a new one.
+    const scaleAnim = React.useRef(new Animated.Value(1)).current
+    const prevChar = React.useRef<string | undefined>(char)
+    const prevShowActive = React.useRef(showActive)
+
+    React.useEffect(() => {
+        const charChanged = char !== prevChar.current
+        const activeChanged = showActive !== prevShowActive.current
+
+        prevChar.current = char
+        prevShowActive.current = showActive
+
+        // Always stop whatever was running to prevent mid-flight interference
+        scaleAnim.stopAnimation()
+
+        const settleTo = showActive ? 1.04 : 1
+
+        if (charChanged && char) {
+            // A new digit arrived: quick overshoot then ease back to settle
+            Animated.sequence([
+                Animated.timing(scaleAnim, {
+                    toValue: 1.13,
+                    duration: 75,
+                    easing: Easing.out(Easing.quad),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(scaleAnim, {
+                    toValue: settleTo,
+                    duration: 180,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+            ]).start()
+        } else if (activeChanged || (charChanged && !char)) {
+            // Focus cursor moved to/from this slot, or digit cleared — smooth glide
+            Animated.timing(scaleAnim, {
+                toValue: settleTo,
+                duration: 160,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+            }).start()
+        }
+    }, [char, showActive])
+
+    // ── Digit fade + slide-in ─────────────────────────────────────────────────
+    // Initialise to visible (1/0) if a char already exists at mount time,
+    // so pre-filled slots are never blank.
+    const charOpacity = React.useRef(new Animated.Value(char ? 1 : 0)).current
+    const charTranslateY = React.useRef(new Animated.Value(char ? 0 : -8)).current
+
+    React.useEffect(() => {
+        if (char) {
+            charOpacity.stopAnimation()
+            charTranslateY.stopAnimation()
+            charOpacity.setValue(0)
+            charTranslateY.setValue(-8)
+            Animated.parallel([
+                Animated.timing(charOpacity, {
+                    toValue: 1,
+                    duration: 140,
+                    easing: Easing.out(Easing.quad),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(charTranslateY, {
+                    toValue: 0,
+                    duration: 180,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+            ]).start()
+        } else {
+            charOpacity.stopAnimation()
+            charTranslateY.stopAnimation()
+            charOpacity.setValue(0)
+            charTranslateY.setValue(-8)
+        }
+    }, [char])
+
+    // ── Active glow pulse ─────────────────────────────────────────────────────
+    const glowOpacity = React.useRef(new Animated.Value(0)).current
+
+    React.useEffect(() => {
+        if (showActive) {
+            glowOpacity.stopAnimation()
+            const pulse = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(glowOpacity, {
+                        toValue: 0.16,
+                        duration: 950,
+                        easing: Easing.inOut(Easing.sin),
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(glowOpacity, {
+                        toValue: 0,
+                        duration: 950,
+                        easing: Easing.inOut(Easing.sin),
+                        useNativeDriver: true,
+                    }),
+                ])
+            )
+            pulse.start()
+            return () => {
+                pulse.stop()
+                glowOpacity.setValue(0)
+            }
+        } else {
+            glowOpacity.stopAnimation()
+            glowOpacity.setValue(0)
+        }
+    }, [showActive])
+
+    const digitColor = isDark ? '#f1f5f9' : '#0f172a'
+
+    // Border-radius values mirrored on the Animated.View so rounded corners
+    // live directly on the element being scaled — no outer wrapper to clip them.
+    const borderStyle = {
+        borderTopLeftRadius: index === 0 ? 12 : 0,
+        borderBottomLeftRadius: index === 0 ? 12 : 0,
+        borderTopRightRadius: index === context.maxLength - 1 ? 12 : 0,
+        borderBottomRightRadius: index === context.maxLength - 1 ? 12 : 0,
+    }
+
     return (
-        <View
+        <Animated.View
             className={cn(
                 "relative flex h-16 w-12 items-center justify-center border-y border-r border-slate-300 bg-white dark:bg-slate-900 dark:border-slate-700",
-                index === 0 && "rounded-l-lg border-l",
-                index === context.maxLength - 1 && "rounded-r-lg",
-                showActive && "z-10 border-blue-500 border-2 dark:border-blue-400", // Simplified active ring equivalent
+                index === 0 && "border-l",
+                showActive && "border-2 border-indigo-500 dark:border-indigo-400",
                 className
             )}
+            style={[borderStyle, { transform: [{ scale: scaleAnim }] }]}
             {...props}
         >
-            <View>
-                <Text className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                    {char || ""}
-                </Text>
-            </View>
-            {showActive && !char && (
-                <View 
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{ pointerEvents: 'none' }}
-                >
-                    <View className="h-6 w-[2px] bg-slate-900 dark:bg-slate-100" />
-                </View>
+            {/* Indigo glow layer */}
+            {showActive && (
+                <Animated.View
+                    pointerEvents="none"
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        borderTopLeftRadius: borderStyle.borderTopLeftRadius,
+                        borderBottomLeftRadius: borderStyle.borderBottomLeftRadius,
+                        borderTopRightRadius: borderStyle.borderTopRightRadius,
+                        borderBottomRightRadius: borderStyle.borderBottomRightRadius,
+                        backgroundColor: '#6366F1',
+                        opacity: glowOpacity,
+                    }}
+                />
             )}
-        </View>
+
+            {/* Digit character with smooth fade + drop */}
+            {char ? (
+                <Animated.Text
+                    style={{
+                        fontSize: 22,
+                        fontWeight: '700',
+                        color: digitColor,
+                        opacity: charOpacity,
+                        transform: [{ translateY: charTranslateY }],
+                    }}
+                >
+                    {char}
+                </Animated.Text>
+            ) : null}
+
+            {/* Blinking caret for empty active slot */}
+            {showActive && !char && <BlinkingCaret />}
+        </Animated.View>
     )
 }
+
+// ─── InputOTPSeparator ────────────────────────────────────────────────────────
 
 function InputOTPSeparator({ ...props }: React.ComponentProps<typeof View>) {
     return (

@@ -2,14 +2,13 @@ import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Platform, Dimensions, Modal, Clipboard, Linking, Pressable, Animated, useColorScheme } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Dimensions, Modal, Clipboard, Linking, Pressable, Animated, useColorScheme, ScrollView } from 'react-native';
 
 const { width } = Dimensions.get('window');
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
-import ConsumerNavbar from '@/components/consumer-navbar';
-import BackButton from '@/components/back-button';
 import SafeIcon from '@/components/safe-icon';
 
 function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -280,14 +279,14 @@ const UnlockCategoryPassModal = ({
                         <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: `${themeColor}20`, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                             <Ionicons name="key" size={28} color={themeColor} />
                         </View>
-                        <Text className="text-2xl font-black text-slate-800 text-center">Unlock Category Pass</Text>
+                        <Text className="text-2xl font-black text-slate-800 text-center">Unlock Contact</Text>
                         <Text className="text-sm text-slate-500 text-center mt-2 px-4 leading-relaxed">
                             Get instant access to contact details for all {categoryName}s in {cityName}.
                         </Text>
                     </View>
 
                     {/* Pass Details Card */}
-                    <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4.5 mb-6">
+                    <View className="bg-slate-50 border border-slate-100 rounded-2xl mb-6 p-4">
                         <View className="flex-row justify-between items-center mb-4">
                             <Text className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Pass Duration</Text>
                             <View className="bg-blue-50 px-3 py-1 rounded-full">
@@ -341,6 +340,122 @@ const UnlockCategoryPassModal = ({
     );
 };
 
+// ─── Category Pass Modal ─────────────────────────────────────────────────────
+
+interface CategoryPassModalProps {
+    visible: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    themeColor: string;
+    categoryName: string;
+    providerCount: number;
+    price: number;
+    durationHours: number;
+    loading: boolean;
+}
+
+const CategoryPassModal = ({
+    visible, onClose, onConfirm, themeColor,
+    categoryName, providerCount, price, durationHours, loading
+}: CategoryPassModalProps) => {
+    if (!visible) return null;
+    return (
+        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' }}>
+                <Pressable style={{ flex: 1 }} onPress={onClose} />
+                <View style={{
+                    backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32,
+                    padding: 24, paddingBottom: 44,
+                    shadowColor: '#000', shadowOffset: { width: 0, height: -6 },
+                    shadowOpacity: 0.12, shadowRadius: 16, elevation: 16
+                }}>
+                    {/* Handle */}
+                    <View style={{ width: 40, height: 5, backgroundColor: '#E2E8F0', borderRadius: 3, alignSelf: 'center', marginBottom: 20 }} />
+
+                    {/* Header */}
+                    <View style={{ alignItems: 'center', marginBottom: 24 }}>
+                        <LinearGradient
+                            colors={[themeColor, `${themeColor}BB`]}
+                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                            style={{ width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}
+                        >
+                            <Ionicons name="people" size={32} color="#fff" />
+                        </LinearGradient>
+                        <Text style={{ fontSize: 22, fontWeight: '900', color: '#0F172A', textAlign: 'center' }}>
+                            Unlock All {categoryName}s
+                        </Text>
+                        <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', marginTop: 6, paddingHorizontal: 16, lineHeight: 19 }}>
+                            One payment. Instant access to all {providerCount} professionals in your area.
+                        </Text>
+                    </View>
+
+                    {/* Savings card */}
+                    <LinearGradient
+                        colors={['#F0FDF4', '#DCFCE7']}
+                        style={{ borderRadius: 20, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#BBF7D0' }}
+                    >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <Text style={{ fontSize: 11, fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: 0.5 }}>Category Pass</Text>
+                            <View style={{ backgroundColor: '#16A34A', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
+                                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>BEST VALUE</Text>
+                            </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                            <Text style={{ fontSize: 36, fontWeight: '900', color: '#0F172A' }}>₹{price}</Text>
+                            <Text style={{ fontSize: 13, color: '#94A3B8', textDecorationLine: 'line-through' }}>₹{price * providerCount}</Text>
+                            <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '700' }}>total</Text>
+                        </View>
+                        <Text style={{ fontSize: 11, color: '#16A34A', fontWeight: '600', marginTop: 4 }}>
+                            Save ₹{Math.max(0, price * providerCount - price)} vs individual unlocks
+                        </Text>
+                    </LinearGradient>
+
+                    {/* Feature rows */}
+                    <View style={{ gap: 10, marginBottom: 24 }}>
+                        {[
+                            { icon: 'call', text: `Call all ${providerCount} ${categoryName}s directly` },
+                            { icon: 'time-outline', text: `Valid for ${durationHours} hours from purchase` },
+                            { icon: 'shield-checkmark-outline', text: 'No commission or hidden fees' },
+                        ].map(({ icon, text }) => (
+                            <View key={icon} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name={icon as any} size={17} color="#16A34A" />
+                                <Text style={{ color: '#334155', fontSize: 13, fontWeight: '600', marginLeft: 10 }}>{text}</Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Buttons */}
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            style={{ flex: 1, backgroundColor: '#F1F5F9', borderRadius: 18, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}
+                        >
+                            <Text style={{ color: '#64748B', fontWeight: '700', fontSize: 14 }}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={onConfirm}
+                            disabled={loading}
+                            style={{ flex: 2, borderRadius: 18, overflow: 'hidden' }}
+                        >
+                            <LinearGradient
+                                colors={[themeColor, `${themeColor}CC`]}
+                                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                                style={{ paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
+                            >
+                                {loading
+                                    ? <ActivityIndicator color="#fff" />
+                                    : <><Ionicons name="card" size={18} color="#fff" />
+                                       <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Pay ₹{price}</Text></>
+                                }
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
 export default function ServiceDetailScreen() {
     const user = useAppStore(state => state.user);
     const refreshProfile = useAppStore(state => state.refreshProfile);
@@ -364,6 +479,8 @@ export default function ServiceDetailScreen() {
     const [tempProviderForSuccess, setTempProviderForSuccess] = useState<any | null>(null);
     const [showUnlockModal, setShowUnlockModal] = useState(false);
     const [providerToUnlock, setProviderToUnlock] = useState<any | null>(null);
+    const [showCategoryPassModal, setShowCategoryPassModal] = useState(false);
+    const [categoryPassLoading, setCategoryPassLoading] = useState(false);
 
     const [cityConfig, setCityConfig] = useState<{ id: string; name: string; tier: string } | null>(null);
     const [pricingConfig, setPricingConfig] = useState<{ unlock_price: number; unlock_duration_hours: number } | null>(null);
@@ -734,6 +851,74 @@ export default function ServiceDetailScreen() {
         }
     };
 
+    // ── Category pass: one payment → all providers in category unlocked ──────
+    const handleBuyCategoryPass = async () => {
+        if (!user?.id) {
+            Alert.alert('Login Required', 'Please login to continue.');
+            return;
+        }
+        setShowCategoryPassModal(false);
+        setCategoryPassLoading(true);
+
+        const passPrice = pricingConfig?.unlock_price || 49;
+        const durationHours = pricingConfig?.unlock_duration_hours || 5;
+
+        try {
+            // Use first provider as payment proxy (Razorpay needs a reference)
+            const proxy = providers[0] || { provider_id: id };
+            const success = await handleRazorpayPayment(proxy, passPrice);
+
+            if (success) {
+                const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+
+                // 1. Create the category-level unlock pass
+                const { error: passError } = await insforge.database
+                    .from('unlock_passes')
+                    .insert([{
+                        customer_id: user.id,
+                        profession_id: id,
+                        city_id: cityConfig?.id || '57b3868e-c554-4ae5-b80f-fb1bd0617542',
+                        amount_paid: passPrice,
+                        expires_at: expiresAt,
+                        payment_status: 'paid'
+                    }]);
+
+                if (passError) console.error('Category pass insert failed:', passError);
+
+                // 2. Bulk-insert unlock_transactions for every provider in category
+                const transactions = providers.map(p => ({
+                    user_id: user.id,
+                    provider_id: p.provider_id,
+                    amount: passPrice,
+                    payment_status: 'completed',
+                    transaction_id: `cat_${Date.now()}_${p.provider_id.slice(0, 8)}`
+                }));
+
+                if (transactions.length > 0) {
+                    const { error: txError } = await insforge.database
+                        .from('unlock_transactions')
+                        .insert(transactions);
+                    if (txError) console.error('Bulk transactions insert failed:', txError);
+                }
+
+                if (fetchActivePasses) await fetchActivePasses();
+                await refreshProfile();
+
+                Alert.alert(
+                    '🎉 All Contacts Unlocked!',
+                    `You now have access to all ${providers.length} ${name} professionals for the next ${durationHours} hours.`,
+                    [{ text: 'Great!', style: 'default' }]
+                );
+            } else {
+                Alert.alert('Payment Cancelled', 'The payment was not completed.');
+            }
+        } catch (err: any) {
+            Alert.alert('Payment Error', err.message);
+        } finally {
+            setCategoryPassLoading(false);
+        }
+    };
+
     const filteredProviders = providers.filter(p => {
         const query = searchQuery.toLowerCase().trim();
         const matchesSearch = query === '' ||
@@ -761,12 +946,6 @@ export default function ServiceDetailScreen() {
 
     const renderHeader = () => (
         <View className="w-full">
-            {/* Explore Services Title */}
-            <View className="px-5 mb-4 mt-6 flex-row items-center gap-2">
-                <Ionicons name='arrow-back' size={22} color={colorScheme === "dark" ? "#ffffff" : "#000000"}
-                    onPress={() => router.back()} />
-                <Text className="text-xl font-bold text-gray-900">Explore {name}</Text>
-            </View>
 
             {/* Category Header Card */}
             <View className="px-5 mb-6">
@@ -908,10 +1087,47 @@ export default function ServiceDetailScreen() {
                 </View>
             )}
 
-            {/* Available Providers Section Title */}
-            <View className="px-5 mb-6">
+            {/* Available Providers header + Category Pass banner */}
+            <View className="px-5 mb-3 flex-row items-center justify-between">
                 <Text className="text-xl font-bold text-gray-900">Available Providers</Text>
+                {providers.length > 0 && (
+                    <View style={{ backgroundColor: `${color}20`, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
+                        <Text style={{ color: color || '#3B82F6', fontSize: 11, fontWeight: '800' }}>{providers.length} near you</Text>
+                    </View>
+                )}
             </View>
+
+            {/* Category Pass CTA — only show when user hasn't unlocked all yet */}
+            {providers.length > 0 && !providers.every(p => isUnlocked(p.provider_id, id)) && (
+                <TouchableOpacity
+                    onPress={() => setShowCategoryPassModal(true)}
+                    activeOpacity={0.92}
+                    style={{ marginHorizontal: 20, marginBottom: 16 }}
+                >
+                    <LinearGradient
+                        colors={[color || '#3B82F6', `${color || '#3B82F6'}AA`]}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                        style={{ borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                <Ionicons name="people" size={22} color="#fff" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900', marginBottom: 2 }}>
+                                    Unlock All {name} Contacts
+                                </Text>
+                                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '600' }}>
+                                    {providers.length} professionals • Pay just ₹{pricingConfig?.unlock_price || 49}
+                                </Text>
+                            </View>
+                        </View>
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7, marginLeft: 8 }}>
+                            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>Unlock All</Text>
+                        </View>
+                    </LinearGradient>
+                </TouchableOpacity>
+            )}
         </View>
     );
 
@@ -932,10 +1148,25 @@ export default function ServiceDetailScreen() {
 
     return (
         <View className="flex-1 bg-white">
+            {/* Fixed title bar — never scrolls */}
+            <View
+                className="px-5 flex-row items-center gap-2 bg-white mb-4"
+                style={{ paddingTop: 60, paddingBottom: 12, borderBottomWidth: 0 }}
+            >
+                <Ionicons
+                    name="arrow-back"
+                    size={22}
+                    color={colorScheme === 'dark' ? '#ffffff' : '#000000'}
+                    onPress={() => router.back()}
+                />
+                <Text className="text-xl font-bold text-gray-900">Explore {name}</Text>
+            </View>
+
+            {/* Category card + search + tags + Available Providers + cards — all scroll together */}
             <FlatList
-                className="flex-1"
+                style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingTop: 60, paddingBottom: 150 }}
+                contentContainerStyle={{ paddingBottom: 150 }}
                 ListHeaderComponent={renderHeader}
                 data={filteredProviders}
                 keyExtractor={(item) => item.provider_id}
@@ -1054,6 +1285,18 @@ export default function ServiceDetailScreen() {
                 cityName={cityConfig?.name || 'Raipur'}
                 price={pricingConfig?.unlock_price || 49}
                 durationHours={pricingConfig?.unlock_duration_hours || 5}
+            />
+
+            <CategoryPassModal
+                visible={showCategoryPassModal}
+                onClose={() => setShowCategoryPassModal(false)}
+                onConfirm={handleBuyCategoryPass}
+                themeColor={color || '#3B82F6'}
+                categoryName={name || 'Service Provider'}
+                providerCount={providers.length}
+                price={pricingConfig?.unlock_price || 49}
+                durationHours={pricingConfig?.unlock_duration_hours || 5}
+                loading={categoryPassLoading}
             />
         </View>
     );

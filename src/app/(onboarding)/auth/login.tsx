@@ -53,19 +53,16 @@ export default function Login() {
         setLoading(true);
         try {
             // Ensure an account exists with this number before sending OTP
-            const { data: consumer } = await insforge.database
-                .from('users')
-                .select('id')
-                .eq('mobile', mobile)
-                .maybeSingle();
+            const { data: checkRes, error: checkError } = await insforge.database.rpc('check_mobile_exists', {
+                target_mobile: mobile
+            });
 
-            const { data: worker } = await insforge.database
-                .from('service_providers')
-                .select('id')
-                .eq('mobile', mobile)
-                .maybeSingle();
+            if (checkError) {
+                console.error('Error checking account existence:', checkError);
+                throw new Error(checkError.message || 'Failed to verify account status.');
+            }
 
-            if (!consumer && !worker) {
+            if (!checkRes || !checkRes.exists) {
                 Alert.alert('Account Not Found', 'No account exists with this mobile number. Please sign up first.');
                 return;
             }
@@ -130,6 +127,12 @@ export default function Login() {
                 if (sessionData?.refreshToken) {
                     await AsyncStorage.setItem('@@app_refresh_token', sessionData.refreshToken);
                     insforge.getHttpClient().setRefreshToken(sessionData.refreshToken);
+                }
+                if (sessionData?.csrfToken) {
+                    await AsyncStorage.setItem('@@app_csrf_token', sessionData.csrfToken);
+                    if (typeof document !== 'undefined') {
+                        document.cookie = `insforge_csrf_token=${sessionData.csrfToken}`;
+                    }
                 }
 
                 // Get the authenticated user

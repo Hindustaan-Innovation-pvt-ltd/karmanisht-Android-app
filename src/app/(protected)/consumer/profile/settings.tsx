@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import * as Application from "expo-application"
-import { ActivityIndicator, Alert, Modal, ScrollView, Text, View, Linking, Image } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, View, Linking, Image, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -590,6 +590,7 @@ export default function SettingsScreen() {
                 onRequestClose={() => setSupportModalVisible(false)}
             >
                 <View className="flex-1 justify-end bg-black/40">
+                    <Pressable style={{ flex: 1 }} onPress={() => setSupportModalVisible(false)} />
                     <View className="bg-white dark:bg-slate-900 rounded-t-[28px] p-6 pb-8 border-t border-slate-100 dark:border-slate-800 shadow-xl">
                         <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full self-center mb-6" />
 

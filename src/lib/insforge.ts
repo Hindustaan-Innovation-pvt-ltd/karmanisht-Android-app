@@ -1,5 +1,40 @@
 import 'react-native-url-polyfill/auto';
 import * as Crypto from 'expo-crypto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Polyfill document.cookie for React Native environment to support CSRF token in InsForge SDK
+if (typeof document === 'undefined') {
+  const cookies: Record<string, string> = {};
+  (global as any).document = {
+    get cookie() {
+      return Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
+    },
+    set cookie(val: string) {
+      if (typeof val !== 'string') return;
+      const parts = val.split(';');
+      const [cookieNameVal] = parts;
+      const idx = cookieNameVal.indexOf('=');
+      if (idx !== -1) {
+        const name = cookieNameVal.substring(0, idx).trim();
+        const value = cookieNameVal.substring(idx + 1).trim();
+        cookies[name] = value;
+        
+        // Sync insforge_csrf_token to AsyncStorage
+        if (name === 'insforge_csrf_token') {
+          AsyncStorage.setItem('@@app_csrf_token', value).catch(() => {});
+        }
+      }
+    }
+  };
+
+  // Asynchronously load initial CSRF token from AsyncStorage to prime the in-memory cookie
+  AsyncStorage.getItem('@@app_csrf_token').then((val) => {
+    if (val && typeof document !== 'undefined') {
+      document.cookie = `insforge_csrf_token=${val}`;
+    }
+  }).catch(() => {});
+}
+
 
 // Polyfill Web Crypto API for React Native environment to support PKCE flows in InsForge SDK
 if (typeof global.crypto === 'undefined') {

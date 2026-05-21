@@ -54,13 +54,6 @@ WebBrowser.maybeCompleteAuthSession();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const refreshProfile = useAppStore(state => state.refreshProfile);
-
-  console.log('EXPO_PUBLIC_INSFORGE_URL:', process.env.EXPO_PUBLIC_INSFORGE_URL);
-  console.log('EXPO_PUBLIC_INSFORGE_ANON_KEY:', process.env.EXPO_PUBLIC_INSFORGE_ANON_KEY);
-  console.log('EXPO_PUBLIC_Test_Key_ID:', process.env.EXPO_PUBLIC_Test_Key_ID);
-  console.log('EXPO_PUBLIC_Test_Key_Secret:', process.env.EXPO_PUBLIC_Test_Key_Secret);
-
-
   useEffect(() => {
     refreshProfile();
   }, [refreshProfile]);
@@ -73,7 +66,7 @@ export default function RootLayout() {
           <Stack.Screen name="(onboarding)" />
           <Stack.Screen name="(location)" />
           <Stack.Screen name="(protected)" />
-          <Stack.Screen name="admin/index" />
+          <Stack.Screen name="admin" />
         </Stack>
         <StatusBar style={colorScheme === 'dark' ? "light" : "dark"} backgroundColor={colorScheme === 'dark' ? '#1e1e1e' : '#f5f5f5'} />
       </ThemeProvider>

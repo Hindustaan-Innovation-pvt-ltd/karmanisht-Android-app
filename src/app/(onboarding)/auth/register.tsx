@@ -156,6 +156,12 @@ export default function Register() {
                     await AsyncStorage.setItem('@@app_refresh_token', authData.refreshToken);
                     insforge.getHttpClient().setRefreshToken(authData.refreshToken);
                 }
+                if (authData.csrfToken) {
+                    await AsyncStorage.setItem('@@app_csrf_token', authData.csrfToken);
+                    if (typeof document !== 'undefined') {
+                        document.cookie = `insforge_csrf_token=${authData.csrfToken}`;
+                    }
+                }
                 finalUserId = authData.user.id;
             }
 

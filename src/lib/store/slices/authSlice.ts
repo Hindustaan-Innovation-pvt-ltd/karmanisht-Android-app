@@ -4,6 +4,50 @@ import * as Location from 'expo-location';
 import { AppStoreType, AuthSlice, UserProfile, STORAGE_KEYS, defaultUser } from '../types';
 import { insforge } from '../../insforge';
 
+function isTokenExpired(token: string | null): boolean {
+  if (!token) return true;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    let jsonPayload: string;
+    
+    if (typeof atob !== 'undefined') {
+      jsonPayload = atob(base64);
+    } else {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      const lookup = new Uint8Array(256);
+      for (let i = 0; i < chars.length; i++) {
+        lookup[chars.charCodeAt(i)] = i;
+      }
+      let buffer = '';
+      const cleanStr = base64.replace(/=+$/, '');
+      const len = cleanStr.length;
+      for (let i = 0; i < len; i += 4) {
+        const encoded1 = lookup[cleanStr.charCodeAt(i)];
+        const encoded2 = lookup[cleanStr.charCodeAt(i + 1)];
+        const encoded3 = i + 2 < len ? lookup[cleanStr.charCodeAt(i + 2)] : 0;
+        const encoded4 = i + 3 < len ? lookup[cleanStr.charCodeAt(i + 3)] : 0;
+        const bytes = (encoded1 << 18) | (encoded2 << 12) | (encoded3 << 6) | encoded4;
+        buffer += String.fromCharCode((bytes >> 16) & 255);
+        if (i + 2 < len) buffer += String.fromCharCode((bytes >> 8) & 255);
+        if (i + 3 < len) buffer += String.fromCharCode(bytes & 255);
+      }
+      jsonPayload = buffer;
+    }
+    
+    const payload = JSON.parse(jsonPayload);
+    if (payload.exp) {
+      const now = Math.floor(Date.now() / 1000);
+      return payload.exp - now < 300; // expires in < 5 minutes
+    }
+  } catch (e) {
+    return true;
+  }
+  return true;
+}
+
 export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (set, get) => ({
     user: defaultUser,
     isOnline: true,
@@ -35,6 +79,11 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             return null;
         }
         try {
+            // Ensure CSRF token cookie is primed in memory from AsyncStorage
+            const csrfToken = await AsyncStorage.getItem('@@app_csrf_token');
+            if (csrfToken && typeof document !== 'undefined') {
+                document.cookie = `insforge_csrf_token=${csrfToken}`;
+            }
             // Ensure token is set on insforge client instance before executing database requests
             const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
             const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
@@ -208,6 +257,11 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     // ─────────────────────────────────────────────────────────────────────────
     refreshProfile: async () => {
         try {
+            // Ensure CSRF token cookie is primed in memory from AsyncStorage
+            const csrfToken = await AsyncStorage.getItem('@@app_csrf_token');
+            if (csrfToken && typeof document !== 'undefined') {
+                document.cookie = `insforge_csrf_token=${csrfToken}`;
+            }
             const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
             const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
             const cachedUserStr = await AsyncStorage.getItem(STORAGE_KEYS.USER);
@@ -231,9 +285,9 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
 
             // Immediately fetch categories in parallel
             let categoriesPromise = get().fetchCategories().catch(() => { });
-            let hasToken = !!token;
+            let hasToken = !!token && !isTokenExpired(token);
 
-            if (refreshToken && !token) {
+            if (refreshToken && (!token || isTokenExpired(token))) {
                 try {
                     const { data: refreshed } = await insforge.auth.refreshSession({ refreshToken });
                     if (refreshed?.accessToken) {
@@ -245,8 +299,14 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         insforge.getHttpClient().setRefreshToken(refreshed.refreshToken);
                         await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshed.refreshToken);
                     }
-                } catch {
-                    // Refresh failed
+                    if (refreshed?.csrfToken) {
+                        await AsyncStorage.setItem('@@app_csrf_token', refreshed.csrfToken);
+                        if (typeof document !== 'undefined') {
+                            document.cookie = `insforge_csrf_token=${refreshed.csrfToken}`;
+                        }
+                    }
+                } catch (refreshErr) {
+                    console.error('[refreshProfile] Refresh failed:', refreshErr);
                 }
             }
 

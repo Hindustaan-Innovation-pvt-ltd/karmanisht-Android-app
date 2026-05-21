@@ -105,7 +105,7 @@ export default function Index() {
     return (
         <SafeAreaView className='flex-1 relative bg-white dark:bg-slate-950'>
             <BackgroundPattern />
-            <View className='p-6 absolute bottom-0 w-full justify-center'>
+            <View className='p-6 absolute bottom-4 w-full justify-center'>
                 <View className='items-center mb-8'>
                     <Image
                         source={require('@assets/images/logo.png')}
