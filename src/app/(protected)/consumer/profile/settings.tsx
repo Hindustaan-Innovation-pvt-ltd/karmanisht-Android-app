@@ -1,16 +1,27 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
+import * as Application from "expo-application"
 import { ActivityIndicator, Alert, Modal, ScrollView, Text, View, Linking, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+    withRepeat,
+    withTiming,
+    interpolate,
+    Easing
+} from 'react-native-reanimated';
 
 import { insforge } from '@/lib/insforge';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 import ScalePressable from '@/components/scale-pressable';
 import StickySwitch from '@/components/sticky-switch';
+import CustomPolicyModel from '@/components/models/policy-modal';
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -23,6 +34,7 @@ export default function SettingsScreen() {
     const [shareLocation, setShareLocation] = useState(true);
 
     const [radiusKm, setRadiusKm] = useState(user?.searchRadiusKm || 5);
+    const [tempRadius, setTempRadius] = useState(user?.searchRadiusKm || 5);
     const [updatingRadius, setUpdatingRadius] = useState(false);
     const [radiusModalVisible, setRadiusModalVisible] = useState(false);
     const [supportModalVisible, setSupportModalVisible] = useState(false);
@@ -31,12 +43,68 @@ export default function SettingsScreen() {
     const [policyVisible, setPolicyVisible] = useState(false);
     const [policyType, setPolicyType] = useState<'privacy' | 'terms'>('privacy');
 
+    const radiusVal = useSharedValue(user?.searchRadiusKm || 5);
+    const radarPulse = useSharedValue(0);
+
     // Sync state if user context updates
     useEffect(() => {
         if (user?.searchRadiusKm) {
             setRadiusKm(user.searchRadiusKm);
+            setTempRadius(user.searchRadiusKm);
         }
     }, [user]);
+
+    // Sync values when modal is opened
+    useEffect(() => {
+        if (radiusModalVisible) {
+            const initialRadius = user?.searchRadiusKm || 5;
+            setTempRadius(initialRadius);
+            radiusVal.value = initialRadius;
+
+            radarPulse.value = 0;
+            radarPulse.value = withRepeat(
+                withTiming(1, { duration: 2200, easing: Easing.out(Easing.ease) }),
+                -1,
+                false
+            );
+        } else {
+            radarPulse.value = 0;
+        }
+    }, [radiusModalVisible, user?.searchRadiusKm, radarPulse, radiusVal]);
+
+    const animatedAreaStyle = useAnimatedStyle(() => {
+        // Map radius in KM (2 to 50) to circle size in DP (30 to 138)
+        const size = interpolate(
+            radiusVal.value,
+            [2, 5, 10, 15, 20, 30, 50],
+            [30, 48, 66, 84, 102, 120, 138]
+        );
+        return {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+        };
+    });
+
+    const animatedRippleStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: interpolate(radarPulse.value, [0, 1], [0.2, 1.5]) }],
+            opacity: interpolate(radarPulse.value, [0, 0.8, 1], [0.5, 0.25, 0]),
+        };
+    });
+
+    const getRadiusDescription = (radius: number) => {
+        switch (radius) {
+            case 2: return "Look for providers in your immediate vicinity/apartment block.";
+            case 5: return "Standard search area covering nearby residential neighborhoods.";
+            case 10: return "Town-wide search, including providers in adjacent local sectors.";
+            case 15: return "Expanded search range to capture a larger pool of service experts.";
+            case 20: return "City-wide search, perfect for specialized services not found nearby.";
+            case 30: return "Extended search zone, listing providers willing to travel further.";
+            case 50: return "Maximum range. Find any provider within the outer metropolitan region.";
+            default: return `Search up to ${radius} KM away.`;
+        }
+    };
 
     const handleRadiusChange = async (opt: number) => {
         setRadiusKm(opt);
@@ -373,7 +441,7 @@ export default function SettingsScreen() {
 
                 {/* Footer Brand */}
                 <Text className="text-center text-slate-350 dark:text-slate-700 text-[10px] font-black mb-16 tracking-widest uppercase">
-                    HINDUSTAN INNOVATIONS • V1.0.4
+                    HINDUSTAN INNOVATIONS • {Application.nativeApplicationVersion}
                 </Text>
             </ScrollView>
 
@@ -386,7 +454,7 @@ export default function SettingsScreen() {
             >
                 <View className="flex-1 justify-end bg-black/40">
                     <View className="bg-white dark:bg-slate-900 rounded-t-[28px] p-6 pb-8 border-t border-slate-100 dark:border-slate-800 shadow-xl">
-                        <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full self-center mb-6" />
+                        <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full self-center mb-5" />
                         <View className="flex-row justify-between items-center mb-4">
                             <Text className="text-xl font-bold text-slate-950 dark:text-slate-100">Search Radius</Text>
                             <ScalePressable
@@ -397,33 +465,119 @@ export default function SettingsScreen() {
                                 <Ionicons name="close" size={18} color={colors.text} />
                             </ScalePressable>
                         </View>
-                        <Text className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-6">
-                            Select the maximum distance (in kilometers) to discover local service providers around you.
+                        <Text className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-5">
+                            Select the maximum distance to discover local service providers around you.
                         </Text>
 
-                        <View className="flex-row flex-wrap justify-between">
-                            {[2, 5, 10, 15, 20, 30, 50].map((opt) => (
-                                <ScalePressable
-                                    key={opt}
-                                    onPress={() => handleRadiusChange(opt)}
-                                    hapticType="selection"
-                                    className={`w-[31%] py-3.5 rounded-xl items-center justify-center mb-3.5 border ${radiusKm === opt
-                                        ? 'bg-blue-600 border-blue-600 dark:bg-blue-600 dark:border-blue-600'
-                                        : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
-                                        }`}
-                                >
-                                    <Text className={`font-bold text-sm ${radiusKm === opt ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>
-                                        {opt} KM
-                                    </Text>
-                                </ScalePressable>
-                            ))}
-                        </View>
-                        {updatingRadius && (
-                            <View className="flex-row items-center justify-center mt-3 gap-2">
-                                <ActivityIndicator size="small" color={colors.tint} />
-                                <Text className="text-xs text-slate-400">Updating settings...</Text>
+                        {/* Radar Visualization Area */}
+                        <View className="bg-slate-50 dark:bg-slate-950/40 rounded-3xl h-36 justify-center items-center overflow-hidden mb-4 border border-slate-100 dark:border-slate-900/60">
+                            {/* Concentric radar grid circles */}
+                            <View className="absolute w-[180px] h-[180px] rounded-full border border-slate-200/40 dark:border-slate-800/20 border-dashed" />
+                            <View className="absolute w-[120px] h-[120px] rounded-full border border-slate-200/40 dark:border-slate-800/20 border-dashed" />
+                            <View className="absolute w-[60px] h-[60px] rounded-full border border-slate-200/40 dark:border-slate-800/20 border-dashed" />
+
+                            <View className="absolute w-full h-[1px] bg-slate-200/30 dark:bg-slate-800/10" />
+                            <View className="absolute h-full w-[1px] bg-slate-200/30 dark:bg-slate-800/10" />
+
+                            {/* Radar Ripple Scan */}
+                            <Animated.View
+                                style={[
+                                    {
+                                        position: 'absolute',
+                                        borderWidth: 1.5,
+                                        borderColor: isDark ? '#3B82F6' : '#1E3A8A',
+                                        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(30, 58, 138, 0.08)',
+                                    },
+                                    animatedRippleStyle
+                                ]}
+                            />
+
+                            {/* Selected Radius Visual Area */}
+                            <Animated.View
+                                style={[
+                                    {
+                                        position: 'absolute',
+                                        borderWidth: 2,
+                                        borderColor: isDark ? '#3B82F6' : '#2563EB',
+                                        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(37, 99, 235, 0.05)',
+                                        borderStyle: 'dashed',
+                                    },
+                                    animatedAreaStyle
+                                ]}
+                            />
+
+                            {/* Center Location Pin */}
+                            <View className="w-8 h-8 rounded-full bg-blue-500/10 items-center justify-center border border-blue-500/20 shadow-md">
+                                <View className="w-4 h-4 rounded-full bg-blue-600 dark:bg-blue-500 items-center justify-center border-2 border-white dark:border-slate-900">
+                                    <Ionicons name="radio" size={8} color="#fff" />
+                                </View>
                             </View>
-                        )}
+                        </View>
+
+                        {/* Active KM value & description details */}
+                        <View className="items-center mb-5 min-h-[44px] justify-center">
+                            <Text className="text-xl font-black text-blue-600 dark:text-blue-400">
+                                {tempRadius} KM
+                            </Text>
+                            <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold text-center mt-1 px-4">
+                                {getRadiusDescription(tempRadius)}
+                            </Text>
+                        </View>
+
+                        {/* Options Scroll Bar */}
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ paddingHorizontal: 2, paddingBottom: 6 }}
+                            className="mb-5"
+                        >
+                            {[2, 5, 10, 15, 20, 30, 50].map((opt) => {
+                                const isSelected = tempRadius === opt;
+                                return (
+                                    <ScalePressable
+                                        key={opt}
+                                        onPress={() => {
+                                            setTempRadius(opt);
+                                            radiusVal.value = withSpring(opt, { damping: 15, stiffness: 100 });
+                                        }}
+                                        hapticType="selection"
+                                        className={`mr-3 px-5 py-3.5 rounded-2xl items-center justify-center border-2 flex-row gap-1 ${isSelected
+                                            ? 'bg-blue-600 border-blue-600 dark:bg-blue-600 dark:border-blue-600'
+                                            : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
+                                            }`}
+                                    >
+                                        <Text className={`font-black text-sm ${isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-350'}`}>
+                                            {opt}
+                                        </Text>
+                                        <Text className={`font-bold text-[10px] ${isSelected ? 'text-blue-100' : 'text-slate-400 dark:text-slate-500'}`}>
+                                            KM
+                                        </Text>
+                                        {isSelected && (
+                                            <Ionicons name="checkmark-circle" size={14} color="#fff" style={{ marginLeft: 2 }} />
+                                        )}
+                                    </ScalePressable>
+                                );
+                            })}
+                        </ScrollView>
+
+                        {/* Action apply button */}
+                        <ScalePressable
+                            onPress={() => handleRadiusChange(tempRadius)}
+                            hapticType="success"
+                            disabled={updatingRadius}
+                            className="w-full py-5 bg-blue-600 rounded-2xl items-center justify-center shadow-lg"
+                        >
+                            {updatingRadius ? (
+                                <View className="flex-row items-center justify-center gap-2">
+                                    <ActivityIndicator size="small" color="#fff" />
+                                    <Text className="text-white font-bold text-sm">Saving changes...</Text>
+                                </View>
+                            ) : (
+                                <Text className="text-white font-bold text-base">
+                                    Apply & Save Radius
+                                </Text>
+                            )}
+                        </ScalePressable>
                     </View>
                 </View>
             </Modal>
@@ -492,64 +646,12 @@ export default function SettingsScreen() {
             </Modal>
 
             {/* Privacy and Terms Modal View */}
-            <Modal
+            <CustomPolicyModel
                 visible={policyVisible}
-                animationType="slide"
-                transparent={false}
-                onRequestClose={() => setPolicyVisible(false)}
-            >
-                <View className="flex-1 bg-white dark:bg-slate-950">
-                    <View
-                        style={{ paddingTop: Math.max(insets.top, 16) }}
-                        className="pb-6 px-6 flex-row items-center justify-between border-b border-slate-50 dark:border-slate-900"
-                    >
-                        <Text className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                            {policyType === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
-                        </Text>
-                        <ScalePressable
-                            onPress={() => setPolicyVisible(false)}
-                            hapticType="light"
-                            className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl items-center justify-center border border-slate-100 dark:border-slate-800"
-                        >
-                            <Ionicons name="close" size={24} color={colors.text} />
-                        </ScalePressable>
-                    </View>
-                    <ScrollView className="flex-1 p-6" showsVerticalScrollIndicator={false}>
-                        {policyType === 'privacy' ? (
-                            <View className="space-y-4">
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 font-sans">1. Data We Collect</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    We collect basic registration information such as your name, mobile phone number, location details, and distance search radius to successfully match you with nearby service workers.
-                                </Text>
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">2. Sharing with Providers</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    When you choose to unlock a contact card, your basic contact and search coordinates are shared with the respective service provider to enable direct communication and localized service delivery.
-                                </Text>
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">3. Security Practices</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8">
-                                    Your information is encrypted and stored securely using our advanced backend platform. We do not sell or lease consumer telemetry or personal files to third-party marketing companies.
-                                </Text>
-                            </View>
-                        ) : (
-                            <View className="space-y-4">
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">1. Services Provided</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    Our platform acts as a discovery service connecting consumers with local services and service providers. We do not guarantee quality of service, availability, or actions of service providers.
-                                </Text>
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">2. Booking & Cancellation</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                                    All negotiations, pricing, and tasks are directly between the consumer and the provider. The platform acts as a direct messaging helper and does not take responsibility for payment disputes or cancellations.
-                                </Text>
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4">3. Code of Conduct</Text>
-                                <Text className="text-slate-600 dark:text-slate-400 leading-relaxed mb-8">
-                                    Any misuse, harassing behavior, fake bookings, or spamming will result in immediate termination of the consumer profile without prior notice.
-                                </Text>
-                            </View>
-                        )}
-                        <View className="h-20" />
-                    </ScrollView>
-                </View>
-            </Modal>
+                onClose={() => setPolicyVisible(false)}
+                role="consumer"
+                type={policyType}
+            />
         </View>
     );
 }

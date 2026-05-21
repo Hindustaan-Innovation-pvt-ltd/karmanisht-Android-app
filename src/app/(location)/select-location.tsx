@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Platform, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TextInput, ScrollView, StyleSheet, Platform, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -8,18 +8,33 @@ import * as Location from 'expo-location';
 import LocationMapPicker from '@/components/location-map-picker';
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
+import ScalePressable from '@/components/scale-pressable';
+import * as Haptics from 'expo-haptics';
+import Animated, { 
+    FadeInDown, 
+    FadeInLeft, 
+    FadeInRight, 
+    FadeOutLeft, 
+    FadeOutRight,
+    useAnimatedStyle, 
+    useSharedValue, 
+    withSpring 
+} from 'react-native-reanimated';
 
 export default function SelectLocation() {
     const router = useRouter();
     const user = useAppStore(state => state.user);
     const userLocation = useAppStore(state => state.userLocation);
-    const refreshProfile = useAppStore(state => state.refreshProfile);
     const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
 
     const [currentAddress, setCurrentAddress] = useState('Locating current address...');
     const [searchQuery, setSearchQuery] = useState('');
     const [savedAddresses, setSavedAddresses] = useState([]);
     const [loadingAddresses, setLoadingAddresses] = useState(false);
+
+    // Online autocomplete search states
+    const [onlineSuggestions, setOnlineSuggestions] = useState([]);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
     // Form states
     const [showAddForm, setShowAddForm] = useState(false);
@@ -30,8 +45,31 @@ export default function SelectLocation() {
     const [addressLine, setAddressLine] = useState('');
     const [savingAddress, setSavingAddress] = useState(false);
 
+    // Reanimated shared values for center pin bounce animation
+    const pinTranslateY = useSharedValue(0);
+    const pinScale = useSharedValue(1);
+    const shadowScale = useSharedValue(1);
+    const shadowOpacity = useSharedValue(0.15);
+
+    // Shared values for the dynamic search results
+    const animatedPinStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { translateY: -19 + pinTranslateY.value },
+                { scale: pinScale.value }
+            ]
+        };
+    });
+
+    const animatedShadowStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: shadowScale.value }],
+            opacity: shadowOpacity.value
+        };
+    });
+
     // Fetch saved addresses from DB
-    const fetchSavedAddresses = async () => {
+    const fetchSavedAddresses = useCallback(async () => {
         if (!user?.id) return;
         setLoadingAddresses(true);
         try {
@@ -51,11 +89,76 @@ export default function SelectLocation() {
         } finally {
             setLoadingAddresses(false);
         }
-    };
+    }, [user?.id]);
 
     useEffect(() => {
         fetchSavedAddresses();
-    }, [user?.id]);
+    }, [fetchSavedAddresses]);
+
+    // Debounced online place query using Nominatim
+    useEffect(() => {
+        let active = true;
+        let controller: AbortController | null = null;
+        let timeoutId: any = null;
+
+        const searchOnlinePlaces = async () => {
+            const query = searchQuery.trim();
+            if (query.length < 3) {
+                setOnlineSuggestions([]);
+                return;
+            }
+            setLoadingSuggestions(true);
+            controller = new AbortController();
+            timeoutId = setTimeout(() => {
+                if (controller) controller.abort();
+            }, 5000);
+
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=in`,
+                    {
+                        signal: controller.signal,
+                        headers: {
+                            'User-Agent': 'Hindustan-Innovations-App'
+                        }
+                    }
+                );
+                if (timeoutId) clearTimeout(timeoutId);
+                const data = await response.json();
+                if (active) {
+                    if (data && Array.isArray(data)) {
+                        const formatted = data.map(item => ({
+                            display_name: item.display_name,
+                            latitude: parseFloat(item.lat),
+                            longitude: parseFloat(item.lon)
+                        }));
+                        setOnlineSuggestions(formatted);
+                    } else {
+                        setOnlineSuggestions([]);
+                    }
+                }
+            } catch (error: any) {
+                if (active && error.name !== 'AbortError') {
+                    console.warn("Nominatim search error:", error);
+                }
+            } finally {
+                if (active) {
+                    setLoadingSuggestions(false);
+                }
+            }
+        };
+
+        const timer = setTimeout(() => {
+            searchOnlinePlaces();
+        }, 500);
+
+        return () => {
+            active = false;
+            clearTimeout(timer);
+            if (timeoutId) clearTimeout(timeoutId);
+            if (controller) controller.abort();
+        };
+    }, [searchQuery]);
 
     // Fetch and geocode current location for the subtext
     useEffect(() => {
@@ -175,6 +278,31 @@ export default function SelectLocation() {
         }
     };
 
+    // Map drag begins
+    const handleRegionChange = () => {
+        pinTranslateY.value = withSpring(-18, { damping: 15, stiffness: 150 });
+        pinScale.value = withSpring(1.15, { damping: 15, stiffness: 150 });
+        shadowScale.value = withSpring(0.5, { damping: 15, stiffness: 150 });
+        shadowOpacity.value = withSpring(0.05, { damping: 15, stiffness: 150 });
+    };
+
+    // Map drag settles
+    const handleRegionChangeComplete = async (region: any) => {
+        pinTranslateY.value = withSpring(0, { damping: 8, stiffness: 220 });
+        pinScale.value = withSpring(1, { damping: 8, stiffness: 220 });
+        shadowScale.value = withSpring(1, { damping: 8, stiffness: 220 });
+        shadowOpacity.value = withSpring(0.15, { damping: 8, stiffness: 220 });
+
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        }
+
+        const lat = region.latitude;
+        const lng = region.longitude;
+        setFormCoords({ latitude: lat, longitude: lng });
+        handleMapDrag(lat, lng);
+    };
+
     // Dragging map or marker updates coordinates and reverse-geocodes
     const handleMapDrag = async (lat: number, lng: number) => {
         try {
@@ -203,6 +331,9 @@ export default function SelectLocation() {
     // Save address to DB
     const handleSaveAddress = async () => {
         if (!addressLine.trim()) {
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            }
             Alert.alert('Validation Error', 'Please enter address details.');
             return;
         }
@@ -216,7 +347,7 @@ export default function SelectLocation() {
         setSavingAddress(true);
 
         try {
-            const { data, error } = await insforge.database
+            const { error } = await insforge.database
                 .from('user_addresses')
                 .insert([
                     {
@@ -230,6 +361,9 @@ export default function SelectLocation() {
 
             if (error) throw error;
 
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            }
             Alert.alert('Success', 'Address saved successfully!');
             setShowAddForm(false);
             fetchSavedAddresses();
@@ -317,28 +451,36 @@ export default function SelectLocation() {
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <ScalePressable onPress={() => router.back()} style={styles.backButton} hapticType="light">
                     <Ionicons name="chevron-down" size={28} color="#1E293B" />
-                </TouchableOpacity>
+                </ScalePressable>
                 <Text style={styles.headerTitle}>Select a location</Text>
             </View>
 
             {showAddForm ? (
                 /* Address Add Form view */
-                <View style={styles.formContainer}>
+                <Animated.View 
+                    entering={FadeInRight.duration(350).springify().damping(20)} 
+                    exiting={FadeOutLeft.duration(200)}
+                    style={styles.formContainer}
+                >
                     <Text style={styles.formSectionTitle}>Confirm your location</Text>
                     <View style={styles.mapWrapper}>
                         <LocationMapPicker
                             coords={formCoords}
                             region={formRegion}
-                            onRegionChangeComplete={(region) => {
-                                setFormCoords({
-                                    latitude: region.latitude,
-                                    longitude: region.longitude
-                                });
-                                handleMapDrag(region.latitude, region.longitude);
-                            }}
+                            onRegionChange={handleRegionChange}
+                            onRegionChangeComplete={handleRegionChangeComplete}
                         />
+                        {/* Centered pin overlay */}
+                        {Platform.OS !== 'web' && (
+                            <View style={styles.pinOverlayContainer} pointerEvents="none">
+                                <Animated.View style={[styles.centerPin, animatedPinStyle]}>
+                                    <FontAwesome5 name="map-marker-alt" size={38} color="#059669" />
+                                </Animated.View>
+                                <Animated.View style={[styles.centerPinShadow, animatedShadowStyle]} />
+                            </View>
+                        )}
                         <View style={styles.mapPinOverlay}>
                             <Text style={styles.mapPinText}>Drag map to adjust pin</Text>
                         </View>
@@ -351,12 +493,13 @@ export default function SelectLocation() {
                                 const isSelected = addressName === type;
                                 const iconName = type === 'Home' ? 'home' : type === 'Office' ? 'business' : 'location';
                                 return (
-                                    <TouchableOpacity
+                                    <ScalePressable
                                         key={type}
                                         style={[
                                             styles.typeButton,
                                             isSelected && styles.typeButtonActive
                                         ]}
+                                        hapticType="selection"
                                         onPress={() => {
                                             setAddressName(type);
                                         }}
@@ -373,7 +516,7 @@ export default function SelectLocation() {
                                         ]}>
                                             {type}
                                         </Text>
-                                    </TouchableOpacity>
+                                    </ScalePressable>
                                 );
                             })}
                         </View>
@@ -399,131 +542,265 @@ export default function SelectLocation() {
                             numberOfLines={3}
                         />
 
-                        <TouchableOpacity
+                        <ScalePressable
                             style={styles.saveBtn}
                             onPress={handleSaveAddress}
                             disabled={savingAddress}
+                            hapticType="success"
                         >
                             {savingAddress ? (
                                 <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
                                 <Text style={styles.saveBtnText}>Save Address</Text>
                             )}
-                        </TouchableOpacity>
+                        </ScalePressable>
 
-                        <TouchableOpacity
+                        <ScalePressable
                             style={styles.cancelBtn}
                             onPress={() => setShowAddForm(false)}
+                            hapticType="light"
                         >
                             <Text style={styles.cancelBtnText}>Cancel</Text>
-                        </TouchableOpacity>
+                        </ScalePressable>
                     </ScrollView>
-                </View>
+                </Animated.View>
             ) : (
                 /* Address Listing view */
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                    {/* Search Bar */}
-                    <View style={styles.searchContainer}>
-                        <Ionicons name="search" size={22} color="#059669" style={styles.searchIcon} />
-                        <TextInput
-                            placeholder="Search saved addresses..."
-                            placeholderTextColor="#94A3B8"
-                            style={styles.searchInput}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                        />
-                    </View>
-
-                    {/* Option: Use current location */}
-                    <TouchableOpacity style={styles.optionRow} onPress={handleUseCurrentLocation}>
-                        <View style={styles.optionIconContainer}>
-                            <MaterialCommunityIcons name="crosshairs-gps" size={22} color="#059669" />
+                <Animated.View 
+                    entering={FadeInLeft.duration(350).springify().damping(20)} 
+                    exiting={FadeOutRight.duration(200)}
+                    style={styles.listingContainer}
+                >
+                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                        {/* Search Bar */}
+                        <View style={styles.searchContainer}>
+                            <Ionicons name="search" size={22} color="#059669" style={styles.searchIcon} />
+                            <TextInput
+                                placeholder="Search saved or search places online..."
+                                placeholderTextColor="#94A3B8"
+                                style={styles.searchInput}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                            />
+                            {searchQuery.length > 0 && (
+                                <ScalePressable onPress={() => setSearchQuery('')} hapticType="light">
+                                    <Ionicons name="close-circle" size={20} color="#94A3B8" />
+                                </ScalePressable>
+                            )}
                         </View>
-                        <View style={styles.optionTextContainer}>
-                            <Text style={styles.optionTitle}>Use current location</Text>
-                            <Text style={styles.optionSubtext} numberOfLines={2}>
-                                {currentAddress}
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
-                    </TouchableOpacity>
 
-                    {/* Option: Add Address */}
-                    <TouchableOpacity style={styles.optionRow} onPress={handleUseCurrentLocation}>
-                        <View style={styles.optionIconContainer}>
-                            <Ionicons name="add" size={22} color="#059669" />
-                        </View>
-                        <View style={styles.optionTextContainer}>
-                            <Text style={styles.optionTitle}>Add Address</Text>
-                            <Text style={styles.optionSubtext}>Select custom location on map</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
-                    </TouchableOpacity>
-
-                    {/* SAVED ADDRESSES */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionHeaderText}>SAVED ADDRESSES</Text>
-                    </View>
-
-                    {loadingAddresses ? (
-                        <ActivityIndicator size="large" color="#059669" style={{ marginVertical: 20 }} />
-                    ) : filteredAddresses.length === 0 ? (
-                        <Text style={styles.noAddressText}>No saved addresses found.</Text>
-                    ) : (
-                        filteredAddresses.map((address) => {
-                            // Calculate distance if coordinates are available
-                            const distance = userLocation?.coords
-                                ? getDistance(
-                                    userLocation.coords.latitude,
-                                    userLocation.coords.longitude,
-                                    Number(address.latitude),
-                                    Number(address.longitude)
-                                )
-                                : null;
-
-                            const distanceStr = distance !== null
-                                ? (distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`)
-                                : '';
-
-                            const isHome = address.name === 'Home';
-                            const isWork = address.name === 'Office';
-                            const iconName = isHome ? 'home-outline' : isWork ? 'business-outline' : 'location-outline';
-
-                            return (
-                                <View key={address.id} style={styles.savedCard}>
-                                    <TouchableOpacity
-                                        style={styles.savedCardTop}
-                                        onPress={() => handleSelectAddress(address)}
-                                    >
-                                        <View style={styles.addressIconBox}>
-                                            <Ionicons name={iconName} size={20} color="#64748B" />
-                                            {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
-                                        </View>
-                                        <View style={styles.addressDetails}>
-                                            <Text style={styles.addressName}>{address.name}</Text>
-                                            <Text style={styles.addressFull} numberOfLines={2}>
-                                                {address.address_line}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                    <View style={styles.savedCardActions}>
-                                        <TouchableOpacity
-                                            style={styles.deleteBtn}
-                                            onPress={() => handleDeleteAddress(address.id)}
-                                        >
-                                            <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                                        </TouchableOpacity>
-                                       
+                        {searchQuery.trim().length === 0 ? (
+                            <>
+                                {/* Option: Use current location */}
+                                <ScalePressable style={styles.optionRow} hapticType="medium" onPress={handleUseCurrentLocation}>
+                                    <View style={styles.optionIconContainer}>
+                                        <MaterialCommunityIcons name="crosshairs-gps" size={22} color="#059669" />
                                     </View>
+                                    <View style={styles.optionTextContainer}>
+                                        <Text style={styles.optionTitle}>Use current location</Text>
+                                        <Text style={styles.optionSubtext} numberOfLines={2}>
+                                            {currentAddress}
+                                        </Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                                </ScalePressable>
+
+                                {/* Option: Add Address */}
+                                <ScalePressable style={styles.optionRow} hapticType="medium" onPress={handleUseCurrentLocation}>
+                                    <View style={styles.optionIconContainer}>
+                                        <Ionicons name="add" size={22} color="#059669" />
+                                    </View>
+                                    <View style={styles.optionTextContainer}>
+                                        <Text style={styles.optionTitle}>Add Address</Text>
+                                        <Text style={styles.optionSubtext}>Select custom location on map</Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                                </ScalePressable>
+
+                                {/* SAVED ADDRESSES */}
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionHeaderText}>SAVED ADDRESSES</Text>
                                 </View>
-                            );
-                        })
-                    )}
 
-                   
+                                {loadingAddresses ? (
+                                    <ActivityIndicator size="large" color="#059669" style={{ marginVertical: 20 }} />
+                                ) : filteredAddresses.length === 0 ? (
+                                    <Text style={styles.noAddressText}>No saved addresses found.</Text>
+                                ) : (
+                                    filteredAddresses.map((address, index) => {
+                                        const distance = userLocation?.coords
+                                            ? getDistance(
+                                                userLocation.coords.latitude,
+                                                userLocation.coords.longitude,
+                                                Number(address.latitude),
+                                                Number(address.longitude)
+                                            )
+                                            : null;
 
-                   
-                </ScrollView>
+                                        const distanceStr = distance !== null
+                                            ? (distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`)
+                                            : '';
+
+                                        const isHome = address.name === 'Home';
+                                        const isWork = address.name === 'Office';
+                                        const iconName = isHome ? 'home-outline' : isWork ? 'business-outline' : 'location-outline';
+
+                                        return (
+                                            <Animated.View 
+                                                key={address.id}
+                                                entering={FadeInDown.delay(index * 40).springify().damping(15)}
+                                                style={styles.savedCard}
+                                            >
+                                                <ScalePressable
+                                                    style={styles.savedCardTop}
+                                                    hapticType="light"
+                                                    onPress={() => handleSelectAddress(address)}
+                                                >
+                                                    <View style={styles.addressIconBox}>
+                                                        <Ionicons name={iconName} size={20} color="#64748B" />
+                                                        {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
+                                                    </View>
+                                                    <View style={styles.addressDetails}>
+                                                        <Text style={styles.addressName}>{address.name}</Text>
+                                                        <Text style={styles.addressFull} numberOfLines={2}>
+                                                            {address.address_line}
+                                                        </Text>
+                                                    </View>
+                                                </ScalePressable>
+                                                <View style={styles.savedCardActions}>
+                                                    <ScalePressable
+                                                        style={styles.deleteBtn}
+                                                        hapticType="heavy"
+                                                        onPress={() => handleDeleteAddress(address.id)}
+                                                    >
+                                                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                    </ScalePressable>
+                                                </View>
+                                            </Animated.View>
+                                        );
+                                    })
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                {/* Places & Locations Online Autocomplete */}
+                                {searchQuery.trim().length > 2 && (
+                                    <View style={styles.onlineSuggestionsWrapper}>
+                                        <View style={styles.sectionHeader}>
+                                            <Text style={styles.sectionHeaderText}>PLACES & LOCATIONS (OSM)</Text>
+                                        </View>
+                                        {loadingSuggestions ? (
+                                            <View style={styles.suggestionLoadingRow}>
+                                                <ActivityIndicator size="small" color="#059669" />
+                                                <Text style={styles.suggestionLoadingText}>Searching places online...</Text>
+                                            </View>
+                                        ) : onlineSuggestions.length === 0 ? (
+                                            <Text style={styles.noAddressText}>No matching online places found.</Text>
+                                        ) : (
+                                            onlineSuggestions.map((suggestion, index) => (
+                                                <Animated.View key={index} entering={FadeInDown.delay(index * 40).springify()}>
+                                                    <ScalePressable
+                                                        style={styles.suggestionRow}
+                                                        hapticType="selection"
+                                                        onPress={() => {
+                                                            const lat = suggestion.latitude;
+                                                            const lng = suggestion.longitude;
+                                                            setFormCoords({ latitude: lat, longitude: lng });
+                                                            setFormRegion({
+                                                                latitude: lat,
+                                                                longitude: lng,
+                                                                latitudeDelta: 0.00922,
+                                                                longitudeDelta: 0.00421,
+                                                            });
+                                                            setAddressLine(suggestion.display_name);
+                                                            setAddressName('Home');
+                                                            setCustomName('');
+                                                            setShowAddForm(true);
+                                                        }}
+                                                    >
+                                                        <View style={styles.suggestionIconBox}>
+                                                            <Ionicons name="map-outline" size={20} color="#059669" />
+                                                        </View>
+                                                        <View style={styles.suggestionDetails}>
+                                                            <Text style={styles.suggestionTitle} numberOfLines={1}>
+                                                                {suggestion.display_name.split(',')[0]}
+                                                            </Text>
+                                                            <Text style={styles.suggestionSubtext} numberOfLines={2}>
+                                                                {suggestion.display_name}
+                                                            </Text>
+                                                        </View>
+                                                        <Ionicons name="chevron-forward" size={16} color="#059669" />
+                                                    </ScalePressable>
+                                                </Animated.View>
+                                            ))
+                                        )}
+                                    </View>
+                                )}
+
+                                {/* Filtered Saved Addresses */}
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionHeaderText}>{`SAVED ADDRESSES MATCHING "${searchQuery.toUpperCase()}"`}</Text>
+                                </View>
+                                {filteredAddresses.length === 0 ? (
+                                    <Text style={styles.noAddressText}>No matching saved addresses found.</Text>
+                                ) : (
+                                    filteredAddresses.map((address, index) => {
+                                        const distance = userLocation?.coords
+                                            ? getDistance(
+                                                userLocation.coords.latitude,
+                                                userLocation.coords.longitude,
+                                                Number(address.latitude),
+                                                Number(address.longitude)
+                                            )
+                                            : null;
+
+                                        const distanceStr = distance !== null
+                                            ? (distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`)
+                                            : '';
+
+                                        const isHome = address.name === 'Home';
+                                        const isWork = address.name === 'Office';
+                                        const iconName = isHome ? 'home-outline' : isWork ? 'business-outline' : 'location-outline';
+
+                                        return (
+                                            <Animated.View 
+                                                key={address.id}
+                                                entering={FadeInDown.delay(index * 40).springify().damping(15)}
+                                                style={styles.savedCard}
+                                            >
+                                                <ScalePressable
+                                                    style={styles.savedCardTop}
+                                                    hapticType="light"
+                                                    onPress={() => handleSelectAddress(address)}
+                                                >
+                                                    <View style={styles.addressIconBox}>
+                                                        <Ionicons name={iconName} size={20} color="#64748B" />
+                                                        {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
+                                                    </View>
+                                                    <View style={styles.addressDetails}>
+                                                        <Text style={styles.addressName}>{address.name}</Text>
+                                                        <Text style={styles.addressFull} numberOfLines={2}>
+                                                            {address.address_line}
+                                                        </Text>
+                                                    </View>
+                                                </ScalePressable>
+                                                <View style={styles.savedCardActions}>
+                                                    <ScalePressable
+                                                        style={styles.deleteBtn}
+                                                        hapticType="heavy"
+                                                        onPress={() => handleDeleteAddress(address.id)}
+                                                    >
+                                                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                    </ScalePressable>
+                                                </View>
+                                            </Animated.View>
+                                        );
+                                    })
+                                )}
+                            </>
+                        )}
+                    </ScrollView>
+                </Animated.View>
             )}
         </SafeAreaView>
     );
@@ -638,6 +915,7 @@ const styles = StyleSheet.create({
     },
     savedCardTop: {
         flexDirection: 'row',
+        flex: 1,
     },
     addressIconBox: {
         alignItems: 'center',
@@ -671,6 +949,7 @@ const styles = StyleSheet.create({
         paddingTop: 12,
         borderTopWidth: 1,
         borderTopColor: '#F1F5F9',
+        justifyContent: 'flex-end',
         gap: 12,
     },
     actionBtn: {
@@ -683,63 +962,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E2E8F0',
     },
-    recentRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 12,
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    recentLeft: {
-        alignItems: 'center',
-        marginRight: 16,
-        width: 40,
-    },
-    recentDistance: {
-        fontSize: 10,
-        color: '#64748B',
-        fontWeight: '600',
-        marginTop: 2,
-    },
-    recentDetails: {
-        flex: 1,
-    },
-    recentTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1E293B',
-        marginBottom: 2,
-    },
-    recentSubtext: {
-        fontSize: 13,
-        color: '#64748B',
-    },
-    googleBrand: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 24,
-        marginBottom: 40,
-    },
-    poweredBy: {
-        fontSize: 12,
-        color: '#94A3B8',
-        marginRight: 4,
-        fontWeight: '500',
-    },
-    googleText: {
-        fontSize: 16,
-        fontWeight: '700',
-        letterSpacing: -0.5,
-    },
-
-    // Form Styles
     formContainer: {
         flex: 1,
         backgroundColor: '#FFFFFF',
@@ -884,5 +1106,79 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: '#FEE2E2',
-    }
+    },
+    listingContainer: {
+        flex: 1,
+    },
+    pinOverlayContainer: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    centerPin: {
+        zIndex: 10,
+    },
+    centerPinShadow: {
+        position: 'absolute',
+        width: 14,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: 'rgba(0, 0, 0, 0.25)',
+        bottom: '50%',
+        marginBottom: -22,
+        zIndex: 9,
+    },
+    onlineSuggestionsWrapper: {
+        marginBottom: 16,
+    },
+    suggestionLoadingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 20,
+    },
+    suggestionLoadingText: {
+        marginLeft: 10,
+        color: '#64748B',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    suggestionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 10,
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 4,
+        elevation: 1,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+    },
+    suggestionIconBox: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#ECFDF5',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    suggestionDetails: {
+        flex: 1,
+    },
+    suggestionTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#1E293B',
+    },
+    suggestionSubtext: {
+        fontSize: 12,
+        color: '#64748B',
+        marginTop: 2,
+        lineHeight: 16,
+    },
 });

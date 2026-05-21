@@ -129,23 +129,23 @@ export default function ProfileScreen() {
                     <Text className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">
                         Account Options
                     </Text>
-                    
+
                     <View className="border-t border-slate-100 dark:border-slate-900">
                         {menuItems.map((item) => {
                             const IconLib = item.library;
                             const isDestructive = item.isDestructive;
                             return (
-                                <TouchableOpacity 
-                                    key={item.id} 
+                                <TouchableOpacity
+                                    key={item.id}
                                     onPress={() => handleMenuPress(item.id)}
                                     className="flex-row items-center justify-between py-4 border-b border-slate-100 dark:border-slate-900"
                                 >
                                     <View className="flex-row items-center flex-1 mr-4">
                                         <View className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 items-center justify-center border border-slate-100/50 dark:border-slate-800/30">
-                                            <IconLib 
-                                                name={item.icon as any} 
-                                                size={18} 
-                                                color={isDestructive ? '#EF4444' : (isDark ? '#94A3B8' : '#475569')} 
+                                            <IconLib
+                                                name={item.icon as any}
+                                                size={18}
+                                                color={isDestructive ? '#EF4444' : (isDark ? '#94A3B8' : '#475569')}
                                             />
                                         </View>
                                         <View className="ml-3 flex-1">
@@ -157,10 +157,10 @@ export default function ProfileScreen() {
                                             </Text>
                                         </View>
                                     </View>
-                                    <Ionicons 
-                                        name="chevron-forward" 
-                                        size={16} 
-                                        color={isDestructive ? '#EF4444' : (isDark ? '#475569' : '#CBD5E1')} 
+                                    <Ionicons
+                                        name="chevron-forward"
+                                        size={16}
+                                        color={isDestructive ? '#EF4444' : (isDark ? '#475569' : '#CBD5E1')}
                                     />
                                 </TouchableOpacity>
                             );

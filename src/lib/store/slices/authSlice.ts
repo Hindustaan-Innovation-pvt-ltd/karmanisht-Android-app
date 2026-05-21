@@ -18,7 +18,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     setUser: async (partial: Partial<UserProfile>) => {
         const next = { ...get().user, ...partial };
         set({ user: next });
-        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(next)).catch(() => {});
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(next)).catch(() => { });
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                             .select('service_radius_km, area_name')
                             .eq('provider_id', workerData.id)
                             .maybeSingle();
-                        
+
                         if (locData) {
                             profile.searchRadiusKm = locData.service_radius_km || 5;
                             profile.location = locData.area_name || '';
@@ -109,7 +109,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                             profile.professionId = servicesData[0].category_id;
                         }
 
-                        set({ 
+                        set({
                             user: profile,
                             workerStats: {
                                 rating: workerData.average_rating ? Number(workerData.average_rating) : 0.0,
@@ -164,7 +164,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     .select('service_radius_km, area_name')
                     .eq('provider_id', workerData.id)
                     .maybeSingle();
-                
+
                 if (locData) {
                     profile.searchRadiusKm = locData.service_radius_km || 5;
                     profile.location = locData.area_name || '';
@@ -181,7 +181,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     profile.professionId = servicesData[0].category_id;
                 }
 
-                set({ 
+                set({
                     user: profile,
                     workerStats: {
                         rating: workerData.average_rating ? Number(workerData.average_rating) : 0.0,
@@ -230,7 +230,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             }
 
             // Immediately fetch categories in parallel
-            let categoriesPromise = get().fetchCategories().catch(() => {});
+            let categoriesPromise = get().fetchCategories().catch(() => { });
             let hasToken = !!token;
 
             if (refreshToken && !token) {
@@ -252,7 +252,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
 
             // If we have an active access token, force-fetch the full database categories list
             if (hasToken) {
-                categoriesPromise = get().fetchCategories(true).catch(() => {});
+                categoriesPromise = get().fetchCategories(true).catch(() => { });
             }
 
             // A. Revalidate User Profile from DB
@@ -393,7 +393,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     const { status } = await Location.requestForegroundPermissionsAsync();
                     if (status === 'granted') {
                         const loc = (await Location.getLastKnownPositionAsync()) ??
-                                    await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                            await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
                         if (loc) {
                             set({ userLocation: loc });
                             const currentUser = get().user;
@@ -443,7 +443,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
         let newId = updates.id || get().user.id;
         const mobileToUse = updates.phone || get().user.phone;
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        
+
         let role = updates.role || get().user.role;
         if (!role && newId && !newId.startsWith('local_') && uuidRegex.test(newId)) {
             try {
@@ -581,7 +581,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
 
         const nextUser = { ...get().user, ...updates, id: newId };
         set({ user: nextUser });
-        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(nextUser)).catch(() => {});
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(nextUser)).catch(() => { });
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -589,7 +589,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     // ─────────────────────────────────────────────────────────────────────────
     setOnline: async (v: boolean) => {
         set({ isOnline: v });
-        AsyncStorage.setItem(STORAGE_KEYS.ONLINE, String(v)).catch(() => {});
+        AsyncStorage.setItem(STORAGE_KEYS.ONLINE, String(v)).catch(() => { });
         const userId = get().user.id;
         if (userId) {
             const tableName = get().user.role === 'worker' ? 'service_providers' : 'users';

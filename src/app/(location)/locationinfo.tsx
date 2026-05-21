@@ -1,6 +1,9 @@
 // @ts-nocheck
 import React from 'react'
 import { View, Text, TouchableOpacity, ScrollView, useColorScheme, TextInput, Alert, ActivityIndicator, Switch, StyleSheet } from 'react-native'
+import Animated, { useSharedValue, withTiming, withRepeat, withDelay, useAnimatedStyle } from 'react-native-reanimated'
+import ScalePressable from '@/components/scale-pressable'
+import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useAppStore } from '@/lib/store';
@@ -99,12 +102,30 @@ export default function LocationInfo() {
 
     // Calculate dynamic scaling for the coverage area preview circle
     // 2km -> small, 5km -> medium, 10km -> large, citywide -> full width
-    const getScale = () => {
-        if (cityWide) return 1.35;
-        if (radiusKm <= 2) return 0.65;
-        if (radiusKm <= 5) return 0.95;
-        return 1.2;
-    };
+    // Scale logic moved inside animated style
+
+    // Radar pulse animation shared value
+    const radarPulse = useSharedValue(1);
+    const radiusSV = useSharedValue(radiusKm);
+    const cityWideSV = useSharedValue(cityWide ? 1 : 0);
+    React.useEffect(() => {
+        radiusSV.value = radiusKm;
+        cityWideSV.value = cityWide ? 1 : 0;
+        radarPulse.value = withRepeat(
+            withTiming(1.2, { duration: 800 }),
+            -1,
+            true
+        );
+    }, [radiusKm, cityWide]);
+
+    const radarStyle = useAnimatedStyle(() => {
+        // Determine base scale: full width if cityWide, otherwise proportional to radius (max 10km)
+        const baseScale = cityWideSV.value === 1 ? 1 : radiusSV.value / 10;
+        return {
+            transform: [{ scale: radarPulse.value * baseScale }],
+            opacity: withDelay(0, withTiming(1, { duration: 800 }))
+        };
+    });
 
     return (
         <SafeAreaProvider>
@@ -141,7 +162,7 @@ export default function LocationInfo() {
                                     value={locationLabel}
                                     onChangeText={setLocationLabel}
                                 />
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={detectCurrentLocation}
                                     disabled={loadingLocation}
                                     className='bg-slate-200/60 dark:bg-slate-800 p-2 rounded-full'
@@ -172,98 +193,114 @@ export default function LocationInfo() {
                         </View>
 
                         {/* Coverage Area Preview Card */}
-                        <View className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] p-6 mb-6 items-center justify-between min-h-[220px]">
+                        <LinearGradient
+                            colors={isDark ? ['#1E3A8A', '#312E81'] : ['#6366F1', '#A78BFA']}
+                            style={{
+                                borderRadius: 24,
+                                padding: 24,
+                                marginBottom: 24,
+                                minHeight: 220,
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                borderWidth: 1.5,
+                                borderColor: isDark ? '#475569' : '#0F172A',
+                            }}
+                        >
+
                             {/* Circle Radar Preview */}
                             <View className="flex-1 items-center justify-center my-4">
-                                {/* Outer circle of dynamic scale */}
-                                <View 
-                                    style={{
+                                {/* Animated outer circle */}
+                                <Animated.View
+                                    style={[radarStyle, {
                                         width: 140,
                                         height: 140,
                                         borderRadius: 70,
                                         borderWidth: 1.5,
                                         borderColor: isDark ? '#475569' : '#0F172A',
                                         backgroundColor: isDark ? 'rgba(71, 85, 105, 0.15)' : '#E2E8F0',
-                                        transform: [{ scale: getScale() }]
-                                    }}
+                                    }
+                                    ]}
                                     className="items-center justify-center"
                                 >
                                     {/* Inner Location Pin Badge */}
                                     <View className="size-10 rounded-full bg-slate-900 dark:bg-slate-100 items-center justify-center border-2 border-white dark:border-slate-950 shadow-md">
                                         <Ionicons name="location" size={18} color={isDark ? "#0F172A" : "#FFFFFF"} />
                                     </View>
-                                </View>
+                                </Animated.View>
                             </View>
-
-                            <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider self-start">
-                                Coverage area preview
-                            </Text>
-                        </View>
-
-                        {/* Quick Distance Selector */}
-                        <View className="mb-6">
-                            <Text className="text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest">
-                                QUICK DISTANCE
-                            </Text>
-                            <View className="flex-row gap-3">
-                                {[2, 5, 10].map((dist) => {
-                                    const isActive = radiusKm === dist && !cityWide;
-                                    return (
-                                        <TouchableOpacity
-                                            key={dist}
-                                            disabled={cityWide}
-                                            onPress={() => setRadiusKm(dist)}
-                                            style={isActive ? styles.btnActive : styles.btnInactive}
-                                            className={`flex-1 py-3.5 rounded-xl items-center justify-center border ${cityWide ? 'opacity-40' : ''}`}
-                                        >
-                                            <Text style={isActive ? styles.textActive : styles.textInactive} className="text-sm font-black">
-                                                {dist} km
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-                        </View>
-
-                        {/* City Wide Switch Row */}
-                        {user?.role === 'worker' && (
-                            <View className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex-row justify-between items-center mb-6">
-                                <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                    Accept city wide requests
-                                </Text>
-                                <Switch
-                                    value={cityWide}
-                                    onValueChange={setCityWide}
-                                    trackColor={{ false: '#E2E8F0', true: '#000000' }}
-                                    thumbColor={cityWide ? '#FFFFFF' : '#FFFFFF'}
-                                />
-                            </View>
-                        )}
+                        </LinearGradient>
+                        <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider self-start">
+                            Coverage area preview
+                        </Text>
                     </View>
+
+                    {/* Quick Distance Selector */}
+                    <View className="mb-6">
+                        <Text className="text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest">
+                            QUICK DISTANCE
+                        </Text>
+                        <View className="flex-row gap-3">
+                            {[2, 5, 10].map((dist) => {
+                                // Scale shared value updated on radius or city-wide changes
+                                const scaleVal = useSharedValue(1);
+                                React.useEffect(() => {
+                                    const newScale = cityWide ? 1.35 : radiusKm <= 2 ? 0.65 : radiusKm <= 5 ? 0.95 : 1.2;
+                                    scaleVal.value = newScale;
+                                }, [cityWide, radiusKm]);
+                                const isActive = radiusKm === dist && !cityWide;
+                                return (
+                                    <ScalePressable
+                                        key={dist}
+                                        disabled={cityWide}
+                                        onPress={() => setRadiusKm(dist)}
+                                        style={isActive ? styles.btnActive : styles.btnInactive}
+                                        className={`flex-1 py-3.5 rounded-xl items-center justify-center border ${cityWide ? 'opacity-40' : ''}`}
+                                    >
+                                        <Text style={isActive ? styles.textActive : styles.textInactive} className="text-sm font-black">
+                                            {dist} km
+                                        </Text>
+                                    </ScalePressable>
+                                );
+                            })}
+                        </View>
+                    </View>
+
+                    {/* City Wide Switch Row */}
+                    {user?.role === 'worker' && (
+                        <View className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex-row justify-between items-center mb-6">
+                            <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                Accept city wide requests
+                            </Text>
+                            <Switch
+                                value={cityWide}
+                                onValueChange={setCityWide}
+                                trackColor={{ false: '#E2E8F0', true: '#000000' }}
+                                thumbColor={cityWide ? '#FFFFFF' : '#FFFFFF'}
+                            />
+                        </View>
+                    )}
                 </ScrollView>
 
                 {/* Footer Save Button */}
                 <View className='p-4 border-t border-slate-100 dark:border-slate-900 items-center gap-2'>
-                    <TouchableOpacity
+                    <ScalePressable
                         onPress={handleFinish}
-                        activeOpacity={0.8}
-                        className='w-full bg-[#18181B] dark:bg-blue-600 py-4 rounded-2xl items-center'
-                    >
+                        className='w-full bg-[#18181B] dark:bg-blue-600 py-4 rounded-2xl items-center'>
                         <Text className='text-white text-base font-black'>Save radius</Text>
-                    </TouchableOpacity>
+                    </ScalePressable>
                     <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                         Service area setup
                     </Text>
                 </View>
             </SafeAreaView>
-        </SafeAreaProvider>
+        </SafeAreaProvider >
     )
 }
 
 const styles = StyleSheet.create({
     btnActive: {
-        backgroundColor: '#18181B',
-        borderColor: '#18181B',
+        backgroundColor: '#4F46E5', // indigo-600
+        borderColor: '#4F46E5',
     },
     btnInactive: {
         backgroundColor: '#FFFFFF',
@@ -274,5 +311,8 @@ const styles = StyleSheet.create({
     },
     textInactive: {
         color: '#0F172A',
+    },
+    textActive: {
+        color: '#FFFFFF',
     }
 });

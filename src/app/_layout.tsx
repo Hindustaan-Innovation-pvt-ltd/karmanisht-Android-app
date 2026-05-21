@@ -42,7 +42,7 @@ if (__DEV__) {
         }
         console.warn(`[Unhandled Promise Rejection] ID: ${id}`, error);
       },
-      onHandled: () => {},
+      onHandled: () => { },
     });
   } catch {
     // Ignore if rejection tracking module is not available
@@ -54,6 +54,12 @@ WebBrowser.maybeCompleteAuthSession();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const refreshProfile = useAppStore(state => state.refreshProfile);
+
+  console.log('EXPO_PUBLIC_INSFORGE_URL:', process.env.EXPO_PUBLIC_INSFORGE_URL);
+  console.log('EXPO_PUBLIC_INSFORGE_ANON_KEY:', process.env.EXPO_PUBLIC_INSFORGE_ANON_KEY);
+  console.log('EXPO_PUBLIC_Test_Key_ID:', process.env.EXPO_PUBLIC_Test_Key_ID);
+  console.log('EXPO_PUBLIC_Test_Key_Secret:', process.env.EXPO_PUBLIC_Test_Key_Secret);
+
 
   useEffect(() => {
     refreshProfile();
