@@ -17,6 +17,7 @@ WebBrowser.maybeCompleteAuthSession();
 export default function Login() {
     const router = useRouter()
     const processUserSession = useAppStore(state => state.processUserSession)
+    const setUser = useAppStore(state => state.setUser)
     const [mobile, setMobile] = useState('')
     const [loading, setLoading] = useState(false)
     const [cooldown, setCooldown] = useState(0)
@@ -149,11 +150,20 @@ export default function Login() {
                 if (profile) {
                     routeProfile(profile);
                 } else {
-                    // Brand new Google user — send to register
+                    // Populate local store state with the authenticated Google session details
+                    await setUser({
+                        id: insforgeUser.id,
+                        name: insforgeUser.profile?.name || insforgeUser.email?.split('@')[0] || 'User',
+                        email: insforgeUser.email || '',
+                        isGoogleUser: true,
+                        role: null,
+                    });
+
+                    // Brand new Google user — send to google-onboarding
                     router.replace({
-                        pathname: '/(onboarding)/auth/register',
+                        pathname: '/(onboarding)/auth/google-onboarding',
                         params: {
-                            prefilledName: insforgeUser.profile?.name || '',
+                            prefilledName: insforgeUser.profile?.name || insforgeUser.email?.split('@')[0] || '',
                             prefilledEmail: insforgeUser.email || '',
                             prefilledUserId: insforgeUser.id,
                         }

@@ -442,11 +442,14 @@ const CategoryPassModal = ({
                                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                                 style={{ paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
                             >
-                                {loading
-                                    ? <ActivityIndicator color="#fff" />
-                                    : <><Ionicons name="card" size={18} color="#fff" />
-                                       <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Pay ₹{price}</Text></>
-                                }
+                                {loading ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="card" size={18} color="#fff" />
+                                        <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Pay ₹{price}</Text>
+                                    </>
+                                )}
                             </LinearGradient>
                         </TouchableOpacity>
                     </View>
