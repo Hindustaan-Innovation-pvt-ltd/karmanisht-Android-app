@@ -2,6 +2,27 @@ import 'react-native-url-polyfill/auto';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Polyfill window.location and window.history for React Native environment to support InsForge SDK
+const globalAny = global as any;
+if (typeof globalAny.window === 'undefined') {
+  globalAny.window = {} as any;
+}
+if (!globalAny.window.location) {
+  globalAny.window.location = {
+    protocol: 'https:',
+    hostname: 'localhost',
+    href: 'https://localhost/',
+    search: '',
+    origin: 'https://localhost',
+    pathname: '/',
+  };
+}
+if (!globalAny.window.history) {
+  globalAny.window.history = {
+    replaceState: () => {},
+  };
+}
+
 // Polyfill document.cookie for React Native environment to support CSRF token in InsForge SDK
 if (typeof document === 'undefined') {
   const cookies: Record<string, string> = {};
