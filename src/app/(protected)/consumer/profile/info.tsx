@@ -170,7 +170,7 @@ export default function ProfileInfoScreen() {
                         <Ionicons name="chevron-back" size={22} color={isDark ? '#94A3B8' : '#334155'} />
                     </TouchableOpacity>
                     <Text className="text-lg font-bold text-slate-800 dark:text-slate-100">Edit Profile</Text>
-                    <View className="w-11" /> {/* Spacer to align title centered */}
+                    <View className="w-11" />
                 </View>
 
                 <KeyboardAvoidingView
