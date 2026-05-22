@@ -24,7 +24,17 @@ export default function Otp() {
     const [loading, setLoading] = useState(false)
     const [cooldown, setCooldown] = useState(initialCooldown ? parseInt(initialCooldown) : 30)
     const [currentVerificationId, setCurrentVerificationId] = useState(verificationId || '')
+    const hasProcessedRef = useRef(false)
 
+    useEffect(() => {
+        const unsubscribe = auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                console.log('Firebase user auto-authenticated in OTP screen:', user.uid);
+                await handleSuccessfulLogin();
+            }
+        });
+        return () => unsubscribe();
+    }, []);
 
     // ── Cooldown countdown timer ─────────────────────────────────────────────
     useEffect(() => {
@@ -51,16 +61,11 @@ export default function Otp() {
         }
     };
 
-    const handleVerifyOtp = async () => {
-        if (otp.length < 6) {
-            Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP.');
-            return;
-        }
+    const handleSuccessfulLogin = async () => {
+        if (hasProcessedRef.current) return;
+        hasProcessedRef.current = true;
         setLoading(true);
         try {
-            const credential = auth.PhoneAuthProvider.credential(currentVerificationId, otp);
-            await auth().signInWithCredential(credential);
-
             // 2. Establish auth session via mock email/password
             const mockEmail = `${mobile}@mock-mobile.local`;
             const mockPassword = `Static_Auth_${mobile}`;
@@ -103,10 +108,34 @@ export default function Otp() {
                 router.replace('/(onboarding)/auth/login');
             }
         } catch (err: any) {
-            console.error('[OTP Verify]', err);
+            console.error('[OTP Verify Success Handler]', err);
             Alert.alert('Error', err?.message || 'Verification failed');
+            hasProcessedRef.current = false; // allow retry
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (otp.length < 6) {
+            Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP.');
+            return;
+        }
+        setLoading(true);
+        try {
+            const credential = auth.PhoneAuthProvider.credential(currentVerificationId, otp);
+            await auth().signInWithCredential(credential);
+        } catch (err: any) {
+            console.error('[OTP Verify Manual]', err);
+            // If the user is already signed in natively, signInWithCredential throws session-expired.
+            const currentUser = auth().currentUser;
+            if (currentUser) {
+                console.log('User is already authenticated, bypassing session-expired error...');
+                await handleSuccessfulLogin();
+            } else {
+                Alert.alert('Error', err?.message || 'Verification failed');
+                setLoading(false);
+            }
         }
     };
 

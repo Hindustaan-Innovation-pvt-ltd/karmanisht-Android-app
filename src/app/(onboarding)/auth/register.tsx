@@ -50,7 +50,18 @@ export default function Register() {
     const [verifyingOtp, setVerifyingOtp] = useState(false)
     const [showMediaPicker, setShowMediaPicker] = useState(false)
     const [verificationId, setVerificationId] = useState('')
+    const hasProcessedRef = useRef(false)
 
+    useEffect(() => {
+        if (!showOtpModal) return;
+        const unsubscribe = auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                console.log('Firebase user auto-authenticated in Register screen:', user.uid);
+                await handleSuccessfulRegistration();
+            }
+        });
+        return () => unsubscribe();
+    }, [showOtpModal]);
 
     // ── Cooldown countdown timer ─────────────────────────────────────────────
     useEffect(() => {
@@ -109,14 +120,11 @@ export default function Register() {
         }
     }
 
-    // ── Step 2: Verify OTP ───────────────────────────────────────────────────
-    const handleVerifyOtp = async () => {
-        if (otp.length < 6) return;
+    const handleSuccessfulRegistration = async () => {
+        if (hasProcessedRef.current) return;
+        hasProcessedRef.current = true;
         setVerifyingOtp(true);
         try {
-            const credential = auth.PhoneAuthProvider.credential(verificationId, otp);
-            await auth().signInWithCredential(credential);
-
             // Establish auth session (only if this isn't a Google-prefilled registration)
             let finalUserId = prefilledUserId;
             if (!prefilledUserId) {
@@ -163,8 +171,30 @@ export default function Register() {
             await finalizeRegistration(finalUserId || '');
         } catch (err: any) {
             Alert.alert('Verification Failed', err.message);
+            hasProcessedRef.current = false; // allow retry
         } finally {
             setVerifyingOtp(false);
+        }
+    }
+
+    // ── Step 2: Verify OTP ───────────────────────────────────────────────────
+    const handleVerifyOtp = async () => {
+        if (otp.length < 6) return;
+        setVerifyingOtp(true);
+        try {
+            const credential = auth.PhoneAuthProvider.credential(verificationId, otp);
+            await auth().signInWithCredential(credential);
+        } catch (err: any) {
+            console.error('[OTP Register Verify Manual]', err);
+            // If the user is already signed in natively, signInWithCredential throws session-expired.
+            const currentUser = auth().currentUser;
+            if (currentUser) {
+                console.log('User is already authenticated in register, bypassing session-expired error...');
+                await handleSuccessfulRegistration();
+            } else {
+                Alert.alert('Verification Failed', err.message);
+                setVerifyingOtp(false);
+            }
         }
     }
 
