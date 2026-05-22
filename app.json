@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "karmanisht",
-    "slug": "karmanisht",
+    "slug": "myproject",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -91,7 +91,8 @@
           "android": {
             "enableShrinkResourcesInReleaseBuilds": true,
             "enableProguardInReleaseBuilds": true,
-            "extraProguardRules": "-keep class com.swmansion.reanimated.** { *; }\n-keep class com.facebook.react.turbomodule.** { *; }\n-keepattributes Signature, *Annotation*, InnerClasses, EnclosingMethod\n-keep class okhttp3.** { *; }\n-keep interface okhttp3.** { *; }\n-dontwarn okhttp3.**\n-keep class okio.** { *; }\n-dontwarn okio.**\n-keep class sun.misc.Unsafe { *; }\n-dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement\n-keepclassmembers class * implements javax.net.ssl.SSLSocketFactory {\n    private final javax.net.ssl.SSLSocketFactory delegate;\n}\n-dontwarn okhttp3.internal.platform.**\n-dontwarn org.conscrypt.**\n-dontwarn org.bouncycastle.**\n-dontwarn org.openjsse.**\n-keepclassmembers class * {\n    @com.facebook.react.uimanager.UIProp <fields>;\n    @com.facebook.react.uimanager.annotations.ReactProp <methods>;\n    @com.facebook.react.uimanager.annotations.ReactPropGroup <methods>;\n}\n-keep class * extends com.facebook.react.bridge.JavaScriptModule { *; }\n-keep class * extends com.facebook.react.bridge.NativeModule { *; }\n-keepclassmembers,includedescriptorclasses class * {\n    native <methods>;\n}\n-keep,allowobfuscation @interface com.facebook.proguard.annotations.DoNotStrip\n-keep,allowobfuscation @interface com.facebook.proguard.annotations.KeepGettersAndSetters\n-keep @com.facebook.proguard.annotations.DoNotStrip class *\n-keepclassmembers class * {\n    @com.facebook.proguard.annotations.DoNotStrip *;\n}\n-dontwarn com.facebook.react.**"
+            "extraProguardRules": "-keep class com.swmansion.reanimated.** { *; }\n-keep class com.facebook.react.turbomodule.** { *; }\n-keepattributes Signature, *Annotation*, InnerClasses, EnclosingMethod\n-keep class okhttp3.** { *; }\n-keep interface okhttp3.** { *; }\n-dontwarn okhttp3.**\n-keep class okio.** { *; }\n-dontwarn okio.**\n-keep class sun.misc.Unsafe { *; }\n-dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement\n-keepclassmembers class * implements javax.net.ssl.SSLSocketFactory {\n    private final javax.net.ssl.SSLSocketFactory delegate;\n}\n-dontwarn okhttp3.internal.platform.**\n-dontwarn org.conscrypt.**\n-dontwarn org.bouncycastle.**\n-dontwarn org.openjsse.**\n-keepclassmembers class * {\n    @com.facebook.react.uimanager.UIProp <fields>;\n    @com.facebook.react.uimanager.annotations.ReactProp <methods>;\n    @com.facebook.react.uimanager.annotations.ReactPropGroup <methods>;\n}\n-keep class * extends com.facebook.react.bridge.JavaScriptModule { *; }\n-keep class * extends com.facebook.react.bridge.NativeModule { *; }\n-keepclassmembers,includedescriptorclasses class * {\n    native <methods>;\n}\n-keep,allowobfuscation @interface com.facebook.proguard.annotations.DoNotStrip\n-keep,allowobfuscation @interface com.facebook.proguard.annotations.KeepGettersAndSetters\n-keep @com.facebook.proguard.annotations.DoNotStrip class *\n-keepclassmembers class * {\n    @com.facebook.proguard.annotations.DoNotStrip *;\n}\n-dontwarn com.facebook.react.**",
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ]
@@ -103,8 +104,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "80dcc8ac-fd6c-42f5-b9df-9d810e34355d"
+        "projectId": "9e8806a2-29a1-46fa-9c9b-81cb3fa06bbc"
       }
-    }
+    },
+    "owner": "shubh7470"
   }
 }

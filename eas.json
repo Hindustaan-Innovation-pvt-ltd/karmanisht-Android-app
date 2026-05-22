@@ -11,7 +11,14 @@
         "EXPO_PUBLIC_INSFORGE_URL": "https://99qhmaqv.us-east.insforge.app",
         "EXPO_PUBLIC_INSFORGE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MDUzODJ9.Sl2Y6o4CM8Ohfl_2gzMyxuqjkrtWkxNfa_-_5EnvWDs",
         "EXPO_PUBLIC_Test_Key_ID": "rzp_test_SpC8XTKEi3eJGe",
-        "EXPO_PUBLIC_Test_Key_Secret": "krFLyeIzsakKmLRelDKVD9lY"
+        "EXPO_PUBLIC_Test_Key_Secret": "krFLyeIzsakKmLRelDKVD9lY",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyA1bTOtosdcCvnwKL_IBqpbx0cThiMqMUY",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "karmanisht-989e2.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "karmanisht-989e2",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "karmanisht-989e2.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "913409881561",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:913409881561:web:01b6aa51502f618bfb15c8",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-NNY5LQPW5K"
       }
     },
     "preview": {
@@ -21,7 +28,14 @@
         "EXPO_PUBLIC_INSFORGE_URL": "https://99qhmaqv.us-east.insforge.app",
         "EXPO_PUBLIC_INSFORGE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MDUzODJ9.Sl2Y6o4CM8Ohfl_2gzMyxuqjkrtWkxNfa_-_5EnvWDs",
         "EXPO_PUBLIC_Test_Key_ID": "rzp_test_SpC8XTKEi3eJGe",
-        "EXPO_PUBLIC_Test_Key_Secret": "krFLyeIzsakKmLRelDKVD9lY"
+        "EXPO_PUBLIC_Test_Key_Secret": "krFLyeIzsakKmLRelDKVD9lY",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyA1bTOtosdcCvnwKL_IBqpbx0cThiMqMUY",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "karmanisht-989e2.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "karmanisht-989e2",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "karmanisht-989e2.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "913409881561",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:913409881561:web:01b6aa51502f618bfb15c8",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-NNY5LQPW5K"
       }
     },
     "preview-light": {
@@ -35,7 +49,14 @@
         "EXPO_PUBLIC_INSFORGE_URL": "https://99qhmaqv.us-east.insforge.app",
         "EXPO_PUBLIC_INSFORGE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MDUzODJ9.Sl2Y6o4CM8Ohfl_2gzMyxuqjkrtWkxNfa_-_5EnvWDs",
         "EXPO_PUBLIC_Test_Key_ID": "rzp_test_SpC8XTKEi3eJGe",
-        "EXPO_PUBLIC_Test_Key_Secret": "krFLyeIzsakKmLRelDKVD9lY"
+        "EXPO_PUBLIC_Test_Key_Secret": "krFLyeIzsakKmLRelDKVD9lY",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyA1bTOtosdcCvnwKL_IBqpbx0cThiMqMUY",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "karmanisht-989e2.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "karmanisht-989e2",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "karmanisht-989e2.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "913409881561",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:913409881561:web:01b6aa51502f618bfb15c8",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-NNY5LQPW5K"
       }
     },
     "production": {
@@ -44,7 +65,14 @@
         "EXPO_PUBLIC_INSFORGE_URL": "https://99qhmaqv.us-east.insforge.app",
         "EXPO_PUBLIC_INSFORGE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3OC0xMjM0LTU2NzgtOTBhYi1jZGVmMTIzNDU2NzgiLCJlbWFpbCI6ImFub25AaW5zZm9yZ2UuY29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MDUzODJ9.Sl2Y6o4CM8Ohfl_2gzMyxuqjkrtWkxNfa_-_5EnvWDs",
         "EXPO_PUBLIC_Test_Key_ID": "rzp_test_SpC8XTKEi3eJGe",
-        "EXPO_PUBLIC_Test_Key_Secret": "krFLyeIzsakKmLRelDKVD9lY"
+        "EXPO_PUBLIC_Test_Key_Secret": "krFLyeIzsakKmLRelDKVD9lY",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyA1bTOtosdcCvnwKL_IBqpbx0cThiMqMUY",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "karmanisht-989e2.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "karmanisht-989e2",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "karmanisht-989e2.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "913409881561",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:913409881561:web:01b6aa51502f618bfb15c8",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-NNY5LQPW5K"
       }
     },
     "production-light": {
