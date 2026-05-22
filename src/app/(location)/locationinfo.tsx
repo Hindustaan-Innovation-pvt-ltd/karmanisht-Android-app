@@ -109,18 +109,26 @@ export default function LocationInfo() {
     const radiusSV = useSharedValue(radiusKm);
     const cityWideSV = useSharedValue(cityWide ? 1 : 0);
     React.useEffect(() => {
-        radiusSV.value = radiusKm;
-        cityWideSV.value = cityWide ? 1 : 0;
+        radiusSV.value = withTiming(radiusKm, { duration: 300 });
+        cityWideSV.value = withTiming(cityWide ? 1 : 0, { duration: 300 });
         radarPulse.value = withRepeat(
-            withTiming(1.2, { duration: 800 }),
+            withTiming(1.15, { duration: 1000 }),
             -1,
             true
         );
     }, [radiusKm, cityWide, radiusSV, cityWideSV, radarPulse]);
 
     const radarStyle = useAnimatedStyle(() => {
-        // Determine base scale: full width if cityWide, otherwise proportional to radius (max 10km)
-        const baseScale = cityWideSV.value === 1 ? 1 : radiusSV.value / 10;
+        // Map radius (2 to 30) to a reasonable scale range (e.g. 0.4 to 1.2)
+        // If cityWide, use a max scale like 1.3
+        let baseScale;
+        if (cityWideSV.value === 1) {
+            baseScale = 1.3;
+        } else {
+            const radius = radiusSV.value;
+            const clamped = Math.min(Math.max(radius, 2), 30);
+            baseScale = 0.4 + ((clamped - 2) / 28) * 0.8;
+        }
         return {
             transform: [{ scale: radarPulse.value * baseScale }],
             opacity: withDelay(0, withTiming(1, { duration: 800 }))
@@ -208,7 +216,7 @@ export default function LocationInfo() {
                         >
 
                             {/* Circle Radar Preview */}
-                            <View className="flex-1 items-center justify-center my-4">
+                            <View className="flex-1 items-center justify-center my-4 relative">
                                 {/* Animated outer circle */}
                                 <Animated.View
                                     style={[radarStyle, {
@@ -221,26 +229,26 @@ export default function LocationInfo() {
                                     }
                                     ]}
                                     className="items-center justify-center"
-                                >
-                                    {/* Inner Location Pin Badge */}
-                                    <View className="size-10 rounded-full bg-slate-900 dark:bg-slate-100 items-center justify-center border-2 border-white dark:border-slate-950 shadow-md">
-                                        <Ionicons name="location" size={18} color={isDark ? "#0F172A" : "#FFFFFF"} />
-                                    </View>
-                                </Animated.View>
+                                />
+
+                                {/* Inner Location Pin Badge - Static */}
+                                <View className="absolute size-10 rounded-full bg-slate-900 dark:bg-slate-100 items-center justify-center border-2 border-white dark:border-slate-950 shadow-md">
+                                    <Ionicons name="location" size={18} color={isDark ? "#0F172A" : "#FFFFFF"} />
+                                </View>
                             </View>
+                            <Text className="absolute top-2 left-2 text-[10px] font-bold text-slate-100 bg-slate-800/30 dark:bg-slate-100 py-2 px-6  rounded-2xl dark:text-slate-500 uppercase tracking-wider self-start">
+                                Coverage area preview
+                            </Text>
                         </LinearGradient>
-                        <Text className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider self-start">
-                            Coverage area preview
-                        </Text>
                     </View>
 
                     {/* Quick Distance Selector */}
-                    <View className="mb-6">
+                    <View className="mb-6 px-6">
                         <Text className="text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest">
                             QUICK DISTANCE
                         </Text>
                         <View className="flex-row gap-3">
-                            {[2, 5, 10].map((dist) => {
+                            {[2, 5, 10, 20, 30].map((dist) => {
                                 const isActive = radiusKm === dist && !cityWide;
                                 return (
                                     <ScalePressable
