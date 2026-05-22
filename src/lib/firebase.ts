@@ -4,13 +4,13 @@ import firebase from "firebase/compat/app";
 import "firebase/compat/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA1bTOtosdcCvnwKL_IBqpbx0cThiMqMUY",
-  authDomain: "karmanisht-989e2.firebaseapp.com",
-  projectId: "karmanisht-989e2",
-  storageBucket: "karmanisht-989e2.firebasestorage.app",
-  messagingSenderId: "913409881561",
-  appId: "1:913409881561:web:01b6aa51502f618bfb15c8",
-  measurementId: "G-NNY5LQPW5K"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
