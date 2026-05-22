@@ -87,7 +87,7 @@ export default function AuthCallback() {
         };
 
         handleDeepLink();
-    }, [processUserSession, router]);
+    }, [processUserSession, router, setUser]);
 
     return (
         <View className='flex-1 bg-white dark:bg-slate-950 items-center justify-center'>

@@ -82,7 +82,15 @@
           ]
         }
       ],
-      "expo-build-properties"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableProguardInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

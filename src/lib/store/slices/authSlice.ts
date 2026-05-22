@@ -42,7 +42,7 @@ function isTokenExpired(token: string | null): boolean {
       const now = Math.floor(Date.now() / 1000);
       return payload.exp - now < 300; // expires in < 5 minutes
     }
-  } catch (e) {
+  } catch {
     return true;
   }
   return true;
@@ -101,14 +101,17 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 .maybeSingle();
 
             if (userData) {
+                const isGoogleUser = (userData.email && !userData.email.endsWith('@mock-mobile.local')) || (userData.mobile && userData.mobile.startsWith('google-'));
                 if (userData.role === 'admin') {
                     const profile: UserProfile = {
                         id: userData.id,
                         name: userData.full_name || fallbackName || 'Admin',
                         role: 'admin',
-                        phone: userData.mobile || '',
+                        phone: userData.mobile && userData.mobile.startsWith('google-') ? '' : (userData.mobile || ''),
                         isOnline: userData.is_active ?? true,
                         searchRadiusKm: userData.search_radius_km || 5,
+                        email: userData.email || '',
+                        isGoogleUser: !!isGoogleUser,
                     };
                     set({ user: profile });
                     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
@@ -123,16 +126,19 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         .maybeSingle();
 
                     if (workerData) {
+                        const isGoogleWorker = (workerData.email && !workerData.email.endsWith('@mock-mobile.local')) || (workerData.mobile && workerData.mobile.startsWith('google-'));
                         const profile: UserProfile = {
                             id: workerData.id,
                             name: workerData.full_name || fallbackName || 'Provider',
                             role: 'worker',
-                            phone: workerData.mobile || '',
+                            phone: workerData.mobile && workerData.mobile.startsWith('google-') ? '' : (workerData.mobile || ''),
                             profession: workerData.business_name || '',
                             bio: workerData.bio || '',
                             experienceYears: workerData.experience_years || 0,
                             isOnline: workerData.is_active ?? true,
                             isPremium: workerData.is_premium ?? false,
+                            email: workerData.email || '',
+                            isGoogleUser: !!isGoogleWorker,
                         };
 
                         // Fetch location for worker
@@ -172,19 +178,52 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     }
                 }
 
-                // If not admin or worker, treat as consumer
-                const profile: UserProfile = {
-                    id: userData.id,
-                    name: userData.full_name || fallbackName || 'User',
-                    role: 'consumer',
-                    phone: userData.mobile || '',
-                    isOnline: userData.is_active ?? true,
-                    searchRadiusKm: userData.search_radius_km || 5,
-                };
-                set({ user: profile });
-                await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
-                await get().refreshProfile();
-                return profile;
+                if (userData.role === 'consumer') {
+                    const profile: UserProfile = {
+                        id: userData.id,
+                        name: userData.full_name || fallbackName || 'User',
+                        role: 'consumer',
+                        phone: userData.mobile && userData.mobile.startsWith('google-') ? '' : (userData.mobile || ''),
+                        isOnline: userData.is_active ?? true,
+                        searchRadiusKm: userData.search_radius_km || 5,
+                        email: userData.email || '',
+                        isGoogleUser: !!isGoogleUser,
+                    };
+                    set({ user: profile });
+                    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                    await get().refreshProfile();
+                    return profile;
+                } else if (!userData.role) {
+                    const profile: UserProfile = {
+                        id: userData.id,
+                        name: userData.full_name || fallbackName || 'User',
+                        role: null,
+                        phone: userData.mobile && userData.mobile.startsWith('google-') ? '' : (userData.mobile || ''),
+                        isOnline: userData.is_active ?? true,
+                        searchRadiusKm: userData.search_radius_km || 5,
+                        email: userData.email || '',
+                        isGoogleUser: !!isGoogleUser,
+                    };
+                    set({ user: profile });
+                    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                    await get().refreshProfile();
+                    return profile;
+                } else {
+                    const profile: UserProfile = {
+                        id: userData.id,
+                        name: userData.full_name || fallbackName || 'User',
+                        role: 'consumer',
+                        phone: userData.mobile && userData.mobile.startsWith('google-') ? '' : (userData.mobile || ''),
+                        isOnline: userData.is_active ?? true,
+                        searchRadiusKm: userData.search_radius_km || 5,
+                        email: userData.email || '',
+                        isGoogleUser: !!isGoogleUser,
+                    };
+                    set({ user: profile });
+                    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
+                    await get().refreshProfile();
+                    return profile;
+                }
             }
 
             // Fallback: Check service_providers directly if user record is missing in users table
@@ -195,16 +234,19 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 .maybeSingle();
 
             if (workerData) {
+                const isGoogleWorker = (workerData.email && !workerData.email.endsWith('@mock-mobile.local')) || (workerData.mobile && workerData.mobile.startsWith('google-'));
                 const profile: UserProfile = {
                     id: workerData.id,
                     name: workerData.full_name || fallbackName || 'Provider',
                     role: 'worker',
-                    phone: workerData.mobile || '',
+                    phone: workerData.mobile && workerData.mobile.startsWith('google-') ? '' : (workerData.mobile || ''),
                     profession: workerData.business_name || '',
                     bio: workerData.bio || '',
                     experienceYears: workerData.experience_years || 0,
                     isOnline: workerData.is_active ?? true,
                     isPremium: workerData.is_premium ?? false,
+                    email: workerData.email || '',
+                    isGoogleUser: !!isGoogleWorker,
                 };
 
                 // Fetch location for worker
@@ -327,7 +369,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     .maybeSingle();
 
                 if (identityData && !identityErr) {
-                    const resolvedRole = identityData.role || 'consumer';
+                    const resolvedRole = identityData.role || null;
                     const tableName = resolvedRole === 'worker' ? 'service_providers' : 'users';
 
                     const { data, error } = tableName === 'users'
@@ -339,14 +381,17 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                             .maybeSingle();
 
                     if (data && !error) {
+                        const isGoogleUser = (data.email && !data.email.endsWith('@mock-mobile.local')) || (data.mobile && data.mobile.startsWith('google-'));
                         const updatedUser: UserProfile = {
                             ...activeUser,
                             name: data.full_name || activeUser.name,
-                            phone: data.mobile || activeUser.phone,
+                            phone: data.mobile && data.mobile.startsWith('google-') ? '' : (data.mobile || ''),
                             isOnline: data.is_active ?? activeUser.isOnline,
                             searchRadiusKm: data.search_radius_km || activeUser.searchRadiusKm,
                             profile_image: data.profile_image || activeUser.profile_image,
                             role: resolvedRole as any,
+                            email: data.email || activeUser.email || '',
+                            isGoogleUser: !!isGoogleUser,
                             // isPremium is only valid for workers — read from service_providers.is_premium
                             isPremium: resolvedRole === 'worker'
                                 ? (data.is_premium ?? activeUser.isPremium ?? false)
@@ -394,8 +439,12 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 } else if (identityErr || !identityData) {
                     // Account no longer exists in DB or call failed with no record
                     if (!identityErr || (identityErr as any).status === 404 || identityErr.code === 'P0001') {
-                        await AsyncStorage.removeItem(STORAGE_KEYS.USER);
-                        set({ user: defaultUser });
+                        // Check if Google user is in onboarding phase (no DB record yet, but valid session)
+                        const isGoogleOnboarding = activeUser?.isGoogleUser && !activeUser?.role;
+                        if (!isGoogleOnboarding) {
+                            await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+                            set({ user: defaultUser });
+                        }
                     }
                 }
             }
@@ -501,7 +550,12 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     // ─────────────────────────────────────────────────────────────────────────
     updateDatabaseProfile: async (updates: Partial<UserProfile>) => {
         let newId = updates.id || get().user.id;
-        const mobileToUse = updates.phone || get().user.phone;
+        const userEmail = get().user.email;
+        const isGoogleUser = !!(updates.isGoogleUser || get().user.isGoogleUser || (updates.email && !updates.email.endsWith('@mock-mobile.local')) || (userEmail && !userEmail.endsWith('@mock-mobile.local')));
+        let mobileToUse = updates.phone || get().user.phone;
+        if (isGoogleUser && (!mobileToUse || mobileToUse.startsWith('google-'))) {
+            mobileToUse = `google-${newId}`;
+        }
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
         let role = updates.role || get().user.role;
@@ -562,6 +616,11 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 is_active: updates.isOnline ?? existingRecord?.is_active ?? get().user.isOnline ?? true,
             };
 
+            const emailToUse = updates.email || get().user.email || existingRecord?.email;
+            if (emailToUse) {
+                payload.email = emailToUse;
+            }
+
             if (updates.profile_image !== undefined) {
                 payload.profile_image = updates.profile_image;
             } else if (existingRecord?.profile_image !== undefined) {
@@ -611,6 +670,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     role: 'worker',
                     is_active: payload.is_active,
                     profile_image: payload.profile_image,
+                    email: payload.email || null,
                 }]);
 
                 if (updates.location !== undefined || updates.searchRadiusKm !== undefined) {
@@ -640,6 +700,9 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
         }
 
         const nextUser = { ...get().user, ...updates, id: newId };
+        if (isGoogleUser && (!nextUser.phone || nextUser.phone.startsWith('google-'))) {
+            nextUser.phone = '';
+        }
         set({ user: nextUser });
         AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(nextUser)).catch(() => { });
     },

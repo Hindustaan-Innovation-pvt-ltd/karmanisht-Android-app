@@ -93,6 +93,7 @@ export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSli
 
         return new Promise((resolve) => {
             try {
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
                 const RazorpayCheckout = require('react-native-razorpay').default;
                 const keyId = process.env.EXPO_PUBLIC_Test_Key_ID || 'rzp_test_SpC8XTKEi3eJGe';
                 const options = {

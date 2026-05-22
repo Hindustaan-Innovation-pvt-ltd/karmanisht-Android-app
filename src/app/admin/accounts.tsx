@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     View, Text, ScrollView, TouchableOpacity, 
     TextInput, ActivityIndicator, Alert, Modal, Platform, RefreshControl 
@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { insforge } from '@/lib/insforge';
-import { useAppStore } from '@/lib/store';
+
 import { useTheme } from '@/lib/theme';
 
 type UserType = 'consumer' | 'worker';
@@ -83,7 +83,7 @@ export default function AdminAccountsConsole() {
     const [isDeleting, setIsDeleting] = useState(false);
 
     // Fetch accounts data
-    const fetchAccountsData = async (isRef = false) => {
+    const fetchAccountsData = useCallback(async (isRef = false) => {
         if (isRef) setRefreshing(true);
         else setLoading(true);
 
@@ -110,11 +110,11 @@ export default function AdminAccountsConsole() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [userType]);
 
     useEffect(() => {
         fetchAccountsData();
-    }, [userType]);
+    }, [fetchAccountsData]);
 
     // Handle toggling user boolean fields (is_active, is_verified, is_kyc_verified)
     const toggleUserField = async (userId: string, type: UserType, field: string, currentValue: boolean) => {

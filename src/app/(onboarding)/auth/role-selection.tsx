@@ -1,36 +1,15 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React from 'react'
-import { Text, View, Image } from 'react-native'
+import { Text, View } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { UsersIcon, BriefcaseIcon, ChevronRightIcon } from '@/svg/icons'
 import ScalePressable from '@/components/scale-pressable'
 
 export default function RoleSelection() {
-        const user = useAppStore(state => state.user);
+    const user = useAppStore(state => state.user);
     const setUser = useAppStore(state => state.setUser);
-    const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
-    const refreshProfile = useAppStore(state => state.refreshProfile);
-    const unlockedContacts = useAppStore(state => state.unlockedContacts);
-    const unlockedProviders = useAppStore(state => state.unlockedProviders);
-    const isUnlocked = useAppStore(state => state.isUnlocked);
-    const unlockWorker = useAppStore(state => state.unlockWorker);
-    const isOnline = useAppStore(state => state.isOnline);
-    const setOnline = useAppStore(state => state.setOnline);
-    const toggleOnlineStatus = useAppStore(state => state.toggleOnlineStatus);
-    const isLoading = useAppStore(state => state.isLoading);
-    const hasCheckedAuth = useAppStore(state => state.hasCheckedAuth);
-    const isSessionExpired = useAppStore(state => state.isSessionExpired);
-    const categories = useAppStore(state => state.categories);
-    const userLocation = useAppStore(state => state.userLocation);
-    const fetchCategories = useAppStore(state => state.fetchCategories);
-    const sessionToken = useAppStore(state => state.sessionToken);
-    const workerStats = useAppStore(state => state.workerStats);
-    const handleRazorpayPayment = useAppStore(state => state.handleRazorpayPayment);
-    const updateProfile = useAppStore(state => state.updateProfile);
-    const updateWorkerSpecialties = useAppStore(state => state.updateWorkerSpecialties);
-    const signOut = useAppStore(state => state.signOut);
 
     const router = useRouter()
     

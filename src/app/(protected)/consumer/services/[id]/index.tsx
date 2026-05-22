@@ -1,27 +1,16 @@
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
+import { useSubCategories, useProviders, useCityPricing, useActivePasses } from '@/hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Dimensions, Modal, Clipboard, Linking, Pressable, Animated, useColorScheme, ScrollView } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Dimensions, Modal, Clipboard, Linking, Pressable, Animated, useColorScheme } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as Location from 'expo-location';
 import SafeIcon from '@/components/safe-icon';
 
-function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 6371; // Radius of the earth in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
+const { width } = Dimensions.get('window');
 
 interface ContactDetailModalProps {
     visible: boolean;
@@ -158,7 +147,7 @@ const SuccessModal = ({ visible, onClose, themeColor }: SuccessModalProps) => {
                 })
             ]).start();
         }
-    }, [visible]);
+    }, [visible, opacityAnim, scaleAnim]);
 
     if (!visible) return null;
 
@@ -460,21 +449,48 @@ const CategoryPassModal = ({
 };
 
 export default function ServiceDetailScreen() {
+    const queryClient = useQueryClient();
     const user = useAppStore(state => state.user);
     const refreshProfile = useAppStore(state => state.refreshProfile);
-    const isUnlocked = useAppStore(state => state.isUnlocked);
+    const unlockedContacts = useAppStore(state => state.unlockedContacts);
     const userLocation = useAppStore(state => state.userLocation);
     const handleRazorpayPayment = useAppStore(state => state.handleRazorpayPayment);
     const fetchActivePasses = useAppStore(state => (state as any).fetchActivePasses);
 
     const { id, name, color, icon } = useLocalSearchParams<{ id: string, name: string, color: string, icon: string }>();
 
-    const [providers, setProviders] = useState<any[]>([]);
-    const [subCategories, setSubCategories] = useState<any[]>([]);
+    const { data: subCategories = [], isLoading: loadingTags } = useSubCategories(id);
+    const { data: providers = [], isLoading: loadingProviders } = useProviders(
+        id,
+        userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null,
+        name
+    );
+    const { data: cityPricingData, isLoading: loadingPricing } = useCityPricing(
+        id,
+        userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null
+    );
+    const { data: activePasses = [] } = useActivePasses(user?.id);
+
+    const isUnlocked = (providerId: string, categoryId?: string) => {
+        if (unlockedContacts.includes(providerId)) return true;
+        if (categoryId) {
+            const now = new Date().toISOString();
+            return activePasses.some(p => p.profession_id === categoryId && p.expires_at > now && p.payment_status === 'paid');
+        }
+        return false;
+    };
+
+    const cityConfig = cityPricingData?.cityConfig || null;
+    const pricingConfig = cityPricingData?.pricingConfig || null;
+
+    // State for local mutation loading (Razorpay payments)
+    const [mutateLoading, setLoading] = useState(false);
+
+    // Combine hooks loading state with mutation loading state
+    const loading = loadingProviders || loadingPricing || mutateLoading;
+
     const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>([]);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [loadingTags, setLoadingTags] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedContact, setSelectedContact] = useState<any | null>(null);
     const [showContactModal, setShowContactModal] = useState(false);
@@ -484,282 +500,6 @@ export default function ServiceDetailScreen() {
     const [providerToUnlock, setProviderToUnlock] = useState<any | null>(null);
     const [showCategoryPassModal, setShowCategoryPassModal] = useState(false);
     const [categoryPassLoading, setCategoryPassLoading] = useState(false);
-
-    const [cityConfig, setCityConfig] = useState<{ id: string; name: string; tier: string } | null>(null);
-    const [pricingConfig, setPricingConfig] = useState<{ unlock_price: number; unlock_duration_hours: number } | null>(null);
-    const [loadingPricing, setLoadingPricing] = useState(true);
-
-    useEffect(() => {
-        fetchProviders();
-        fetchSubCategories();
-        resolveUserCityAndPricing();
-        if (user?.id && fetchActivePasses) {
-            fetchActivePasses();
-        }
-    }, [id, userLocation, user?.id]);
-
-    const fetchSubCategories = async () => {
-        setLoadingTags(true);
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(id)) {
-            console.warn(`fetchSubCategories: invalid category id format: "${id}". Using fallbacks.`);
-            setSubCategories([
-                { id: '1', name: 'Emergency Repair' },
-                { id: '2', name: 'New Installation' },
-                { id: '3', name: 'Maintenance' },
-            ]);
-            setLoadingTags(false);
-            return;
-        }
-        try {
-            const { data, error } = await insforge.database
-                .from('service_tags')
-                .select('id, name')
-                .eq('category_id', id);
-
-            if (data && !error) {
-                setSubCategories(data);
-            } else {
-                setSubCategories([
-                    { id: '1', name: 'Emergency Repair' },
-                    { id: '2', name: 'New Installation' },
-                    { id: '3', name: 'Maintenance' },
-                ]);
-            }
-        } catch (err) {
-            console.error("Failed to load subcategories:", err);
-            setSubCategories([]);
-        } finally {
-            setLoadingTags(false);
-        }
-    };
-
-    const resolveUserCityAndPricing = async () => {
-        setLoadingPricing(true);
-        try {
-            let lat = userLocation?.coords?.latitude;
-            let lng = userLocation?.coords?.longitude;
-
-            if (!lat || !lng) {
-                try {
-                    const { status } = await Location.requestForegroundPermissionsAsync();
-                    if (status === 'granted') {
-                        const loc = await Location.getLastKnownPositionAsync() ??
-                            await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-                        if (loc?.coords) {
-                            lat = loc.coords.latitude;
-                            lng = loc.coords.longitude;
-                        }
-                    }
-                } catch (locationErr) {
-                    console.log("Could not obtain location coords:", locationErr);
-                }
-            }
-
-            let cityName = 'Raipur'; // Default fallback
-            if (lat && lng) {
-                try {
-                    const address = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-                    if (address && address.length > 0) {
-                        cityName = address[0].city || address[0].subregion || address[0].region || 'Raipur';
-                    }
-                } catch (err) {
-                    console.log("Reverse geocode failed, using closest city distance fallback:", err);
-                    const cityCoords = [
-                        { name: 'Raipur', lat: 21.2514, lng: 81.6296 },
-                        { name: 'Nagpur', lat: 21.1458, lng: 79.0882 },
-                        { name: 'Indore', lat: 22.7196, lng: 75.8577 },
-                        { name: 'Bhopal', lat: 23.2599, lng: 77.4126 },
-                        { name: 'Bilaspur', lat: 22.0797, lng: 82.1391 },
-                        { name: 'Mumbai', lat: 19.0760, lng: 72.8777 },
-                        { name: 'Delhi', lat: 28.7041, lng: 77.1025 },
-                        { name: 'Bengaluru', lat: 12.9716, lng: 77.5946 },
-                        { name: 'Hyderabad', lat: 17.3850, lng: 78.4867 },
-                        { name: 'Pune', lat: 18.5204, lng: 73.8567 },
-                    ];
-                    let minDistance = Infinity;
-                    let closest = 'Raipur';
-                    for (const c of cityCoords) {
-                        const dist = getDistanceKm(lat, lng, c.lat, c.lng);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            closest = c.name;
-                        }
-                    }
-                    cityName = closest;
-                }
-            }
-
-            // Query cities table
-            const { data: dbCities, error: cityError } = await insforge.database
-                .from('cities')
-                .select('*')
-                .ilike('name', `%${cityName}%`);
-
-            let resolvedCity = null;
-            if (dbCities && dbCities.length > 0 && !cityError) {
-                resolvedCity = dbCities[0];
-            } else {
-                // Fallback: fetch Raipur from database
-                const { data: defaultCities } = await insforge.database
-                    .from('cities')
-                    .select('*')
-                    .eq('name', 'Raipur');
-                if (defaultCities && defaultCities.length > 0) {
-                    resolvedCity = defaultCities[0];
-                }
-            }
-
-            if (resolvedCity) {
-                setCityConfig(resolvedCity);
-
-                // Fetch pricing config
-                const { data: priceData, error: priceError } = await insforge.database
-                    .from('city_pricing_config')
-                    .select('unlock_price, unlock_duration_hours')
-                    .eq('city_id', resolvedCity.id)
-                    .eq('profession_id', id)
-                    .maybeSingle();
-
-                if (priceData && !priceError) {
-                    setPricingConfig({
-                        unlock_price: Number(priceData.unlock_price),
-                        unlock_duration_hours: Number(priceData.unlock_duration_hours)
-                    });
-                } else {
-                    // Safety default based on city tier
-                    const defaultPrice = resolvedCity.tier === 'tier_1' ? 99 : 49;
-                    setPricingConfig({
-                        unlock_price: defaultPrice,
-                        unlock_duration_hours: 5
-                    });
-                }
-            }
-        } catch (err) {
-            console.error("resolveUserCityAndPricing failed:", err);
-            setPricingConfig({
-                unlock_price: 49,
-                unlock_duration_hours: 5
-            });
-        } finally {
-            setLoadingPricing(false);
-        }
-    };
-
-    const fetchProviders = async () => {
-        setLoading(true);
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(id)) {
-            console.warn(`fetchProviders: invalid category id format: "${id}". Skipping DB fetch.`);
-            setProviders([]);
-            setLoading(false);
-            return;
-        }
-        try {
-            const { data: provSvcData, error: provSvcError } = await insforge.database
-                .from('provider_services')
-                .select('provider_id, tag_id')
-                .eq('category_id', id);
-
-            if (provSvcError) {
-                console.error("Failed to fetch provider services:", provSvcError);
-                setProviders([]);
-                setLoading(false);
-                return;
-            }
-
-            const providerIds = Array.from(new Set(provSvcData?.map(p => p.provider_id) || []));
-
-            if (providerIds.length === 0) {
-                setProviders([]);
-                setLoading(false);
-                return;
-            }
-
-            const { data: providersList, error: providersError } = await insforge.database
-                .from('service_providers')
-                .select(`
-                    id,
-                    full_name,
-                    mobile,
-                    profile_image,
-                    experience_years,
-                    bio,
-                    average_rating,
-                    total_jobs_completed,
-                    is_active,
-                    is_premium
-                `)
-                .in('id', providerIds)
-                .eq('is_active', true);
-
-            if (providersError) {
-                console.error("Failed to fetch provider details:", providersError);
-                setProviders([]);
-                setLoading(false);
-                return;
-            }
-
-            const { data: locationsList } = await insforge.database
-                .from('provider_locations')
-                .select('provider_id, latitude, longitude, service_radius_km')
-                .in('provider_id', providerIds);
-
-            const locationMap = new Map(
-                locationsList?.map(l => [l.provider_id, { latitude: l.latitude, longitude: l.longitude, service_radius_km: l.service_radius_km }]) || []
-            );
-
-            const formattedProviders = (providersList || []).map(p => {
-                const loc = locationMap.get(p.id);
-                let distance_km = 0;
-                if (loc && userLocation?.coords) {
-                    distance_km = parseFloat(getDistanceKm(
-                        userLocation.coords.latitude,
-                        userLocation.coords.longitude,
-                        loc.latitude,
-                        loc.longitude
-                    ).toFixed(1));
-                }
-
-                const providerTags = provSvcData
-                    ?.filter(ps => ps.provider_id === p.id && ps.tag_id)
-                    .map(ps => {
-                        const tagObj = subCategories.find(sc => sc.id === ps.tag_id);
-                        return tagObj ? tagObj.name : null;
-                    })
-                    .filter(Boolean) || [];
-
-                return {
-                    provider_id: p.id,
-                    full_name: p.full_name,
-                    profile_image: p.profile_image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.full_name),
-                    average_rating: p.average_rating || 0.0,
-                    total_reviews: p.total_jobs_completed || 0,
-                    distance_km: distance_km || 1.5,
-                    experience_years: p.experience_years || 0,
-                    mobile: p.mobile,
-                    description: p.bio || ('Expert ' + name + ' services.'),
-                    tags: providerTags,
-                    service_radius_km: loc ? (loc.service_radius_km || 5) : 5,
-                    is_premium: p.is_premium || false
-                };
-            });
-
-            // Sort premium providers to the top, and sort by distance as secondary metric
-            const sortedProviders = [...formattedProviders].sort((a, b) => {
-                if (a.is_premium && !b.is_premium) return -1;
-                if (!a.is_premium && b.is_premium) return 1;
-                return a.distance_km - b.distance_km;
-            });
-
-            setProviders(sortedProviders);
-        } catch (err) {
-            console.error("Failed to load providers:", err);
-            setProviders([]);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const toggleSubCategory = (tagName: string | null) => {
         if (tagName === null) {
@@ -841,6 +581,10 @@ export default function ServiceDetailScreen() {
                 }
                 await refreshProfile();
 
+                if (user?.id) {
+                    queryClient.invalidateQueries({ queryKey: ['activePasses', user.id] });
+                }
+
                 setTempProviderForSuccess(providerToUnlock);
                 setShowSuccessModal(true);
             } else {
@@ -906,6 +650,10 @@ export default function ServiceDetailScreen() {
 
                 if (fetchActivePasses) await fetchActivePasses();
                 await refreshProfile();
+
+                if (user?.id) {
+                    queryClient.invalidateQueries({ queryKey: ['activePasses', user.id] });
+                }
 
                 Alert.alert(
                     '🎉 All Contacts Unlocked!',

@@ -1,6 +1,5 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react'
-import { FlatList, Text, TouchableOpacity, View, ActivityIndicator, Dimensions } from 'react-native'
+import { FlatList, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import BackButton from '@/components/back-button'
@@ -9,8 +8,6 @@ import SafeIcon from '@/components/safe-icon'
 import { useAppStore } from '@/lib/store'
 import { insforge } from '@/lib/insforge'
 import { useTheme } from '@/lib/theme'
-
-const { width } = Dimensions.get('window');
 
 const VIBRANT_COLORS = [
     '#EF4444', // Red

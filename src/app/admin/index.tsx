@@ -5,7 +5,7 @@ import {
     ActivityIndicator, Alert, Platform, RefreshControl
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
@@ -14,10 +14,6 @@ import { useAppStore } from '@/lib/store';
 const shadowSm = Platform.OS === 'web'
     ? { boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
     : { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 };
-
-const shadowMd = Platform.OS === 'web'
-    ? { boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' }
-    : { elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4 };
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -122,10 +118,7 @@ export default function AdminDashboard() {
     const bgClass = isDark ? 'bg-slate-950' : 'bg-slate-50';
     const cardBgClass = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100';
     const textMainClass = isDark ? 'text-slate-100' : 'text-slate-900';
-    const textSubClass = isDark ? 'text-slate-400' : 'text-slate-500';
-
     // Ratios computation
-    const totalUsers = stats.consumersCount + stats.workersCount;
     const activeConsumersPercent = stats.consumersCount > 0 ? Math.round((stats.activeConsumers / stats.consumersCount) * 100) : 0;
     const activeWorkersPercent = stats.workersCount > 0 ? Math.round((stats.activeWorkers / stats.workersCount) * 100) : 0;
     const verifiedWorkersPercent = stats.workersCount > 0 ? Math.round((stats.verifiedWorkers / stats.workersCount) * 100) : 0;

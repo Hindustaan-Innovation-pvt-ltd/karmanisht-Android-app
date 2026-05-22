@@ -1,28 +1,26 @@
 import { useAppStore } from '@/lib/store';
+import { useCategories } from '@/hooks/queries';
 // @ts-nocheck
 import HomeMap from '@/components/home-map';
 import SafeIcon from '@/components/safe-icon';
 import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Platform, Keyboard, Modal } from 'react-native';
+import { FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Keyboard, Modal } from 'react-native';
 import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScalePressable from '@/components/scale-pressable';
-
-const { width } = Dimensions.get('window');
 
 
 export default function ConsumerHome() {
     const user = useAppStore(state => state.user);
     const unlockedProviders = useAppStore(state => state.unlockedProviders);
-    const categories = useAppStore(state => state.categories);
+    const { data: categories = [] } = useCategories();
     const userLocation = useAppStore(state => state.userLocation);
-    const fetchCategories = useAppStore(state => state.fetchCategories);
     const refreshProfile = useAppStore(state => state.refreshProfile);
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
@@ -34,9 +32,8 @@ export default function ConsumerHome() {
     const [showLiveMap, setShowLiveMap] = useState(false);
 
     useEffect(() => {
-        fetchCategories();
         refreshProfile().catch(err => console.error('[ConsumerHome] refreshProfile error:', err));
-    }, [fetchCategories, refreshProfile]);
+    }, [refreshProfile]);
 
     useEffect(() => {
         if (params?.showMap === 'true') {
@@ -76,7 +73,7 @@ export default function ConsumerHome() {
                     const clean = data.address_line.replace(/^[A-Z0-9]{4,}\+[A-Z0-9]+,\s*/i, '');
                     setSavedAddressName(clean);
                 }
-            } catch (error) {
+            } catch {
                 // Ignore address fetch errors silently
             }
         }

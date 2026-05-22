@@ -88,8 +88,6 @@ export default function AdminRequestsConsole() {
         setIsDeleting(true);
         const userId = selectedUser.id;
         const targetType = selectedUser.type; // 'consumer' or 'worker'
-        const userMobile = selectedUser.mobile;
-        const userFullName = selectedUser.full_name;
         const requestId = selectedUser.requestId;
 
         try {

@@ -44,7 +44,7 @@ export default function LocationInfo() {
         if (user?.location) {
             setLocationLabel(user.location)
         }
-    }, [user?.searchRadiusKm, user?.location])
+    }, [user?.searchRadiusKm, user?.location, user?.role])
 
     const handleFinish = async () => {
         if (!locationLabel.trim()) {
@@ -116,7 +116,7 @@ export default function LocationInfo() {
             -1,
             true
         );
-    }, [radiusKm, cityWide]);
+    }, [radiusKm, cityWide, radiusSV, cityWideSV, radarPulse]);
 
     const radarStyle = useAnimatedStyle(() => {
         // Determine base scale: full width if cityWide, otherwise proportional to radius (max 10km)
@@ -241,12 +241,6 @@ export default function LocationInfo() {
                         </Text>
                         <View className="flex-row gap-3">
                             {[2, 5, 10].map((dist) => {
-                                // Scale shared value updated on radius or city-wide changes
-                                const scaleVal = useSharedValue(1);
-                                React.useEffect(() => {
-                                    const newScale = cityWide ? 1.35 : radiusKm <= 2 ? 0.65 : radiusKm <= 5 ? 0.95 : 1.2;
-                                    scaleVal.value = newScale;
-                                }, [cityWide, radiusKm]);
                                 const isActive = radiusKm === dist && !cityWide;
                                 return (
                                     <ScalePressable
@@ -311,8 +305,5 @@ const styles = StyleSheet.create({
     },
     textInactive: {
         color: '#0F172A',
-    },
-    textActive: {
-        color: '#FFFFFF',
     }
 });

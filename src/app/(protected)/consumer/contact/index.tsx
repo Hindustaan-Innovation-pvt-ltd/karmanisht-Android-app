@@ -1,15 +1,14 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput, useColorScheme, Linking, LayoutAnimation, Platform, Keyboard } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, useColorScheme, Linking, LayoutAnimation, Keyboard } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, FadeInDown } from 'react-native-reanimated';
 import { useAppStore } from '@/lib/store';
 import SafeIcon from '@/components/safe-icon';
 
 const ContactListItem = ({ provider, categories, index, isDark }) => {
-    const router = useRouter();
     const category = categories.find(c => c.id === provider.category_id);
     const categoryName = category ? category.name : 'Professional';
     const categoryIcon = category ? category.icon : 'briefcase';

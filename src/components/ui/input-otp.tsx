@@ -118,7 +118,7 @@ function BlinkingCaret() {
         )
         blink.start()
         return () => blink.stop()
-    }, [])
+    }, [opacity])
 
     return (
         <Animated.View
@@ -198,7 +198,7 @@ function InputOTPSlot({
                 useNativeDriver: true,
             }).start()
         }
-    }, [char, showActive])
+    }, [char, showActive, scaleAnim])
 
     // ── Digit fade + slide-in ─────────────────────────────────────────────────
     // Initialise to visible (1/0) if a char already exists at mount time,
@@ -232,7 +232,7 @@ function InputOTPSlot({
             charOpacity.setValue(0)
             charTranslateY.setValue(-8)
         }
-    }, [char])
+    }, [char, charOpacity, charTranslateY])
 
     // ── Active glow pulse ─────────────────────────────────────────────────────
     const glowOpacity = React.useRef(new Animated.Value(0)).current
@@ -265,7 +265,7 @@ function InputOTPSlot({
             glowOpacity.stopAnimation()
             glowOpacity.setValue(0)
         }
-    }, [showActive])
+    }, [showActive, glowOpacity])
 
     const digitColor = isDark ? '#f1f5f9' : '#0f172a'
 

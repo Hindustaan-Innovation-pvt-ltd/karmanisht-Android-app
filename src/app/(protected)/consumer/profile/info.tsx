@@ -10,12 +10,12 @@ import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
-import { insforge, uploadToInsForge } from '@/lib/insforge';
+import { uploadToInsForge } from '@/lib/insforge';
 import MediaLibraryPicker from '@/components/media-library-picker';
 
 export default function ProfileInfoScreen() {
     const router = useRouter();
-    const { colors, isDark } = useTheme();
+    const { isDark } = useTheme();
     const { user, updateDatabaseProfile, refreshProfile } = useAppStore();
 
     const [name, setName] = useState(user.name || '');
@@ -84,7 +84,8 @@ export default function ProfileInfoScreen() {
             Alert.alert('Required Field', 'Please enter your name.');
             return;
         }
-        if (!phone.trim()) {
+        const isGoogleUser = user.isGoogleUser === true || (user.email && !user.email.endsWith('@mock-mobile.local'));
+        if (!isGoogleUser && !phone.trim()) {
             Alert.alert('Required Field', 'Please enter your phone number.');
             return;
         }

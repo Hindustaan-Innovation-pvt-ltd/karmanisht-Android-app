@@ -1,14 +1,10 @@
 // @ts-nocheck
 import React, { useState } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme, Image } from 'react-native'
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import { insforge, uploadToInsForge } from '@/lib/insforge'
 import { useAppStore } from '@/lib/store'
-import { UserIcon, BriefcaseIcon, PhoneIcon, ClockIcon } from '@/svg/icons'
-import { Feather } from '@expo/vector-icons'
-import * as ImagePicker from 'expo-image-picker'
-import MediaLibraryPicker from '@/components/media-library-picker'
+import { UserIcon, BriefcaseIcon, ClockIcon } from '@/svg/icons'
 import ScalePressable from '@/components/scale-pressable'
 
 type Role = 'worker' | 'consumer'
@@ -29,64 +25,17 @@ export default function GoogleOnboarding() {
         prefilledUserId?: string,
     }>()
 
-    const [fullName, setFullName] = useState(prefilledName || '')
-    const [phone, setPhone] = useState('')
+    const fullName = prefilledName || 'User'
     const [role, setRole] = useState<Role | null>(null)
     const [experience, setExperience] = useState('')
-    const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null)
-    const [showMediaPicker, setShowMediaPicker] = useState(false)
     const [loading, setLoading] = useState(false)
 
     const canSubmit =
-        fullName.trim().length > 1 &&
-        phone.trim().length >= 10 &&
         role !== null &&
         (role === 'consumer' || experience.trim().length > 0)
 
-    const takePhoto = async () => {
-        try {
-            const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-            if (!permissionResult.granted) {
-                Alert.alert("Permission Required", "Camera permission is required to take a photo.");
-                return;
-            }
-
-            const result = await ImagePicker.launchCameraAsync({
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 0.8,
-            });
-
-            if (!result.canceled && result.assets && result.assets.length > 0) {
-                const asset = result.assets[0];
-                setSelectedImage({
-                    uri: asset.uri,
-                    size: asset.fileSize,
-                });
-            }
-        } catch (err: any) {
-            Alert.alert("Error capturing photo", err.message);
-        }
-    };
-
-    const handleSelectPhoto = () => {
-        Alert.alert(
-            "Profile Photo",
-            "Select an option to add your photo",
-            [
-                { text: "Take Photo", onPress: takePhoto },
-                { text: "Choose from Library", onPress: () => setShowMediaPicker(true) },
-                { text: "Cancel", style: "cancel" }
-            ]
-        );
-    };
-
     const handleCompleteOnboarding = async () => {
         if (!canSubmit) return;
-        if (!/^[7-9]\d{9}$/.test(phone)) {
-            Alert.alert('Invalid Mobile', 'Please enter a valid 10-digit Indian mobile number starting with 7, 8, or 9.');
-            return;
-        }
 
         setLoading(true);
         try {
@@ -95,27 +44,14 @@ export default function GoogleOnboarding() {
                 throw new Error('User session not found. Please log in again.');
             }
 
-            let uploadedImageUrl = undefined;
-            if (selectedImage) {
-                try {
-                    const filename = `avatar_${userId}_${Date.now()}.jpg`;
-                    const uploadRes = await uploadToInsForge('avatars', filename, selectedImage);
-                    if (uploadRes?.url) {
-                        uploadedImageUrl = uploadRes.url;
-                    }
-                } catch (uploadErr) {
-                    console.error('[GoogleOnboarding] Failed converting/uploading photo:', uploadErr);
-                }
-            }
-
             await updateDatabaseProfile({
                 id: userId,
                 name: fullName,
-                phone: phone,
+                email: prefilledEmail || undefined,
+                phone: '', // Auto-generates placeholder google-${userId} in authSlice
                 role: role!,
                 experienceYears: role === 'worker' ? parseInt(experience) || 0 : undefined,
                 experience: role === 'worker' ? `${experience} yrs` : undefined,
-                profile_image: uploadedImageUrl,
                 isGoogleUser: true
             });
 
@@ -164,62 +100,14 @@ export default function GoogleOnboarding() {
             >
                 <ScrollView
                     className='flex-1'
-                    contentContainerStyle={{ padding: 24, gap: 20 }}
+                    contentContainerStyle={{ padding: 24, gap: 24 }}
                     keyboardShouldPersistTaps="handled"
                 >
                     <View>
-                        <Text className='text-3xl font-black text-slate-900 dark:text-white leading-tight'>Almost there!</Text>
+                        <Text className='text-3xl font-black text-slate-900 dark:text-white leading-tight'>Welcome, {fullName}!</Text>
                         <Text className='text-sm text-slate-500 mt-2 font-medium'>
-                            Let&apos;s set up your profile details. You bypassed mobile verification since you signed in securely with Google.
+                            To complete your registration, please select how you want to use the app.
                         </Text>
-                    </View>
-
-                    {/* Profile Photo Selection */}
-                    <View className="items-center my-3">
-                        <TouchableOpacity
-                            onPress={handleSelectPhoto}
-                            activeOpacity={0.8}
-                            className="relative w-28 h-28 rounded-[36px] border-4 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shadow-md items-center justify-center overflow-hidden"
-                        >
-                            {selectedImage?.uri ? (
-                                <Image source={{ uri: selectedImage.uri }} className="w-full h-full" resizeMode="cover" />
-                            ) : (
-                                <View className="items-center justify-center">
-                                    <Feather name="camera" size={28} color="#94A3B8" />
-                                    <Text className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">Add Photo</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Full name */}
-                    <View className='gap-2'>
-                        <Text className='text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest'>Full Name</Text>
-                        <TextInput
-                            value={fullName}
-                            onChangeText={setFullName}
-                            placeholder='e.g. Ramesh Kumar'
-                            placeholderTextColor="#94A3B8"
-                            autoCapitalize='words'
-                            className='border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-base font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900'
-                        />
-                    </View>
-
-                    {/* Phone Number */}
-                    <View className='gap-2'>
-                        <Text className='text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest'>Phone Number</Text>
-                        <View className='flex-row items-center border border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900 px-5'>
-                            <PhoneIcon size={18} color="#94A3B8" />
-                            <TextInput
-                                value={phone}
-                                onChangeText={setPhone}
-                                placeholder='9876543210'
-                                placeholderTextColor="#94A3B8"
-                                keyboardType='phone-pad'
-                                maxLength={10}
-                                className='flex-1 py-4 ml-3 text-base font-semibold text-slate-900 dark:text-slate-100'
-                            />
-                        </View>
                     </View>
 
                     {/* Role Selection */}
@@ -292,12 +180,6 @@ export default function GoogleOnboarding() {
                     </ScalePressable>
                 </View>
             </KeyboardAvoidingView>
-
-            <MediaLibraryPicker
-                visible={showMediaPicker}
-                onClose={() => setShowMediaPicker(false)}
-                onSelect={(img) => setSelectedImage(img)}
-            />
         </SafeAreaView>
     )
 }

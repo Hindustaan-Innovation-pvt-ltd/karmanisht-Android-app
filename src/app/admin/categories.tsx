@@ -200,7 +200,7 @@ export default function AdminCategoriesConsole() {
     const bgClass = isDark ? 'bg-slate-950' : 'bg-slate-50';
     const cardBgClass = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100';
     const textMainClass = isDark ? 'text-slate-100' : 'text-slate-900';
-    const textSubClass = isDark ? 'text-slate-400' : 'text-slate-500';
+
     const searchBgClass = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
 
     return (

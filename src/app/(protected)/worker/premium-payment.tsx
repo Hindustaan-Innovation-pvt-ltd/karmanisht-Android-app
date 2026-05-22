@@ -12,7 +12,7 @@ import { insforge } from '@/lib/insforge';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Confetti } from '@/components/Confetti';
 
-const BASE_URL = process.env.EXPO_PUBLIC_INSFORGE_URL;
+
 const RAZORPAY_KEY = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SpC8XTKEi3eJGe';
 
 export default function PremiumPayment() {
@@ -34,6 +34,7 @@ export default function PremiumPayment() {
     const openRazorpay = (): Promise<'success' | 'cancelled' | 'unavailable'> => {
         return new Promise((resolve) => {
             try {
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
                 const RazorpayCheckout = require('react-native-razorpay').default;
                 const options = {
                     description: `Karmanisht ${plan === 'premium' ? 'Premium' : 'Basic'} Subscription`,
