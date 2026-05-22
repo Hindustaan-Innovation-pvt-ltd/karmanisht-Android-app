@@ -82,7 +82,7 @@ export default function Register() {
         try {
             const confirmation = await auth().signInWithPhoneNumber('+91' + phone);
             setVerificationId(confirmation.verificationId);
-            Alert.alert('OTP Sent', 'OTP sent successfully via Firebase!');
+            Alert.alert('OTP Sent', 'OTP sent successfully!');
             setCooldown(30); // 30 seconds cooldown
             setShowOtpModal(true);
         } catch (err: any) {
@@ -99,7 +99,7 @@ export default function Register() {
         try {
             const confirmation = await auth().signInWithPhoneNumber('+91' + phone);
             setVerificationId(confirmation.verificationId);
-            Alert.alert('OTP Sent', 'OTP resent successfully via Firebase!');
+            Alert.alert('OTP Sent', 'OTP resent successfully!');
             setCooldown(30);
         } catch (err: any) {
             console.error('[Firebase OTP Resend Error]', err);
@@ -122,10 +122,23 @@ export default function Register() {
             if (!prefilledUserId) {
                 const mockEmail = `${phone}@mock-mobile.local`;
                 const mockPassword = `Static_Auth_${phone}`;
-                const { data: authData, error: authError } = await insforge.auth.signInWithPassword({
+                
+                // First try to sign in
+                let { data: authData, error: authError } = await insforge.auth.signInWithPassword({
                     email: mockEmail,
                     password: mockPassword
                 });
+                
+                // If sign in fails (likely because account doesn't exist during registration)
+                if (authError) {
+                     const signUpRes = await insforge.auth.signUp({
+                         email: mockEmail,
+                         password: mockPassword
+                     });
+                     authData = signUpRes.data;
+                     authError = signUpRes.error;
+                }
+
                 if (authError || !authData?.user) {
                     throw new Error(authError?.message || 'Could not establish auth session.');
                 }

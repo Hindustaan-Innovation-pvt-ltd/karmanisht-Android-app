@@ -40,9 +40,8 @@ export default function Otp() {
         setLoading(true);
         try {
             const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
-            
             setCurrentVerificationId(confirmation.verificationId);
-            Alert.alert('OTP Sent', 'OTP resent successfully via Firebase!');
+            Alert.alert('OTP Sent', 'OTP resent successfully!');
             setCooldown(30); // restart cooldown
         } catch (err: any) {
             console.error('[Firebase OTP Error]', err);

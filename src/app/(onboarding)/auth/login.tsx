@@ -70,7 +70,7 @@ export default function Login() {
             }
 
             // Firebase Phone Auth using native RN Firebase (no Recaptcha required)
-            const confirmation = await signInWithPhoneNumber('+91' + mobile);
+            const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
 
             Alert.alert('OTP Sent', 'OTP sent successfully!');
             setCooldown(30); // 30 seconds cooldown
