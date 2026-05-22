@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "karmanisht",
-    "slug": "myproject",
+    "slug": "karmanisht",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/80dcc8ac-fd6c-42f5-b9df-9d810e34355d"
     },
     "ios": {
       "supportsTablet": true,
@@ -36,6 +37,24 @@
         "android.permission.ACCESS_MEDIA_LOCATION",
         "android.permission.READ_MEDIA_AUDIO",
         "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_IMAGES",
         "android.permission.INTERNET"
       ],
       "package": "com.karmanisht",
@@ -43,6 +62,9 @@
         "googleMaps": {
           "apiKey": "[GCP_API_KEY]"
         }
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "web": {
@@ -104,9 +126,12 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "9e8806a2-29a1-46fa-9c9b-81cb3fa06bbc"
+        "projectId": "80dcc8ac-fd6c-42f5-b9df-9d810e34355d"
       }
     },
-    "owner": "shubh7470"
+    "owner": "rockgamer002",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

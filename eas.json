@@ -19,7 +19,8 @@
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "913409881561",
         "EXPO_PUBLIC_FIREBASE_APP_ID": "1:913409881561:web:01b6aa51502f618bfb15c8",
         "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-NNY5LQPW5K"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -36,7 +37,8 @@
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "913409881561",
         "EXPO_PUBLIC_FIREBASE_APP_ID": "1:913409881561:web:01b6aa51502f618bfb15c8",
         "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-NNY5LQPW5K"
-      }
+      },
+      "channel": "preview"
     },
     "preview-light": {
       "extends": "preview",
@@ -57,7 +59,8 @@
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "913409881561",
         "EXPO_PUBLIC_FIREBASE_APP_ID": "1:913409881561:web:01b6aa51502f618bfb15c8",
         "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-NNY5LQPW5K"
-      }
+      },
+      "channel": "preview-light"
     },
     "production": {
       "autoIncrement": true,
@@ -73,13 +76,15 @@
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "913409881561",
         "EXPO_PUBLIC_FIREBASE_APP_ID": "1:913409881561:web:01b6aa51502f618bfb15c8",
         "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-NNY5LQPW5K"
-      }
+      },
+      "channel": "production"
     },
     "production-light": {
       "extends": "production",
       "android": {
         "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=arm64-v8a"
-      }
+      },
+      "channel": "production-light"
     }
   },
   "submit": {

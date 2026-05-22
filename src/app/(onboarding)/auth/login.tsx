@@ -204,7 +204,7 @@ export default function Login() {
                             scaleTo={0.97}
                         >
                             <Google className='absolute left-4' />
-                            <Text className='w-full text-lg font-semibold text-center text-slate-900 dark:text-slate-100'>
+                            <Text className='w-full text-lg font-semibold text-center text-slate-900 dark:text-slate-100 -ms-4'>
                                 Sign in with Google
                             </Text>
                         </ScalePressable>
