@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { ScrollView, Text, TouchableOpacity, View, Alert, ActivityIndicator, Image, Platform, useColorScheme, Modal } from 'react-native'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import BackButton from '@/components/back-button'
+
 import { ShieldIcon, UploadIcon, CheckCircleIcon } from '@/svg/icons'
 import * as ImagePicker from 'expo-image-picker'
 import MediaLibraryPicker from '@/components/media-library-picker'

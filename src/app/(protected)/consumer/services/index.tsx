@@ -1,7 +1,7 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, LayoutAnimation, Platform, Keyboard, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, LayoutAnimation, Keyboard, Modal, ActivityIndicator } from 'react-native';
 import SafeIcon from '@/components/safe-icon';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
@@ -60,7 +60,7 @@ export default function ServicesScreen() {
     useEffect(() => {
         // Always re-fetch to ensure we have the latest and complete list
         fetchCategories();
-    }, []);
+    }, [fetchCategories]);
 
     const renderHeader = () => (
         <View className="px-5 flex-row items-center justify-between mb-8 min-h-12" onTouchStart={(e) => e.stopPropagation()}>

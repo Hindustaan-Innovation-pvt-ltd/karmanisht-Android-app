@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect } from 'react';
-import { Text, View, StyleSheet, useColorScheme } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
@@ -12,7 +12,6 @@ import ScalePressable from '@/components/scale-pressable';
 export default function AllSet() {
     const router = useRouter();
     const { user } = useAppStore();
-    const colorScheme = useColorScheme();
     const isWorker = user?.role === 'worker';
 
     useEffect(() => {

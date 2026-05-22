@@ -8,6 +8,7 @@ export default function OnboardingLayout() {
             <Stack.Screen name="auth/login" />
             <Stack.Screen name="auth/otp" />
             <Stack.Screen name="auth/register" />
+            <Stack.Screen name="auth/google-onboarding" />
             <Stack.Screen name="worker" />
             <Stack.Screen name="all-set" />
         </Stack>

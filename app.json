@@ -8,15 +8,21 @@
     "scheme": "mobileapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.developershre.mobileapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundImage": "./assets/images/android-icon-background.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -80,6 +86,15 @@
       "expo-build-properties",
       "@react-native-firebase/app",
       "@react-native-firebase/auth"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableProguardInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -88,7 +103,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "cbe99290-6d87-4d08-98a0-4110e9bcff7b"
+        "projectId": "80dcc8ac-fd6c-42f5-b9df-9d810e34355d"
       }
     }
   }

@@ -37,7 +37,7 @@ export default function StickySwitch({
       leftVal.value = withSpring(3, { damping: 13, stiffness: 220 });
       rightVal.value = withSpring(27, { damping: 22, stiffness: 70, mass: 1.5 });
     }
-  }, [value]);
+  }, [value, leftVal, rightVal]);
 
   const handlePress = () => {
     Haptics.selectionAsync().catch(() => {});

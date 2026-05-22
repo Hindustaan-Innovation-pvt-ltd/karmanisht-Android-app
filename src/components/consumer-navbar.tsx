@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 export type TabName = 'home' | 'services' | 'contact' | 'profile';
 

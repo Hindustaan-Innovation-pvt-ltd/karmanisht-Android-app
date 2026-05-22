@@ -23,7 +23,7 @@ export default function Services() {
         if (!categories || categories.length === 0) {
             fetchCategories();
         }
-    }, [categories]);
+    }, [categories, fetchCategories]);
 
     // Resolve professionName
     const rawProfessionName = paramProfessionName || storeUser?.profession;

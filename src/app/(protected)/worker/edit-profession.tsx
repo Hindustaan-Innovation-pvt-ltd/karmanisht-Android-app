@@ -34,8 +34,6 @@ export default function EditProfession() {
     // --- Profession state (saved) ---
     const [savedCategoryId, setSavedCategoryId] = useState('');
     const [savedTagIds, setSavedTagIds] = useState<string[]>([]);
-    // Full tag objects for view-mode display (so names show without opening modal)
-    const [savedTagObjects, setSavedTagObjects] = useState<any[]>([]);
 
     // --- Inline dropdown state ---
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -59,16 +57,7 @@ export default function EditProfession() {
                         setSavedCategoryId(catId);
                         setSavedTagIds(tagIds);
 
-                        // Fetch full tag objects so view-mode names are shown immediately
-                        if (tagIds.length > 0) {
-                            try {
-                                const { data: tagData } = await insforge.database
-                                    .from('service_tags')
-                                    .select('*')
-                                    .in('id', tagIds);
-                                if (tagData) setSavedTagObjects(tagData);
-                            } catch (_) { }
-                        }
+
 
                         // Pre-load ALL available tags for the category so badges render without dropdown open
                         fetchTagsForCategory(catId);
@@ -87,7 +76,7 @@ export default function EditProfession() {
             }
         }
         fetchDetails();
-    }, [user?.id, categories]);
+    }, [user?.id, categories, fetchTagsForCategory]);
 
     // Fetch tags when editCategoryId changes inside modal
     const fetchTagsForCategory = useCallback(async (categoryId: string) => {
@@ -116,20 +105,14 @@ export default function EditProfession() {
     const handleCategoryChange = (catId: string) => {
         setSavedCategoryId(catId);
         setSavedTagIds([]);
-        setSavedTagObjects([]);
         setShowCategoryDropdown(false);
         fetchTagsForCategory(catId);
     };
 
     const toggleTag = (tagId: string) => {
-        const tagObj = availableTags.find(t => t.id === tagId);
         setSavedTagIds(prev => {
             if (prev.includes(tagId)) return prev.filter(id => id !== tagId);
             return [...prev, tagId];
-        });
-        setSavedTagObjects(prev => {
-            if (prev.find(t => t.id === tagId)) return prev.filter(t => t.id !== tagId);
-            return tagObj ? [...prev, tagObj] : prev;
         });
     };
 
@@ -156,7 +139,7 @@ export default function EditProfession() {
             } else {
                 Alert.alert('Error', 'Failed to update profession details.');
             }
-        } catch (err) {
+        } catch {
             Alert.alert('Error', 'An unexpected error occurred.');
         } finally {
             setLoading(false);
@@ -294,7 +277,7 @@ export default function EditProfession() {
                                     <View className="flex-row items-center justify-between mb-3">
                                         <Text className="text-sm font-bold text-slate-500 uppercase">Services / Specialities</Text>
                                         {savedTagIds.length > 0 && (
-                                            <TouchableOpacity onPress={() => { setSavedTagIds([]); setSavedTagObjects([]); }}>
+                                            <TouchableOpacity onPress={() => { setSavedTagIds([]); }}>
                                                 <Text className="text-xs text-red-400 font-semibold">Clear all</Text>
                                             </TouchableOpacity>
                                         )}

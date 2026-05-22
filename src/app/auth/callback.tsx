@@ -11,6 +11,7 @@ import { getOnboardingRoute } from '@/lib/utils';
 export default function AuthCallback() {
     const router = useRouter();
     const processUserSession = useAppStore(state => state.processUserSession);
+    const setUser = useAppStore(state => state.setUser);
 
     useEffect(() => {
         const handleDeepLink = async () => {
@@ -59,11 +60,20 @@ export default function AuthCallback() {
                         router.replace(nextRoute as any);
                     }
                 } else {
-                    // New user — route to registration with prefilled data
+                    // Populate local store state with the authenticated Google session details
+                    await setUser({
+                        id: insforgeUser.id,
+                        name: insforgeUser.profile?.name || insforgeUser.email?.split('@')[0] || 'User',
+                        email: insforgeUser.email || '',
+                        isGoogleUser: true,
+                        role: null,
+                    });
+
+                    // New user — route to google-onboarding
                     router.replace({
-                        pathname: '/(onboarding)/auth/register',
+                        pathname: '/(onboarding)/auth/google-onboarding',
                         params: {
-                            prefilledName: insforgeUser.profile?.name || '',
+                            prefilledName: insforgeUser.profile?.name || insforgeUser.email?.split('@')[0] || '',
                             prefilledEmail: insforgeUser.email || '',
                             prefilledUserId: insforgeUser.id,
                         }
@@ -77,7 +87,7 @@ export default function AuthCallback() {
         };
 
         handleDeepLink();
-    }, [processUserSession, router]);
+    }, [processUserSession, router, setUser]);
 
     return (
         <View className='flex-1 bg-white dark:bg-slate-950 items-center justify-center'>

@@ -1,19 +1,21 @@
 // @ts-nocheck
 // Native implementation — uses react-native-maps
 import React from 'react';
-import MapView, { Marker, UrlTile } from 'react-native-maps';
+import MapView, { UrlTile } from 'react-native-maps';
 import { StyleSheet } from 'react-native';
 
 interface LocationMapPickerProps {
     coords: { latitude: number; longitude: number };
     region: any;
+    onRegionChange?: (region: any) => void;
     onRegionChangeComplete: (region: any) => void;
-    onMarkerDragEnd: (lat: number, lng: number) => void;
+    onMarkerDragEnd?: (lat: number, lng: number) => void;
 }
 
 export default function LocationMapPicker({
     coords,
     region,
+    onRegionChange,
     onRegionChangeComplete,
     onMarkerDragEnd,
 }: LocationMapPickerProps) {
@@ -37,6 +39,7 @@ export default function LocationMapPicker({
                 latitudeDelta: 0.00922,
                 longitudeDelta: 0.00421,
             }}
+            onRegionChange={onRegionChange}
             onRegionChangeComplete={onRegionChangeComplete}
         >
             <UrlTile
@@ -44,11 +47,6 @@ export default function LocationMapPicker({
                 maximumZ={19}
                 flipY={false}
                 zIndex={1}
-            />
-            <Marker
-                coordinate={coords}
-                draggable={false}
-                zIndex={2}
             />
         </MapView>
     );

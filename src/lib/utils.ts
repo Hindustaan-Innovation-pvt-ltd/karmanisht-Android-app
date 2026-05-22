@@ -11,6 +11,9 @@ export function getOnboardingRoute(user: any): string | null {
     return '/(onboarding)/auth/login';
   }
   if (!user.role) {
+    if (user.isGoogleUser || (user.email && !user.email.endsWith('@mock-mobile.local'))) {
+      return '/(onboarding)/auth/google-onboarding';
+    }
     return '/(onboarding)/auth/register';
   }
   if (user.role === 'worker') {

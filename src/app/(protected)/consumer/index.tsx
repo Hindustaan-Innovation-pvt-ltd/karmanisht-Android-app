@@ -1,28 +1,26 @@
 import { useAppStore } from '@/lib/store';
+import { useCategories } from '@/hooks/queries';
 // @ts-nocheck
 import HomeMap from '@/components/home-map';
 import SafeIcon from '@/components/safe-icon';
 import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Platform, Keyboard, Modal } from 'react-native';
+import { FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Keyboard, Modal } from 'react-native';
 import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScalePressable from '@/components/scale-pressable';
-
-const { width } = Dimensions.get('window');
 
 
 export default function ConsumerHome() {
     const user = useAppStore(state => state.user);
     const unlockedProviders = useAppStore(state => state.unlockedProviders);
-    const categories = useAppStore(state => state.categories);
+    const { data: categories = [] } = useCategories();
     const userLocation = useAppStore(state => state.userLocation);
-    const fetchCategories = useAppStore(state => state.fetchCategories);
     const refreshProfile = useAppStore(state => state.refreshProfile);
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
@@ -34,9 +32,8 @@ export default function ConsumerHome() {
     const [showLiveMap, setShowLiveMap] = useState(false);
 
     useEffect(() => {
-        fetchCategories();
         refreshProfile().catch(err => console.error('[ConsumerHome] refreshProfile error:', err));
-    }, [fetchCategories, refreshProfile]);
+    }, [refreshProfile]);
 
     useEffect(() => {
         if (params?.showMap === 'true') {
@@ -76,7 +73,7 @@ export default function ConsumerHome() {
                     const clean = data.address_line.replace(/^[A-Z0-9]{4,}\+[A-Z0-9]+,\s*/i, '');
                     setSavedAddressName(clean);
                 }
-            } catch (error) {
+            } catch {
                 // Ignore address fetch errors silently
             }
         }
@@ -207,12 +204,12 @@ export default function ConsumerHome() {
             {/* Explore Services Header */}
             <View className="mt-8 px-5 mb-6 flex-row items-center justify-between h-12" onTouchStart={(e) => e.stopPropagation()}>
                 <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">Explore Services</Text>
-                <Modal 
-                    visible={isSearchToggle} 
-                    transparent={false} 
+                <Modal
+                    visible={isSearchToggle}
+                    transparent={false}
                     animationType="fade"
-                    onRequestClose={() => { 
-                        setIsSearchToggle(false); 
+                    onRequestClose={() => {
+                        setIsSearchToggle(false);
                         setSearchQuery('');
                     }}
                 >
@@ -272,7 +269,7 @@ export default function ConsumerHome() {
                                             }}
                                             className="flex-row items-center bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-900/60 p-3 rounded-2xl active:scale-98"
                                         >
-                                            <View 
+                                            <View
                                                 style={{ backgroundColor: color }}
                                                 className="w-10 h-10 rounded-xl items-center justify-center shadow-sm"
                                             >
@@ -394,57 +391,151 @@ export default function ConsumerHome() {
 
 const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
     const router = useRouter();
-    const avatar = provider.profile_image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(provider.full_name);
+    const avatar =
+        provider.profile_image ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(provider.full_name)}&background=6366F1&color=fff&size=176`;
     const scale = useSharedValue(1);
+    const borderOpacity = useSharedValue(0);
 
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ scale: scale.value }]
-        };
-    });
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const borderStyle = useAnimatedStyle(() => ({
+        opacity: borderOpacity.value,
+    }));
 
     const handlePressIn = () => {
-        scale.value = withSpring(0.95, { damping: 20, stiffness: 200 });
+        scale.value = withSpring(0.93, { damping: 18, stiffness: 220 });
+        borderOpacity.value = withSpring(1, { damping: 20, stiffness: 300 });
     };
 
     const handlePressOut = () => {
-        scale.value = withSpring(1, { damping: 20, stiffness: 200 });
+        scale.value = withSpring(1, { damping: 18, stiffness: 220 });
+        borderOpacity.value = withSpring(0, { damping: 20, stiffness: 300 });
     };
+
+    const rating = provider.average_rating ? Number(provider.average_rating).toFixed(1) : null;
 
     return (
         <Animated.View
-            entering={FadeInRight.delay(index * 50).springify().damping(20).stiffness(150)}
+            entering={FadeInRight.delay(index * 55).springify().damping(18).stiffness(140)}
         >
-            <Animated.View style={[animatedStyle]}>
+            <Animated.View style={animatedStyle}>
                 <TouchableOpacity
-                    activeOpacity={0.9}
+                    activeOpacity={1}
                     onPressIn={handlePressIn}
                     onPressOut={handlePressOut}
-                    onPress={() => router.push({
-                        pathname: '/(protected)/consumer/services/[id]',
-                        params: { id: provider.category_id, providerId: provider.id }
-                    } as any)}
-                    className="w-44 h-44 rounded-[15px] overflow-hidden mr-3 relative shadow-sm border border-gray-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-900"
+                    onPress={() =>
+                        router.push({
+                            pathname: '/(protected)/consumer/services/[id]',
+                            params: { id: provider.category_id, providerId: provider.id },
+                        } as any)
+                    }
+                    style={{ width: 176, height: 176, borderRadius: 20, overflow: 'hidden', marginRight: 12 }}
                 >
+                    {/* Photo */}
                     <Image
                         source={{ uri: avatar }}
-                        className="w-full h-full"
+                        style={{ width: '100%', height: '100%' }}
                         resizeMode="cover"
                     />
-                    <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
-                        <Text className="text-white text-[10px] font-bold" numberOfLines={1}>{provider.full_name}</Text>
-                    </View>
+
+                    {/* Animated press border ring */}
+                    <Animated.View
+                        pointerEvents="none"
+                        style={[
+                            {
+                                position: 'absolute',
+                                top: 0, left: 0, right: 0, bottom: 0,
+                                borderRadius: 20,
+                                borderWidth: 2.5,
+                                borderColor: '#6366F1',
+                            },
+                            borderStyle,
+                        ]}
+                    />
+
+                    {/* Gradient nameplate */}
+                    <LinearGradient
+                        colors={['transparent', 'rgba(214, 214, 214, 0.72)', 'rgba(218, 218, 218, 0.92)']}
+                        locations={[0, 0.55, 1]}
+                        style={{
+                            position: 'absolute',
+                            bottom: 0, left: 0, right: 0,
+                            paddingTop: 24,
+                            paddingBottom: 10,
+                            paddingHorizontal: 10,
+                        }}
+                    >
+                        <Text
+                            style={{ color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 0.1 }}
+                            numberOfLines={1}
+                        >
+                            {provider.full_name}
+                        </Text>
+                        {provider.business_name ? (
+                            <Text
+                                style={{ color: 'rgba(255,255,255,0.65)', fontSize: 9.5, fontWeight: '600', marginTop: 1 }}
+                                numberOfLines={1}
+                            >
+                                {provider.business_name}
+                            </Text>
+                        ) : null}
+
+                        {/* Rating row */}
+                        {rating && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                <Ionicons name="star" size={10} color="#FBBF24" />
+                                <Text style={{ color: '#FBBF24', fontSize: 10, fontWeight: '800', marginLeft: 3 }}>
+                                    {rating}
+                                </Text>
+                                {provider.total_jobs_completed > 0 && (
+                                    <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, marginLeft: 4 }}>
+                                        · {provider.total_jobs_completed} jobs
+                                    </Text>
+                                )}
+                            </View>
+                        )}
+                    </LinearGradient>
+
+                    {/* Call FAB */}
                     <TouchableOpacity
                         onPress={() => {
                             if (provider.mobile) {
                                 Linking.openURL(`tel:${provider.mobile}`).catch((err) => {
-                                    console.error("Failed to open dialer:", err);
+                                    console.error('Failed to open dialer:', err);
                                 });
                             }
                         }}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center shadow-md border border-white bg-slate-200 active:scale-90"
+                        style={{
+                            position: 'absolute',
+                            top: 10,
+                            right: 10,
+                            width: 34,
+                            height: 34,
+                            borderRadius: 17,
+                            overflow: 'hidden',
+                            shadowColor: '#fff',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.35,
+                            shadowRadius: 4,
+                            elevation: 6,
+                        }}
                     >
-                        <Ionicons name="call" size={16} color="black" />
+                        <LinearGradient
+                            colors={['#22C55E', '#16A34A']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Ionicons name="call" size={16} color="#fff" />
+                        </LinearGradient>
                     </TouchableOpacity>
                 </TouchableOpacity>
             </Animated.View>

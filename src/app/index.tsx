@@ -1,11 +1,14 @@
 // @ts-nocheck
 import React, { useEffect } from 'react'
-import { ActivityIndicator, Image, Platform, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Image, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppStore } from '@/lib/store'
 import { getOnboardingRoute } from '@/lib/utils'
-import { LinearGradient } from 'expo-linear-gradient'
+import { Vector as Leaf } from '@/svg/leaf'
+import { Vector as Wheel } from '@/svg/wheel'
+import { Vector as Fan } from '@/svg/fan'
+import { Vector as Bolt } from '@/svg/bolt'
 
 
 const BackgroundPattern = () => {
@@ -18,10 +21,9 @@ const BackgroundPattern = () => {
                     style={{ width: '100%', height: '100%' }}
                     resizeMode="stretch"
                 />
-                <Image
-                    source={require('@assets/images/leaf.png')}
-                    style={{ position: 'absolute', left: 30, bottom: 18, width: 36, height: 36 }}
-                    resizeMode="contain"
+                <Leaf
+                    size={42}
+                    style={{ position: 'absolute', left: 30, bottom: 18, width: 42, height: 42 }}
                 />
             </View>
 
@@ -32,10 +34,9 @@ const BackgroundPattern = () => {
                     style={{ width: '100%', height: '100%' }}
                     resizeMode="stretch"
                 />
-                <Image
-                    source={require('@assets/images/wheel.png')}
-                    style={{ position: 'absolute', right: 30, bottom: 18, width: 36, height: 36 }}
-                    resizeMode="contain"
+                <Wheel
+                    size={42}
+                    style={{ position: 'absolute', right: 20, bottom: 18, width: 42, height: 42 }}
                 />
             </View>
 
@@ -46,10 +47,9 @@ const BackgroundPattern = () => {
                     style={{ width: '100%', height: '100%' }}
                     resizeMode="stretch"
                 />
-                <Image
-                    source={require('@assets/images/fan.png')}
-                    style={{ position: 'absolute', left: 30, top: 26, width: 36, height: 36 }}
-                    resizeMode="contain"
+                <Fan
+                    size={42}
+                    style={{ position: 'absolute', left: 30, top: 20, width: 42, height: 42 }}
                 />
             </View>
 
@@ -60,10 +60,9 @@ const BackgroundPattern = () => {
                     style={{ width: '100%', height: '100%' }}
                     resizeMode="stretch"
                 />
-                <Image
-                    source={require('@assets/images/elect.png')}
-                    style={{ position: 'absolute', right: 30, top: 22, width: 36, height: 36 }}
-                    resizeMode="contain"
+                <Bolt
+                    size={42}
+                    style={{ position: 'absolute', right: 30, top: 15, width: 42, height: 42 }}
                 />
             </View>
         </View>
@@ -105,7 +104,7 @@ export default function Index() {
     return (
         <SafeAreaView className='flex-1 relative bg-white dark:bg-slate-950'>
             <BackgroundPattern />
-            <View className='p-6 absolute bottom-0 w-full justify-center'>
+            <View className='p-6 absolute bottom-4 w-full justify-center'>
                 <View className='items-center mb-8'>
                     <Image
                         source={require('@assets/images/logo.png')}

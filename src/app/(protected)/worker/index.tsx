@@ -7,7 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StarIcon, MapPinIcon, EditIcon, UploadIcon, ShieldIcon, ClockIcon } from '@/svg/icons';
 import { Ionicons } from '@expo/vector-icons';
-import Animated from 'react-native-reanimated';
+
 
 export default function WorkerDashboard() {
     const { user, isOnline, toggleOnlineStatus, workerStats, refreshProfile } = useAppStore();

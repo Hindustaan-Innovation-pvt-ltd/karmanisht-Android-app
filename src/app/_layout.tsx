@@ -10,6 +10,8 @@ import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppStore } from '@/lib/store';
 import { useEffect } from 'react';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { queryClient, queryPersister } from '@/lib/queryClient';
 
 // Suppress ExpoKeepAwake uncaught promise rejections on Android during startup/activity recreation
 if (__DEV__) {
@@ -42,7 +44,7 @@ if (__DEV__) {
         }
         console.warn(`[Unhandled Promise Rejection] ID: ${id}`, error);
       },
-      onHandled: () => {},
+      onHandled: () => { },
     });
   } catch {
     // Ignore if rejection tracking module is not available
@@ -54,24 +56,28 @@ WebBrowser.maybeCompleteAuthSession();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const refreshProfile = useAppStore(state => state.refreshProfile);
-
   useEffect(() => {
     refreshProfile();
   }, [refreshProfile]);
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(onboarding)" />
-          <Stack.Screen name="(location)" />
-          <Stack.Screen name="(protected)" />
-          <Stack.Screen name="admin/index" />
-        </Stack>
-        <StatusBar style={colorScheme === 'dark' ? "light" : "dark"} backgroundColor={colorScheme === 'dark' ? '#1e1e1e' : '#f5f5f5'} />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: queryPersister, maxAge: 24 * 60 * 60 * 1000 }}
+    >
+      <SafeAreaProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(onboarding)" />
+            <Stack.Screen name="(location)" />
+            <Stack.Screen name="(protected)" />
+            <Stack.Screen name="admin" />
+          </Stack>
+          <StatusBar style={colorScheme === 'dark' ? "light" : "dark"} backgroundColor={colorScheme === 'dark' ? '#1e1e1e' : '#f5f5f5'} />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </PersistQueryClientProvider>
   );
 }
 

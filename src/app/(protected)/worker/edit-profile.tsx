@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useAppStore } from '@/lib/store';
-import { insforge, uploadToInsForge } from '@/lib/insforge';
+import { uploadToInsForge } from '@/lib/insforge';
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
@@ -38,7 +38,7 @@ export default function EditProfile() {
         setFullName(user?.name || '');
         setBio(user?.bio || '');
         setFetching(false);
-    }, [user?.id]);
+    }, [user?.id, user?.name, user?.bio]);
 
     // Photo handlers
     const takePhoto = async () => {
@@ -99,7 +99,7 @@ export default function EditProfile() {
             } else {
                 Alert.alert('Error', 'Failed to update profile details.');
             }
-        } catch (err) {
+        } catch {
             Alert.alert('Error', 'An unexpected error occurred.');
         } finally {
             setLoading(false);

@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { insforge, uploadToInsForge } from '@/lib/insforge';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, useColorScheme, Modal, Image } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, Modal, Image } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import BackButton from '@/components/back-button'
 import Progress from '@/components/progress'
@@ -138,6 +137,12 @@ export default function Register() {
                     await AsyncStorage.setItem('@@app_refresh_token', authData.refreshToken);
                     insforge.getHttpClient().setRefreshToken(authData.refreshToken);
                 }
+                if (authData.csrfToken) {
+                    await AsyncStorage.setItem('@@app_csrf_token', authData.csrfToken);
+                    if (typeof document !== 'undefined') {
+                        document.cookie = `insforge_csrf_token=${authData.csrfToken}`;
+                    }
+                }
                 finalUserId = authData.user.id;
             }
 
@@ -227,7 +232,7 @@ export default function Register() {
         }
     }
 
-    const colorScheme = useColorScheme();
+
 
     return (
         <View className='flex-1 pt-12 mt-16'>

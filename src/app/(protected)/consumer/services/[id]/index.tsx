@@ -1,28 +1,16 @@
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
+import { useSubCategories, useProviders, useCityPricing, useActivePasses } from '@/hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Platform, Dimensions, Modal, Clipboard, Linking, Pressable, Animated, useColorScheme } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Dimensions, Modal, Clipboard, Linking, Pressable, Animated, useColorScheme } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as Location from 'expo-location';
-import ConsumerNavbar from '@/components/consumer-navbar';
-import BackButton from '@/components/back-button';
 import SafeIcon from '@/components/safe-icon';
 
-function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 6371; // Radius of the earth in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
+const { width } = Dimensions.get('window');
 
 interface ContactDetailModalProps {
     visible: boolean;
@@ -159,7 +147,7 @@ const SuccessModal = ({ visible, onClose, themeColor }: SuccessModalProps) => {
                 })
             ]).start();
         }
-    }, [visible]);
+    }, [visible, opacityAnim, scaleAnim]);
 
     if (!visible) return null;
 
@@ -280,14 +268,14 @@ const UnlockCategoryPassModal = ({
                         <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: `${themeColor}20`, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                             <Ionicons name="key" size={28} color={themeColor} />
                         </View>
-                        <Text className="text-2xl font-black text-slate-800 text-center">Unlock Category Pass</Text>
+                        <Text className="text-2xl font-black text-slate-800 text-center">Unlock Contact</Text>
                         <Text className="text-sm text-slate-500 text-center mt-2 px-4 leading-relaxed">
                             Get instant access to contact details for all {categoryName}s in {cityName}.
                         </Text>
                     </View>
 
                     {/* Pass Details Card */}
-                    <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4.5 mb-6">
+                    <View className="bg-slate-50 border border-slate-100 rounded-2xl mb-6 p-4">
                         <View className="flex-row justify-between items-center mb-4">
                             <Text className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Pass Duration</Text>
                             <View className="bg-blue-50 px-3 py-1 rounded-full">
@@ -341,22 +329,168 @@ const UnlockCategoryPassModal = ({
     );
 };
 
+// ─── Category Pass Modal ─────────────────────────────────────────────────────
+
+interface CategoryPassModalProps {
+    visible: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    themeColor: string;
+    categoryName: string;
+    providerCount: number;
+    price: number;
+    durationHours: number;
+    loading: boolean;
+}
+
+const CategoryPassModal = ({
+    visible, onClose, onConfirm, themeColor,
+    categoryName, providerCount, price, durationHours, loading
+}: CategoryPassModalProps) => {
+    if (!visible) return null;
+    return (
+        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' }}>
+                <Pressable style={{ flex: 1 }} onPress={onClose} />
+                <View style={{
+                    backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32,
+                    padding: 24, paddingBottom: 44,
+                    shadowColor: '#000', shadowOffset: { width: 0, height: -6 },
+                    shadowOpacity: 0.12, shadowRadius: 16, elevation: 16
+                }}>
+                    {/* Handle */}
+                    <View style={{ width: 40, height: 5, backgroundColor: '#E2E8F0', borderRadius: 3, alignSelf: 'center', marginBottom: 20 }} />
+
+                    {/* Header */}
+                    <View style={{ alignItems: 'center', marginBottom: 24 }}>
+                        <LinearGradient
+                            colors={[themeColor, `${themeColor}BB`]}
+                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                            style={{ width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}
+                        >
+                            <Ionicons name="people" size={32} color="#fff" />
+                        </LinearGradient>
+                        <Text style={{ fontSize: 22, fontWeight: '900', color: '#0F172A', textAlign: 'center' }}>
+                            Unlock All {categoryName}s
+                        </Text>
+                        <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', marginTop: 6, paddingHorizontal: 16, lineHeight: 19 }}>
+                            One payment. Instant access to all {providerCount} professionals in your area.
+                        </Text>
+                    </View>
+
+                    {/* Savings card */}
+                    <LinearGradient
+                        colors={['#F0FDF4', '#DCFCE7']}
+                        style={{ borderRadius: 20, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#BBF7D0' }}
+                    >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <Text style={{ fontSize: 11, fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: 0.5 }}>Category Pass</Text>
+                            <View style={{ backgroundColor: '#16A34A', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
+                                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>BEST VALUE</Text>
+                            </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                            <Text style={{ fontSize: 36, fontWeight: '900', color: '#0F172A' }}>₹{price}</Text>
+                            <Text style={{ fontSize: 13, color: '#94A3B8', textDecorationLine: 'line-through' }}>₹{price * providerCount}</Text>
+                            <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '700' }}>total</Text>
+                        </View>
+                        <Text style={{ fontSize: 11, color: '#16A34A', fontWeight: '600', marginTop: 4 }}>
+                            Save ₹{Math.max(0, price * providerCount - price)} vs individual unlocks
+                        </Text>
+                    </LinearGradient>
+
+                    {/* Feature rows */}
+                    <View style={{ gap: 10, marginBottom: 24 }}>
+                        {[
+                            { icon: 'call', text: `Call all ${providerCount} ${categoryName}s directly` },
+                            { icon: 'time-outline', text: `Valid for ${durationHours} hours from purchase` },
+                            { icon: 'shield-checkmark-outline', text: 'No commission or hidden fees' },
+                        ].map(({ icon, text }) => (
+                            <View key={icon} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name={icon as any} size={17} color="#16A34A" />
+                                <Text style={{ color: '#334155', fontSize: 13, fontWeight: '600', marginLeft: 10 }}>{text}</Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Buttons */}
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            style={{ flex: 1, backgroundColor: '#F1F5F9', borderRadius: 18, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}
+                        >
+                            <Text style={{ color: '#64748B', fontWeight: '700', fontSize: 14 }}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={onConfirm}
+                            disabled={loading}
+                            style={{ flex: 2, borderRadius: 18, overflow: 'hidden' }}
+                        >
+                            <LinearGradient
+                                colors={[themeColor, `${themeColor}CC`]}
+                                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                                style={{ paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="card" size={18} color="#fff" />
+                                        <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Pay ₹{price}</Text>
+                                    </>
+                                )}
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
 export default function ServiceDetailScreen() {
+    const queryClient = useQueryClient();
     const user = useAppStore(state => state.user);
     const refreshProfile = useAppStore(state => state.refreshProfile);
-    const isUnlocked = useAppStore(state => state.isUnlocked);
+    const unlockedContacts = useAppStore(state => state.unlockedContacts);
     const userLocation = useAppStore(state => state.userLocation);
     const handleRazorpayPayment = useAppStore(state => state.handleRazorpayPayment);
     const fetchActivePasses = useAppStore(state => (state as any).fetchActivePasses);
 
     const { id, name, color, icon } = useLocalSearchParams<{ id: string, name: string, color: string, icon: string }>();
 
-    const [providers, setProviders] = useState<any[]>([]);
-    const [subCategories, setSubCategories] = useState<any[]>([]);
+    const { data: subCategories = [], isLoading: loadingTags } = useSubCategories(id);
+    const { data: providers = [], isLoading: loadingProviders } = useProviders(
+        id,
+        userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null,
+        name
+    );
+    const { data: cityPricingData, isLoading: loadingPricing } = useCityPricing(
+        id,
+        userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null
+    );
+    const { data: activePasses = [] } = useActivePasses(user?.id);
+
+    const isUnlocked = (providerId: string, categoryId?: string) => {
+        if (unlockedContacts.includes(providerId)) return true;
+        if (categoryId) {
+            const now = new Date().toISOString();
+            return activePasses.some(p => p.profession_id === categoryId && p.expires_at > now && p.payment_status === 'paid');
+        }
+        return false;
+    };
+
+    const cityConfig = cityPricingData?.cityConfig || null;
+    const pricingConfig = cityPricingData?.pricingConfig || null;
+
+    // State for local mutation loading (Razorpay payments)
+    const [mutateLoading, setLoading] = useState(false);
+
+    // Combine hooks loading state with mutation loading state
+    const loading = loadingProviders || loadingPricing || mutateLoading;
+
     const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>([]);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [loadingTags, setLoadingTags] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedContact, setSelectedContact] = useState<any | null>(null);
     const [showContactModal, setShowContactModal] = useState(false);
@@ -364,282 +498,8 @@ export default function ServiceDetailScreen() {
     const [tempProviderForSuccess, setTempProviderForSuccess] = useState<any | null>(null);
     const [showUnlockModal, setShowUnlockModal] = useState(false);
     const [providerToUnlock, setProviderToUnlock] = useState<any | null>(null);
-
-    const [cityConfig, setCityConfig] = useState<{ id: string; name: string; tier: string } | null>(null);
-    const [pricingConfig, setPricingConfig] = useState<{ unlock_price: number; unlock_duration_hours: number } | null>(null);
-    const [loadingPricing, setLoadingPricing] = useState(true);
-
-    useEffect(() => {
-        fetchProviders();
-        fetchSubCategories();
-        resolveUserCityAndPricing();
-        if (user?.id && fetchActivePasses) {
-            fetchActivePasses();
-        }
-    }, [id, userLocation, user?.id]);
-
-    const fetchSubCategories = async () => {
-        setLoadingTags(true);
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(id)) {
-            console.warn(`fetchSubCategories: invalid category id format: "${id}". Using fallbacks.`);
-            setSubCategories([
-                { id: '1', name: 'Emergency Repair' },
-                { id: '2', name: 'New Installation' },
-                { id: '3', name: 'Maintenance' },
-            ]);
-            setLoadingTags(false);
-            return;
-        }
-        try {
-            const { data, error } = await insforge.database
-                .from('service_tags')
-                .select('id, name')
-                .eq('category_id', id);
-
-            if (data && !error) {
-                setSubCategories(data);
-            } else {
-                setSubCategories([
-                    { id: '1', name: 'Emergency Repair' },
-                    { id: '2', name: 'New Installation' },
-                    { id: '3', name: 'Maintenance' },
-                ]);
-            }
-        } catch (err) {
-            console.error("Failed to load subcategories:", err);
-            setSubCategories([]);
-        } finally {
-            setLoadingTags(false);
-        }
-    };
-
-    const resolveUserCityAndPricing = async () => {
-        setLoadingPricing(true);
-        try {
-            let lat = userLocation?.coords?.latitude;
-            let lng = userLocation?.coords?.longitude;
-
-            if (!lat || !lng) {
-                try {
-                    const { status } = await Location.requestForegroundPermissionsAsync();
-                    if (status === 'granted') {
-                        const loc = await Location.getLastKnownPositionAsync() ??
-                            await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-                        if (loc?.coords) {
-                            lat = loc.coords.latitude;
-                            lng = loc.coords.longitude;
-                        }
-                    }
-                } catch (locationErr) {
-                    console.log("Could not obtain location coords:", locationErr);
-                }
-            }
-
-            let cityName = 'Raipur'; // Default fallback
-            if (lat && lng) {
-                try {
-                    const address = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-                    if (address && address.length > 0) {
-                        cityName = address[0].city || address[0].subregion || address[0].region || 'Raipur';
-                    }
-                } catch (err) {
-                    console.log("Reverse geocode failed, using closest city distance fallback:", err);
-                    const cityCoords = [
-                        { name: 'Raipur', lat: 21.2514, lng: 81.6296 },
-                        { name: 'Nagpur', lat: 21.1458, lng: 79.0882 },
-                        { name: 'Indore', lat: 22.7196, lng: 75.8577 },
-                        { name: 'Bhopal', lat: 23.2599, lng: 77.4126 },
-                        { name: 'Bilaspur', lat: 22.0797, lng: 82.1391 },
-                        { name: 'Mumbai', lat: 19.0760, lng: 72.8777 },
-                        { name: 'Delhi', lat: 28.7041, lng: 77.1025 },
-                        { name: 'Bengaluru', lat: 12.9716, lng: 77.5946 },
-                        { name: 'Hyderabad', lat: 17.3850, lng: 78.4867 },
-                        { name: 'Pune', lat: 18.5204, lng: 73.8567 },
-                    ];
-                    let minDistance = Infinity;
-                    let closest = 'Raipur';
-                    for (const c of cityCoords) {
-                        const dist = getDistanceKm(lat, lng, c.lat, c.lng);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            closest = c.name;
-                        }
-                    }
-                    cityName = closest;
-                }
-            }
-
-            // Query cities table
-            const { data: dbCities, error: cityError } = await insforge.database
-                .from('cities')
-                .select('*')
-                .ilike('name', `%${cityName}%`);
-
-            let resolvedCity = null;
-            if (dbCities && dbCities.length > 0 && !cityError) {
-                resolvedCity = dbCities[0];
-            } else {
-                // Fallback: fetch Raipur from database
-                const { data: defaultCities } = await insforge.database
-                    .from('cities')
-                    .select('*')
-                    .eq('name', 'Raipur');
-                if (defaultCities && defaultCities.length > 0) {
-                    resolvedCity = defaultCities[0];
-                }
-            }
-
-            if (resolvedCity) {
-                setCityConfig(resolvedCity);
-
-                // Fetch pricing config
-                const { data: priceData, error: priceError } = await insforge.database
-                    .from('city_pricing_config')
-                    .select('unlock_price, unlock_duration_hours')
-                    .eq('city_id', resolvedCity.id)
-                    .eq('profession_id', id)
-                    .maybeSingle();
-
-                if (priceData && !priceError) {
-                    setPricingConfig({
-                        unlock_price: Number(priceData.unlock_price),
-                        unlock_duration_hours: Number(priceData.unlock_duration_hours)
-                    });
-                } else {
-                    // Safety default based on city tier
-                    const defaultPrice = resolvedCity.tier === 'tier_1' ? 99 : 49;
-                    setPricingConfig({
-                        unlock_price: defaultPrice,
-                        unlock_duration_hours: 5
-                    });
-                }
-            }
-        } catch (err) {
-            console.error("resolveUserCityAndPricing failed:", err);
-            setPricingConfig({
-                unlock_price: 49,
-                unlock_duration_hours: 5
-            });
-        } finally {
-            setLoadingPricing(false);
-        }
-    };
-
-    const fetchProviders = async () => {
-        setLoading(true);
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(id)) {
-            console.warn(`fetchProviders: invalid category id format: "${id}". Skipping DB fetch.`);
-            setProviders([]);
-            setLoading(false);
-            return;
-        }
-        try {
-            const { data: provSvcData, error: provSvcError } = await insforge.database
-                .from('provider_services')
-                .select('provider_id, tag_id')
-                .eq('category_id', id);
-
-            if (provSvcError) {
-                console.error("Failed to fetch provider services:", provSvcError);
-                setProviders([]);
-                setLoading(false);
-                return;
-            }
-
-            const providerIds = Array.from(new Set(provSvcData?.map(p => p.provider_id) || []));
-
-            if (providerIds.length === 0) {
-                setProviders([]);
-                setLoading(false);
-                return;
-            }
-
-            const { data: providersList, error: providersError } = await insforge.database
-                .from('service_providers')
-                .select(`
-                    id,
-                    full_name,
-                    mobile,
-                    profile_image,
-                    experience_years,
-                    bio,
-                    average_rating,
-                    total_jobs_completed,
-                    is_active,
-                    is_premium
-                `)
-                .in('id', providerIds)
-                .eq('is_active', true);
-
-            if (providersError) {
-                console.error("Failed to fetch provider details:", providersError);
-                setProviders([]);
-                setLoading(false);
-                return;
-            }
-
-            const { data: locationsList } = await insforge.database
-                .from('provider_locations')
-                .select('provider_id, latitude, longitude, service_radius_km')
-                .in('provider_id', providerIds);
-
-            const locationMap = new Map(
-                locationsList?.map(l => [l.provider_id, { latitude: l.latitude, longitude: l.longitude, service_radius_km: l.service_radius_km }]) || []
-            );
-
-            const formattedProviders = (providersList || []).map(p => {
-                const loc = locationMap.get(p.id);
-                let distance_km = 0;
-                if (loc && userLocation?.coords) {
-                    distance_km = parseFloat(getDistanceKm(
-                        userLocation.coords.latitude,
-                        userLocation.coords.longitude,
-                        loc.latitude,
-                        loc.longitude
-                    ).toFixed(1));
-                }
-
-                const providerTags = provSvcData
-                    ?.filter(ps => ps.provider_id === p.id && ps.tag_id)
-                    .map(ps => {
-                        const tagObj = subCategories.find(sc => sc.id === ps.tag_id);
-                        return tagObj ? tagObj.name : null;
-                    })
-                    .filter(Boolean) || [];
-
-                return {
-                    provider_id: p.id,
-                    full_name: p.full_name,
-                    profile_image: p.profile_image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(p.full_name),
-                    average_rating: p.average_rating || 0.0,
-                    total_reviews: p.total_jobs_completed || 0,
-                    distance_km: distance_km || 1.5,
-                    experience_years: p.experience_years || 0,
-                    mobile: p.mobile,
-                    description: p.bio || ('Expert ' + name + ' services.'),
-                    tags: providerTags,
-                    service_radius_km: loc ? (loc.service_radius_km || 5) : 5,
-                    is_premium: p.is_premium || false
-                };
-            });
-
-            // Sort premium providers to the top, and sort by distance as secondary metric
-            const sortedProviders = [...formattedProviders].sort((a, b) => {
-                if (a.is_premium && !b.is_premium) return -1;
-                if (!a.is_premium && b.is_premium) return 1;
-                return a.distance_km - b.distance_km;
-            });
-
-            setProviders(sortedProviders);
-        } catch (err) {
-            console.error("Failed to load providers:", err);
-            setProviders([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [showCategoryPassModal, setShowCategoryPassModal] = useState(false);
+    const [categoryPassLoading, setCategoryPassLoading] = useState(false);
 
     const toggleSubCategory = (tagName: string | null) => {
         if (tagName === null) {
@@ -721,6 +581,10 @@ export default function ServiceDetailScreen() {
                 }
                 await refreshProfile();
 
+                if (user?.id) {
+                    queryClient.invalidateQueries({ queryKey: ['activePasses', user.id] });
+                }
+
                 setTempProviderForSuccess(providerToUnlock);
                 setShowSuccessModal(true);
             } else {
@@ -731,6 +595,78 @@ export default function ServiceDetailScreen() {
         } finally {
             setLoading(false);
             setProviderToUnlock(null);
+        }
+    };
+
+    // ── Category pass: one payment → all providers in category unlocked ──────
+    const handleBuyCategoryPass = async () => {
+        if (!user?.id) {
+            Alert.alert('Login Required', 'Please login to continue.');
+            return;
+        }
+        setShowCategoryPassModal(false);
+        setCategoryPassLoading(true);
+
+        const passPrice = pricingConfig?.unlock_price || 49;
+        const durationHours = pricingConfig?.unlock_duration_hours || 5;
+
+        try {
+            // Use first provider as payment proxy (Razorpay needs a reference)
+            const proxy = providers[0] || { provider_id: id };
+            const success = await handleRazorpayPayment(proxy, passPrice);
+
+            if (success) {
+                const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+
+                // 1. Create the category-level unlock pass
+                const { error: passError } = await insforge.database
+                    .from('unlock_passes')
+                    .insert([{
+                        customer_id: user.id,
+                        profession_id: id,
+                        city_id: cityConfig?.id || '57b3868e-c554-4ae5-b80f-fb1bd0617542',
+                        amount_paid: passPrice,
+                        expires_at: expiresAt,
+                        payment_status: 'paid'
+                    }]);
+
+                if (passError) console.error('Category pass insert failed:', passError);
+
+                // 2. Bulk-insert unlock_transactions for every provider in category
+                const transactions = providers.map(p => ({
+                    user_id: user.id,
+                    provider_id: p.provider_id,
+                    amount: passPrice,
+                    payment_status: 'completed',
+                    transaction_id: `cat_${Date.now()}_${p.provider_id.slice(0, 8)}`
+                }));
+
+                if (transactions.length > 0) {
+                    const { error: txError } = await insforge.database
+                        .from('unlock_transactions')
+                        .insert(transactions);
+                    if (txError) console.error('Bulk transactions insert failed:', txError);
+                }
+
+                if (fetchActivePasses) await fetchActivePasses();
+                await refreshProfile();
+
+                if (user?.id) {
+                    queryClient.invalidateQueries({ queryKey: ['activePasses', user.id] });
+                }
+
+                Alert.alert(
+                    '🎉 All Contacts Unlocked!',
+                    `You now have access to all ${providers.length} ${name} professionals for the next ${durationHours} hours.`,
+                    [{ text: 'Great!', style: 'default' }]
+                );
+            } else {
+                Alert.alert('Payment Cancelled', 'The payment was not completed.');
+            }
+        } catch (err: any) {
+            Alert.alert('Payment Error', err.message);
+        } finally {
+            setCategoryPassLoading(false);
         }
     };
 
@@ -761,12 +697,6 @@ export default function ServiceDetailScreen() {
 
     const renderHeader = () => (
         <View className="w-full">
-            {/* Explore Services Title */}
-            <View className="px-5 mb-4 mt-6 flex-row items-center gap-2">
-                <Ionicons name='arrow-back' size={22} color={colorScheme === "dark" ? "#ffffff" : "#000000"}
-                    onPress={() => router.back()} />
-                <Text className="text-xl font-bold text-gray-900">Explore {name}</Text>
-            </View>
 
             {/* Category Header Card */}
             <View className="px-5 mb-6">
@@ -908,10 +838,47 @@ export default function ServiceDetailScreen() {
                 </View>
             )}
 
-            {/* Available Providers Section Title */}
-            <View className="px-5 mb-6">
+            {/* Available Providers header + Category Pass banner */}
+            <View className="px-5 mb-3 flex-row items-center justify-between">
                 <Text className="text-xl font-bold text-gray-900">Available Providers</Text>
+                {providers.length > 0 && (
+                    <View style={{ backgroundColor: `${color}20`, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
+                        <Text style={{ color: color || '#3B82F6', fontSize: 11, fontWeight: '800' }}>{providers.length} near you</Text>
+                    </View>
+                )}
             </View>
+
+            {/* Category Pass CTA — only show when user hasn't unlocked all yet */}
+            {providers.length > 0 && !providers.every(p => isUnlocked(p.provider_id, id)) && (
+                <TouchableOpacity
+                    onPress={() => setShowCategoryPassModal(true)}
+                    activeOpacity={0.92}
+                    style={{ marginHorizontal: 20, marginBottom: 16 }}
+                >
+                    <LinearGradient
+                        colors={[color || '#3B82F6', `${color || '#3B82F6'}AA`]}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                        style={{ borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                <Ionicons name="people" size={22} color="#fff" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900', marginBottom: 2 }}>
+                                    Unlock All {name} Contacts
+                                </Text>
+                                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '600' }}>
+                                    {providers.length} professionals • Pay just ₹{pricingConfig?.unlock_price || 49}
+                                </Text>
+                            </View>
+                        </View>
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7, marginLeft: 8 }}>
+                            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>Unlock All</Text>
+                        </View>
+                    </LinearGradient>
+                </TouchableOpacity>
+            )}
         </View>
     );
 
@@ -932,10 +899,25 @@ export default function ServiceDetailScreen() {
 
     return (
         <View className="flex-1 bg-white">
+            {/* Fixed title bar — never scrolls */}
+            <View
+                className="px-5 flex-row items-center gap-2 bg-white mb-4"
+                style={{ paddingTop: 60, paddingBottom: 12, borderBottomWidth: 0 }}
+            >
+                <Ionicons
+                    name="arrow-back"
+                    size={22}
+                    color={colorScheme === 'dark' ? '#ffffff' : '#000000'}
+                    onPress={() => router.back()}
+                />
+                <Text className="text-xl font-bold text-gray-900">Explore {name}</Text>
+            </View>
+
+            {/* Category card + search + tags + Available Providers + cards — all scroll together */}
             <FlatList
-                className="flex-1"
+                style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingTop: 60, paddingBottom: 150 }}
+                contentContainerStyle={{ paddingBottom: 150 }}
                 ListHeaderComponent={renderHeader}
                 data={filteredProviders}
                 keyExtractor={(item) => item.provider_id}
@@ -1054,6 +1036,18 @@ export default function ServiceDetailScreen() {
                 cityName={cityConfig?.name || 'Raipur'}
                 price={pricingConfig?.unlock_price || 49}
                 durationHours={pricingConfig?.unlock_duration_hours || 5}
+            />
+
+            <CategoryPassModal
+                visible={showCategoryPassModal}
+                onClose={() => setShowCategoryPassModal(false)}
+                onConfirm={handleBuyCategoryPass}
+                themeColor={color || '#3B82F6'}
+                categoryName={name || 'Service Provider'}
+                providerCount={providers.length}
+                price={pricingConfig?.unlock_price || 49}
+                durationHours={pricingConfig?.unlock_duration_hours || 5}
+                loading={categoryPassLoading}
             />
         </View>
     );

@@ -82,6 +82,12 @@ export default function Otp() {
                 await AsyncStorage.setItem('@@app_refresh_token', authData.refreshToken);
                 insforge.getHttpClient().setRefreshToken(authData.refreshToken);
             }
+            if (authData.csrfToken) {
+                await AsyncStorage.setItem('@@app_csrf_token', authData.csrfToken);
+                if (typeof document !== 'undefined') {
+                    document.cookie = `insforge_csrf_token=${authData.csrfToken}`;
+                }
+            }
 
             // 3. Central DB lookup — builds and syncs the user profile
             const profile = await processUserSession(authData.user.id, '');

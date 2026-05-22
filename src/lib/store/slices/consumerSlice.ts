@@ -79,12 +79,12 @@ export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSli
                     "Razorpay Native SDK is not linked/compiled in this app build. Would you like to proceed with a Mock Payment for testing?",
                     [
                         { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
-                        { 
-                            text: `Pay with Mock (${actualAmount} INR)`, 
+                        {
+                            text: `Pay with Mock (${actualAmount} INR)`,
                             onPress: () => {
                                 Alert.alert("Success", "Mock Payment Successful!");
                                 resolve(true);
-                            } 
+                            }
                         }
                     ]
                 );
@@ -93,12 +93,9 @@ export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSli
 
         return new Promise((resolve) => {
             try {
-                // Dynamic import to prevent bundler errors on web
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
                 const RazorpayCheckout = require('react-native-razorpay').default;
-                
-                // Use Test_Key_ID from environment if available
-                const keyId = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || process.env.Test_Key_ID || 'rzp_test_SpC8XTKEi3eJGe';
-                
+                const keyId = process.env.EXPO_PUBLIC_Test_Key_ID || 'rzp_test_SpC8XTKEi3eJGe';
                 const options = {
                     description: `Unlock contact for ${provider.full_name}`,
                     image: provider.profile_image || 'https://i.imgur.com/3g7UR1G.png',

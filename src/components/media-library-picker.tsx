@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -32,36 +32,25 @@ export default function MediaLibraryPicker({ visible, onClose, onSelect }: Media
   const [hasNextPage, setHasNextPage] = useState(true);
   const [selectingAssetId, setSelectingAssetId] = useState<string | null>(null);
 
-  // Reset/fetch state when modal becomes visible
-  useEffect(() => {
-    if (visible) {
-      setAssets([]);
-      setEndCursor(undefined);
-      setHasNextPage(true);
-      checkPermissions();
-    }
-  }, [visible]);
-
-  const checkPermissions = async () => {
+  const loadInitialAssets = useCallback(async () => {
+    setLoading(true);
     try {
-      const { status } = await MediaLibrary.getPermissionsAsync(false, ['photo']);
-      if (status === 'granted') {
-        setHasPermission(true);
-        loadInitialAssets();
-      } else {
-        setHasPermission(false);
-        // Request permission automatically if not determined yet
-        if (status === 'undetermined') {
-          requestPermission();
-        }
-      }
-    } catch (err) {
-      console.error('Error checking permissions:', err);
-      setHasPermission(false);
+      const result = await MediaLibrary.getAssetsAsync({
+        first: 30,
+        mediaType: 'photo',
+        sortBy: [[MediaLibrary.SortBy.creationTime, false]],
+      });
+      setAssets(result.assets || []);
+      setEndCursor(result.endCursor);
+      setHasNextPage(result.hasNextPage);
+    } catch (error) {
+      console.error('Error loading assets:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const requestPermission = async () => {
+  const requestPermission = useCallback(async () => {
     try {
       const { status } = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
       if (status === 'granted') {
@@ -82,25 +71,36 @@ export default function MediaLibraryPicker({ visible, onClose, onSelect }: Media
       console.error('Error requesting permission:', err);
       setHasPermission(false);
     }
-  };
+  }, [loadInitialAssets]);
 
-  const loadInitialAssets = async () => {
-    setLoading(true);
+  const checkPermissions = useCallback(async () => {
     try {
-      const result = await MediaLibrary.getAssetsAsync({
-        first: 30,
-        mediaType: 'photo',
-        sortBy: [[MediaLibrary.SortBy.creationTime, false]],
-      });
-      setAssets(result.assets || []);
-      setEndCursor(result.endCursor);
-      setHasNextPage(result.hasNextPage);
-    } catch (error) {
-      console.error('Error loading assets:', error);
-    } finally {
-      setLoading(false);
+      const { status } = await MediaLibrary.getPermissionsAsync(false, ['photo']);
+      if (status === 'granted') {
+        setHasPermission(true);
+        loadInitialAssets();
+      } else {
+        setHasPermission(false);
+        // Request permission automatically if not determined yet
+        if (status === 'undetermined') {
+          requestPermission();
+        }
+      }
+    } catch (err) {
+      console.error('Error checking permissions:', err);
+      setHasPermission(false);
     }
-  };
+  }, [loadInitialAssets, requestPermission]);
+
+  // Reset/fetch state when modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      setAssets([]);
+      setEndCursor(undefined);
+      setHasNextPage(true);
+      checkPermissions();
+    }
+  }, [visible, checkPermissions]);
 
   const loadMoreAssets = async () => {
     if (!hasNextPage || loadingMore || loading) return;

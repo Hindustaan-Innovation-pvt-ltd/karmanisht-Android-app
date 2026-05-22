@@ -19,6 +19,8 @@ export interface UserProfile {
     hasSpecialties?: boolean;
     /** Worker-only. Consumers do NOT have premium. Sourced from service_providers.is_premium. */
     isPremium?: boolean;
+    email?: string;
+    isGoogleUser?: boolean;
 }
 
 export interface Category {
