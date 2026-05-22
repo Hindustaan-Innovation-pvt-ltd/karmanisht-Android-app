@@ -11,6 +11,7 @@ import { insforge } from '@/lib/insforge'
 import { useAppStore } from '@/lib/store'
 import { getOnboardingRoute } from '@/lib/utils'
 import ScalePressable from '@/components/scale-pressable'
+import auth from '@react-native-firebase/auth';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -68,23 +69,20 @@ export default function Login() {
                 return;
             }
 
-            const { data, error } = await insforge.functions.invoke('send-otp', {
-                body: { mobile }
-            });
+            // Firebase Phone Auth using native RN Firebase (no Recaptcha required)
+            const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
 
-            if (error || data?.error) {
-                const errMsg = error?.message || data?.error || 'Failed to send OTP';
-                if (errMsg.includes('Spam detected')) {
-                    setCooldown(90);
-                }
-                throw new Error(errMsg);
-            }
-
-            Alert.alert('OTP Sent', data.message || 'OTP sent successfully!');
+            Alert.alert('OTP Sent', 'OTP sent successfully!');
             setCooldown(30); // 30 seconds cooldown
-            router.push({ pathname: '/(onboarding)/auth/otp', params: { mobile, initialCooldown: '30' } });
+            
+            // Pass the confirmation object's verificationId to the next screen
+            router.push({ 
+                pathname: '/(onboarding)/auth/otp', 
+                params: { mobile, initialCooldown: '30', verificationId: confirmation.verificationId } 
+            });
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to connect to server');
+            console.error('[Firebase OTP Error]', err);
+            Alert.alert('Error', err.message || 'Failed to send OTP');
         } finally {
             setLoading(false);
         }
@@ -186,6 +184,8 @@ export default function Login() {
 
     return (
         <SafeAreaView className='flex-col flex-1 relative bg-white dark:bg-slate-950'>
+
+
             <View className='flex-1'>
                 <Image source={require('@assets/images/background.png')} className='w-full h-full' />
             </View>
