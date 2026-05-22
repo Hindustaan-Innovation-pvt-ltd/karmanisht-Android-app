@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "913409881561",
+    "project_id": "karmanisht-989e2",
+    "storage_bucket": "karmanisht-989e2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:913409881561:android:5463f909cd1fd900fb15c8",
+        "android_client_info": {
+          "package_name": "com.karmanisht"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4luVjyyeU1fUKESPE2OApKkAp3rc0a74"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

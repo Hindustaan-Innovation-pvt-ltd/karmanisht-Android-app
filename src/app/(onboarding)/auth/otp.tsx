@@ -11,17 +11,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '@/lib/store';
 import { getOnboardingRoute } from '@/lib/utils';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import auth from '@react-native-firebase/auth';
 
 export default function Otp() {
     const router = useRouter()
-    const { mobile, initialCooldown } = useLocalSearchParams<{ mobile: string, initialCooldown?: string }>()
+    const { mobile, initialCooldown, verificationId } = useLocalSearchParams<{ mobile: string, initialCooldown?: string, verificationId?: string }>()
     const processUserSession = useAppStore(state => state.processUserSession)
     const [otp, setOtp] = useState('')
     const [loading, setLoading] = useState(false)
     const [cooldown, setCooldown] = useState(initialCooldown ? parseInt(initialCooldown) : 30)
+    const [currentVerificationId, setCurrentVerificationId] = useState(verificationId || '')
+
 
     // ── Cooldown countdown timer ─────────────────────────────────────────────
     useEffect(() => {
@@ -32,24 +35,17 @@ export default function Otp() {
         return () => clearInterval(timer);
     }, [cooldown]);
 
-    // ── Resend OTP handler ───────────────────────────────────────────────────
     const handleResendOtp = async () => {
         if (cooldown > 0) return;
         setLoading(true);
         try {
-            const { data, error } = await insforge.functions.invoke('send-otp', {
-                body: { mobile }
-            });
-            if (error || data?.error) {
-                const errMsg = error?.message || data?.error || 'Failed to send OTP';
-                if (errMsg.includes('Spam detected')) {
-                    setCooldown(90);
-                }
-                throw new Error(errMsg);
-            }
-            Alert.alert('OTP Sent', data.message || 'OTP resent successfully!');
+            const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
+            
+            setCurrentVerificationId(confirmation.verificationId);
+            Alert.alert('OTP Sent', 'OTP resent successfully via Firebase!');
             setCooldown(30); // restart cooldown
         } catch (err: any) {
+            console.error('[Firebase OTP Error]', err);
             Alert.alert('Error', err.message || 'Failed to resend OTP');
         } finally {
             setLoading(false);
@@ -63,14 +59,8 @@ export default function Otp() {
         }
         setLoading(true);
         try {
-            // 1. Verify OTP via edge function
-            const { data: verifyData, error: verifyError } = await insforge.functions.invoke('verify-otp', {
-                body: { mobile, otp_code: otp }
-            });
-
-            if (verifyError || !verifyData || verifyData.error) {
-                throw new Error(verifyError?.message || verifyData?.error || 'Verification failed');
-            }
+            const credential = auth.PhoneAuthProvider.credential(currentVerificationId, otp);
+            await auth().signInWithCredential(credential);
 
             // 2. Establish auth session via mock email/password
             const mockEmail = `${mobile}@mock-mobile.local`;
@@ -117,6 +107,7 @@ export default function Otp() {
 
     return (
         <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
+
             <View className='absolute top-12 left-2 z-10'><BackButton /></View>
             <View className='flex-1'>
                 <Image source={require('@assets/images/background.png')} className='w-full h-full' />

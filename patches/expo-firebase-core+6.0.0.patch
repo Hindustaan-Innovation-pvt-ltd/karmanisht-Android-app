@@ -1,0 +1,706 @@
+diff --git a/node_modules/expo-firebase-core/android/build.gradle b/node_modules/expo-firebase-core/android/build.gradle
+deleted file mode 100644
+index 9bda09b..0000000
+--- a/node_modules/expo-firebase-core/android/build.gradle
++++ /dev/null
+@@ -1,99 +0,0 @@
+-apply plugin: 'com.android.library'
+-apply plugin: 'kotlin-android'
+-apply plugin: 'maven-publish'
+-
+-group = 'host.exp.exponent'
+-version = '6.0.0'
+-
+-buildscript {
+-  def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
+-  if (expoModulesCorePlugin.exists()) {
+-    apply from: expoModulesCorePlugin
+-    applyKotlinExpoModulesCorePlugin()
+-  }
+-
+-  // Simple helper that allows the root project to override versions declared by this library.
+-  ext.safeExtGet = { prop, fallback ->
+-    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+-  }
+-
+-  // Ensures backward compatibility
+-  ext.getKotlinVersion = {
+-    if (ext.has("kotlinVersion")) {
+-      ext.kotlinVersion()
+-    } else {
+-      ext.safeExtGet("kotlinVersion", "1.6.10")
+-    }
+-  }
+-
+-  repositories {
+-    mavenCentral()
+-  }
+-
+-  dependencies {
+-    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${getKotlinVersion()}")
+-  }
+-}
+-
+-// Creating sources with comments
+-task androidSourcesJar(type: Jar) {
+-  classifier = 'sources'
+-  from android.sourceSets.main.java.srcDirs
+-}
+-
+-afterEvaluate {
+-  publishing {
+-    publications {
+-      release(MavenPublication) {
+-        from components.release
+-        // Add additional sourcesJar to artifacts
+-        artifact(androidSourcesJar)
+-      }
+-    }
+-    repositories {
+-      maven {
+-        url = mavenLocal().url
+-      }
+-    }
+-  }
+-}
+-
+-android {
+-  compileSdkVersion safeExtGet("compileSdkVersion", 31)
+-
+-  compileOptions {
+-    sourceCompatibility JavaVersion.VERSION_11
+-    targetCompatibility JavaVersion.VERSION_11
+-  }
+-
+-  kotlinOptions {
+-    jvmTarget = JavaVersion.VERSION_11.majorVersion
+-  }
+-
+-  defaultConfig {
+-    minSdkVersion safeExtGet("minSdkVersion", 21)
+-    targetSdkVersion safeExtGet("targetSdkVersion", 31)
+-    versionCode 10
+-    versionName '6.0.0'
+-  }
+-  lintOptions {
+-    abortOnError false
+-  }
+-}
+-
+-dependencies {
+-  implementation project(':expo-modules-core')
+-
+-  // We can't use BOM, cause it doesn't work with prebuilding and new autolinking.
+-  // > Could not find com.google.firebase:firebase-core:.
+-  // Required by:
+-  // project :expo > host.exp.exponent:expo-firebase-analytics:X.X.X
+-  // project :expo > host.exp.exponent:expo-firebase-core:X.X.X
+-  // api platform("com.google.firebase:firebase-bom:24.1.0")
+-  // See https://firebase.google.com/support/release-notes/android
+-  // for individual package versions for latest BOM version specified in react-native-firebase
+-  api 'com.google.firebase:firebase-core:21.1.0'
+-  api 'com.google.firebase:firebase-common:20.1.1'
+-
+-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${getKotlinVersion()}"
+-}
+diff --git a/node_modules/expo-firebase-core/android/src/main/AndroidManifest.xml b/node_modules/expo-firebase-core/android/src/main/AndroidManifest.xml
+deleted file mode 100644
+index 5374c4d..0000000
+--- a/node_modules/expo-firebase-core/android/src/main/AndroidManifest.xml
++++ /dev/null
+@@ -1,3 +0,0 @@
+-<manifest package="expo.modules.firebase.core">
+-
+-</manifest>
+diff --git a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreInterface.java b/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreInterface.java
+deleted file mode 100644
+index d451e82..0000000
+--- a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreInterface.java
++++ /dev/null
+@@ -1,7 +0,0 @@
+-package expo.modules.firebase.core;
+-
+-import com.google.firebase.FirebaseApp;
+-
+-public interface FirebaseCoreInterface {
+-  FirebaseApp getDefaultApp();
+-}
+diff --git a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreModule.java b/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreModule.java
+deleted file mode 100644
+index 0bb4e53..0000000
+--- a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreModule.java
++++ /dev/null
+@@ -1,58 +0,0 @@
+-// Copyright 2020-present 650 Industries. All rights reserved.
+-
+-package expo.modules.firebase.core;
+-
+-import android.content.Context;
+-
+-import androidx.annotation.Nullable;
+-
+-import java.util.Map;
+-import java.util.HashMap;
+-
+-import com.google.firebase.FirebaseApp;
+-import com.google.firebase.FirebaseOptions;
+-
+-import expo.modules.core.ExportedModule;
+-import expo.modules.core.ModuleRegistry;
+-
+-public class FirebaseCoreModule extends ExportedModule {
+-  private static final String NAME = "ExpoFirebaseCore";
+-  private static final String DEFAULT_APP_NAME = "[DEFAULT]";
+-
+-  private ModuleRegistry mModuleRegistry;
+-  private Map<String, String> mDefaultOptions;
+-
+-  public FirebaseCoreModule(Context context) {
+-    super(context);
+-  }
+-
+-  @Nullable
+-  public Map<String, Object> getConstants() {
+-    FirebaseCoreInterface firebaseCore = mModuleRegistry.getModule(FirebaseCoreInterface.class);
+-    FirebaseApp defaultApp = firebaseCore.getDefaultApp();
+-
+-    final Map<String, Object> constants = new HashMap<>();
+-    constants.put("DEFAULT_APP_NAME", (defaultApp != null) ? defaultApp.getName() : DEFAULT_APP_NAME);
+-
+-    if (mDefaultOptions == null) {
+-      FirebaseOptions options = (defaultApp != null) ? defaultApp.getOptions() : null;
+-      mDefaultOptions = FirebaseCoreOptions.toJSON(options);
+-    }
+-
+-    if (mDefaultOptions != null) {
+-      constants.put("DEFAULT_APP_OPTIONS", mDefaultOptions);
+-    }
+-
+-    return constants;
+-  }
+-
+-  @Override
+-  public String getName() {
+-    return NAME;
+-  }
+-
+-  @Override
+-  public void onCreate(ModuleRegistry moduleRegistry) {
+-    mModuleRegistry = moduleRegistry;
+-  }
+-}
+diff --git a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreOptions.java b/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreOptions.java
+deleted file mode 100644
+index a32501e..0000000
+--- a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreOptions.java
++++ /dev/null
+@@ -1,56 +0,0 @@
+-package expo.modules.firebase.core;
+-
+-import com.google.firebase.FirebaseOptions;
+-
+-import java.util.Map;
+-import java.util.HashMap;
+-
+-public class FirebaseCoreOptions {
+-
+-  public static FirebaseOptions fromJSON(final Map<String, String> json) {
+-    if (json == null)
+-      return null;
+-    FirebaseOptions.Builder builder = new FirebaseOptions.Builder();
+-
+-    if (json.containsKey("apiKey"))
+-      builder.setApiKey(json.get("apiKey"));
+-    if (json.containsKey("appId"))
+-      builder.setApplicationId(json.get("appId"));
+-    if (json.containsKey("databaseURL"))
+-      builder.setDatabaseUrl(json.get("databaseURL"));
+-    if (json.containsKey("messagingSenderId"))
+-      builder.setGcmSenderId(json.get("messagingSenderId"));
+-    if (json.containsKey("projectId"))
+-      builder.setProjectId(json.get("projectId"));
+-    if (json.containsKey("storageBucket"))
+-      builder.setStorageBucket(json.get("storageBucket"));
+-    if (json.containsKey("trackingId"))
+-      builder.setGaTrackingId(json.get("trackingId"));
+-
+-    return builder.build();
+-  }
+-
+-  public static Map<String, String> toJSON(final FirebaseOptions options) {
+-    if (options == null)
+-      return null;
+-    final Map<String, String> result = new HashMap<>();
+-    result.put("apiKey", options.getApiKey());
+-    result.put("appId", options.getApplicationId());
+-    result.put("databaseURL", options.getDatabaseUrl());
+-    result.put("messagingSenderId", options.getGcmSenderId());
+-    result.put("projectId", options.getProjectId());
+-    result.put("storageBucket", options.getStorageBucket());
+-    if (options.getGaTrackingId() != null)
+-      result.put("trackingId", options.getGaTrackingId());
+-
+-    return result;
+-  }
+-
+-  public static boolean isEqual(final FirebaseOptions opts1, final FirebaseOptions opts2) {
+-    if (opts1 == opts2)
+-      return true;
+-    if ((opts1 == null) || (opts2 == null))
+-      return false;
+-    return opts1.equals(opts2);
+-  }
+-}
+diff --git a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCorePackage.java b/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCorePackage.java
+deleted file mode 100644
+index 25ca450..0000000
+--- a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCorePackage.java
++++ /dev/null
+@@ -1,22 +0,0 @@
+-package expo.modules.firebase.core;
+-
+-import android.content.Context;
+-
+-import java.util.Collections;
+-import java.util.List;
+-
+-import expo.modules.core.BasePackage;
+-import expo.modules.core.ExportedModule;
+-import expo.modules.core.interfaces.InternalModule;
+-
+-public class FirebaseCorePackage extends BasePackage {
+-  @Override
+-  public List<InternalModule> createInternalModules(Context context) {
+-    return Collections.singletonList((InternalModule) new FirebaseCoreService(context));
+-  }
+-
+-  @Override
+-  public List<ExportedModule> createExportedModules(Context context) {
+-    return Collections.singletonList((ExportedModule) new FirebaseCoreModule(context));
+-  }
+-}
+diff --git a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreService.java b/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreService.java
+deleted file mode 100644
+index a04b702..0000000
+--- a/node_modules/expo-firebase-core/android/src/main/java/expo/modules/firebase/core/FirebaseCoreService.java
++++ /dev/null
+@@ -1,89 +0,0 @@
+-package expo.modules.firebase.core;
+-
+-import android.content.Context;
+-
+-import com.google.firebase.FirebaseApp;
+-import com.google.firebase.FirebaseOptions;
+-
+-import expo.modules.core.interfaces.InternalModule;
+-
+-import java.util.List;
+-import java.util.Collections;
+-
+-public class FirebaseCoreService implements InternalModule, FirebaseCoreInterface {
+-
+-  protected static final String DEFAULT_APP_NAME = "[DEFAULT]";
+-
+-  private Context mContext;
+-
+-  public FirebaseCoreService(Context context) {
+-    super();
+-    mContext = context;
+-  }
+-
+-  @Override
+-  public List<Class> getExportedInterfaces() {
+-    return Collections.singletonList((Class) FirebaseCoreInterface.class);
+-  }
+-
+-  // FirebaseCoreInterface
+-
+-  public FirebaseApp getDefaultApp() {
+-    return getFirebaseApp(getAppName());
+-  }
+-
+-  // Overridable
+-
+-  protected String getAppName() {
+-    FirebaseApp app = getFirebaseApp(null);
+-    return (app != null) ? app.getName() : DEFAULT_APP_NAME;
+-  }
+-
+-  protected FirebaseOptions getAppOptions() {
+-    FirebaseApp app = getFirebaseApp(null);
+-    return (app != null) ? app.getOptions() : FirebaseOptions.fromResource(mContext);
+-  }
+-
+-  protected boolean isAppAccessible(final String name) {
+-    return true;
+-  }
+-
+-  protected FirebaseApp updateFirebaseApp(final FirebaseOptions options, final String name) {
+-    FirebaseApp app = getFirebaseApp(name);
+-    if (app != null) {
+-      if (options == null) {
+-        app.delete();
+-      } else {
+-        if (!FirebaseCoreOptions.isEqual(options, app.getOptions())) {
+-          app.delete();
+-          if (name == null) {
+-            app = FirebaseApp.initializeApp(mContext, options);
+-          } else {
+-            app = FirebaseApp.initializeApp(mContext, options, name);
+-          }
+-        }
+-      }
+-    } else {
+-      if (options != null) {
+-        if (name == null) {
+-          app = FirebaseApp.initializeApp(mContext, options);
+-        } else {
+-          app = FirebaseApp.initializeApp(mContext, options, name);
+-        }
+-      }
+-    }
+-
+-    return app;
+-  }
+-
+-  // Static
+-
+-  protected static FirebaseApp getFirebaseApp(String name) {
+-    FirebaseApp app;
+-    try {
+-      return (name == null) ? FirebaseApp.getInstance() : FirebaseApp.getInstance(name);
+-    } catch (Exception e) {
+-      return null;
+-    }
+-  }
+-}
+diff --git a/node_modules/expo-firebase-core/ios/EXFirebaseCore.podspec b/node_modules/expo-firebase-core/ios/EXFirebaseCore.podspec
+deleted file mode 100644
+index 66986e8..0000000
+--- a/node_modules/expo-firebase-core/ios/EXFirebaseCore.podspec
++++ /dev/null
+@@ -1,35 +0,0 @@
+-require 'json'
+-
+-package = JSON.parse(File.read(File.join(__dir__, '..', 'package.json')))
+-
+-firebase_sdk_version = '9.5.0'
+-if defined? $FirebaseSDKVersion
+-  firebase_sdk_version = $FirebaseSDKVersion
+-end
+-
+-Pod::Spec.new do |s|
+-  s.name           = 'EXFirebaseCore'
+-  s.version        = package['version']
+-  s.summary        = package['description']
+-  s.description    = package['description']
+-  s.license        = package['license']
+-  s.author         = package['author']
+-  s.homepage       = package['homepage']
+-  s.platform       = :ios, '13.0'
+-  s.source         = { git: 'https://github.com/expo/expo.git' }
+-  s.static_framework = true
+-
+-  s.pod_target_xcconfig = {
+-    'DEFINES_MODULE' => 'YES',
+-  }
+-
+-  s.dependency 'ExpoModulesCore'
+-  s.dependency 'Firebase/Core', firebase_sdk_version
+-
+-  if !$ExpoUseSources&.include?(package['name']) && ENV['EXPO_USE_SOURCE'].to_i == 0 && File.exist?("#{s.name}.xcframework") && Gem::Version.new(Pod::VERSION) >= Gem::Version.new('1.10.0')
+-    s.source_files = "#{s.name}/**/*.h"
+-    s.vendored_frameworks = "#{s.name}.xcframework"
+-  else
+-    s.source_files = "#{s.name}/**/*.{h,m}"
+-  end
+-end
+diff --git a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore+FIROptions.h b/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore+FIROptions.h
+deleted file mode 100644
+index 30e8206..0000000
+--- a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore+FIROptions.h
++++ /dev/null
+@@ -1,12 +0,0 @@
+-//  Copyright © 2020 650 Industries. All rights reserved.
+-
+-#import <Foundation/Foundation.h>
+-#import <EXFirebaseCore/EXFirebaseCore.h>
+-#import <Firebase/Firebase.h>
+-
+-@interface EXFirebaseCore (FIROptions)
+-
+-+ (nonnull NSDictionary *)firOptionsToJSON:(nonnull FIROptions *)options;
+-+ (BOOL)areFirOptions:(nullable FIROptions *)options1 equalTo:(nullable FIROptions *)options2;
+-
+-@end
+diff --git a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore+FIROptions.m b/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore+FIROptions.m
+deleted file mode 100644
+index 22cb7fc..0000000
+--- a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore+FIROptions.m
++++ /dev/null
+@@ -1,50 +0,0 @@
+-//  Copyright © 2020 650 Industries. All rights reserved.
+-
+-#import <EXFirebaseCore/EXFirebaseCore+FIROptions.h>
+-
+-@implementation EXFirebaseCore (FIROptions)
+-
+-+ (BOOL)compareString:(nullable NSString *) str1 to:(nullable NSString *) str2 {
+-  if (str1 == str2) return YES;
+-  if (!str1 || !str2) return NO;
+-  return [str1 isEqualToString:str2];
+-}
+-
+-+ (BOOL)areFirOptions:(nullable FIROptions *)options1 equalTo:(nullable FIROptions *)options2
+-{
+-  if (options1 == options2) return YES;
+-  if (!options1 || !options2) return NO;
+-  return [self.class compareString:options1.androidClientID to:options2.androidClientID]
+-    && [self.class compareString:options1.APIKey to:options2.APIKey]
+-    && [self.class compareString:options1.appGroupID to:options2.appGroupID]
+-    && [self.class compareString:options1.bundleID to:options2.bundleID]
+-    && [self.class compareString:options1.clientID to:options2.clientID]
+-    && [self.class compareString:options1.databaseURL to:options2.databaseURL]
+-    && [self.class compareString:options1.deepLinkURLScheme to:options2.deepLinkURLScheme]
+-    && [self.class compareString:options1.GCMSenderID to:options2.GCMSenderID]
+-    && [self.class compareString:options1.googleAppID to:options2.googleAppID]
+-    && [self.class compareString:options1.projectID to:options2.projectID]
+-    && [self.class compareString:options1.storageBucket to:options2.storageBucket]
+-    && [self.class compareString:options1.trackingID to:options2.trackingID];
+-}
+-
+-+ (nonnull NSDictionary *)firOptionsToJSON:(nonnull FIROptions *)options
+-{
+-  NSMutableDictionary* json = [NSMutableDictionary dictionary];
+-  
+-  if (options.androidClientID) [json setValue:options.androidClientID forKey:@"androidClientId"];
+-  if (options.APIKey) [json setValue:options.APIKey forKey:@"apiKey"];
+-  if (options.googleAppID) [json setValue:options.googleAppID forKey:@"appId"];
+-  if (options.clientID) [json setValue:options.clientID forKey:@"clientId"];
+-  if (options.databaseURL) [json setValue:options.databaseURL forKey:@"databaseURL"];
+-  if (options.deepLinkURLScheme) [json setValue:options.deepLinkURLScheme forKey:@"deepLinkUrlScheme"];
+-  if (options.GCMSenderID) [json setValue:options.GCMSenderID forKey:@"messagingSenderId"];
+-  if (options.projectID) [json setValue:options.projectID forKey:@"projectId"];
+-  if (options.storageBucket) [json setValue:options.storageBucket forKey:@"storageBucket"];
+-  if (options.trackingID) [json setValue:options.trackingID forKey:@"trackingId"];
+-  if (options.appGroupID) [json setValue:options.trackingID forKey:@"appGroupId"];
+-
+-  return json;
+-}
+-
+-@end
+diff --git a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore.h b/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore.h
+deleted file mode 100644
+index eb8b4a6..0000000
+--- a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore.h
++++ /dev/null
+@@ -1,16 +0,0 @@
+-//  Copyright © 2020 650 Industries. All rights reserved.
+-
+-#import <ExpoModulesCore/EXExportedModule.h>
+-#import <EXFirebaseCore/EXFirebaseCoreInterface.h>
+-#import <Firebase/Firebase.h>
+-
+-@interface EXFirebaseCore : EXExportedModule<EXFirebaseCoreInterface>
+-
+-- (nonnull instancetype)init;
+-- (nonnull instancetype)initWithAppName:(nonnull NSString *)name options:(nullable FIROptions *)options;
+-
+-- (BOOL)isAppAccessible:(nonnull NSString *)name;
+-
+-- (nullable FIRApp *)defaultApp;
+-
+-@end
+diff --git a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore.m b/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore.m
+deleted file mode 100644
+index ea03473..0000000
+--- a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCore.m
++++ /dev/null
+@@ -1,123 +0,0 @@
+-// Copyright 2020-present 650 Industries. All rights reserved.
+-
+-#import <ExpoModulesCore/EXUtilities.h>
+-#import <EXFirebaseCore/EXFirebaseCore.h>
+-#import <EXFirebaseCore/EXFirebaseCore+FIROptions.h>
+-
+-static NSString * const DEFAULT_APP_NAME_IOS = @"__FIRAPP_DEFAULT";
+-static NSString * const DEFAULT_APP_NAME_UNIVERSAL = @"[DEFAULT]";
+-
+-@interface EXFirebaseCore ()
+-@property (nonatomic, strong) NSString *appName;
+-@property (nonatomic, strong) FIROptions *appOptions;
+-@end
+-
+-@implementation EXFirebaseCore
+-
+-EX_EXPORT_MODULE(ExpoFirebaseCore);
+-
+-+ (const NSArray<Protocol *> *)exportedInterfaces
+-{
+-  return @[@protocol(EXFirebaseCoreInterface)];
+-}
+-
+-+ (NSString *)toUniversalAppName:(NSString *)name
+-{
+-  return [name isEqualToString:DEFAULT_APP_NAME_IOS]
+-  ? DEFAULT_APP_NAME_UNIVERSAL
+-  : name;
+-}
+-
+-+ (NSString *)fromUniversalAppName:(NSString *)name
+-{
+-  return [name isEqualToString:DEFAULT_APP_NAME_UNIVERSAL]
+-  ? DEFAULT_APP_NAME_IOS
+-  : name;
+-}
+-
+-- (nonnull instancetype)init
+-{
+-  // Base initialisation of the "default" Firebase App.
+-  // This will initialize firebase when a config exists, and when
+-  // Firebase hasn't already been initialized.
+-  if (self = [super init]) {
+-    _appName = DEFAULT_APP_NAME_IOS;
+-    NSString *path = [[NSBundle mainBundle] pathForResource:@"GoogleService-Info" ofType:@"plist"];
+-    if (path && ![FIRApp defaultApp]) {
+-      [FIRApp configure];
+-    }
+-    FIRApp* defaultApp = [FIRApp defaultApp];
+-    if (defaultApp) {
+-      _appName = defaultApp.name;
+-      _appOptions = defaultApp.options;
+-    }
+-  }
+-  return self;
+-}
+-
+-- (nonnull instancetype)initWithAppName:(nonnull NSString *)name options:(nullable FIROptions *)options
+-{
+-  if (self = [super init]) {
+-    _appName = name;
+-    _appOptions = options;
+-    
+-    // Initialize the firebase app. This will delete/create/update the app
+-    // if it has changed, and leaves the app untouched when the config
+-    // is the same.
+-    [self.class updateAppWithOptions:options name:name completion:^(BOOL success) {
+-      if (!success) {
+-        EXLogWarn(@"Failed to initialize Firebase app: %@", name);
+-      }
+-    }];
+-  }
+-  return self;
+-}
+-
+-- (NSDictionary *)constantsToExport
+-{
+-  NSMutableDictionary* constants = [NSMutableDictionary dictionaryWithDictionary:@{
+-    @"DEFAULT_APP_NAME": [self.class toUniversalAppName:_appName]
+-  }];
+-  
+-  if (_appOptions) {
+-    [constants setObject:[self.class firOptionsToJSON:_appOptions] forKey:@"DEFAULT_APP_OPTIONS"];
+-  }
+-  
+-  return constants;
+-}
+-
+-- (BOOL)isAppAccessible:(nonnull NSString *)name
+-{
+-  return YES;
+-}
+-
+-- (nullable FIRApp *)defaultApp
+-{
+-  return [FIRApp appNamed:_appName];
+-}
+-
+-+ (void)updateAppWithOptions:(nullable FIROptions *)options name:(nonnull NSString *)name completion:(nonnull FIRAppVoidBoolCallback)completion
+-{
+-  FIRApp* app = [FIRApp appNamed:name];
+-  if (!options) {
+-    if (app) {
+-      [app deleteApp:completion];
+-      return;
+-    }
+-  } else {
+-    if (app) {
+-      if (![self.class areFirOptions:app.options equalTo:options]) {
+-        [app deleteApp:^(BOOL success) {
+-          [FIRApp configureWithName:name options:options];
+-          completion(YES);
+-        }];
+-        return;
+-      }
+-    } else {
+-      [FIRApp configureWithName:name options:options];
+-    }
+-  }
+-  completion(YES);
+-}
+-
+-@end
+diff --git a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreAppDelegate.h b/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreAppDelegate.h
+deleted file mode 100644
+index 856fedd..0000000
+--- a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreAppDelegate.h
++++ /dev/null
+@@ -1,13 +0,0 @@
+-// Copyright 2021-present 650 Industries. All rights reserved.
+-
+-#import <Foundation/Foundation.h>
+-#import <EXFirebaseCore/EXFirebaseCore.h>
+-#import <ExpoModulesCore/EXSingletonModule.h>
+-
+-NS_ASSUME_NONNULL_BEGIN
+-
+-@interface EXFirebaseCoreAppDelegate : EXSingletonModule <UIApplicationDelegate>
+-
+-@end
+-
+-NS_ASSUME_NONNULL_END
+diff --git a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreAppDelegate.m b/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreAppDelegate.m
+deleted file mode 100644
+index 4fb98d5..0000000
+--- a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreAppDelegate.m
++++ /dev/null
+@@ -1,26 +0,0 @@
+-// Copyright 2021-present 650 Industries. All rights reserved.
+-
+-#import <EXFirebaseCore/EXFirebaseCoreAppDelegate.h>
+-#import <ExpoModulesCore/EXModuleRegistryProvider.h>
+-#import <Firebase/Firebase.h>
+-
+-@implementation EXFirebaseCoreAppDelegate
+-
+-EX_REGISTER_SINGLETON_MODULE(EXFirebaseCoreAppDelegate)
+-
+-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+-{
+-  // Only auto configure Firebase if the main AppDelegate hasn't already configured it.
+-  // We provide no interface for customizing this app's Firebase configuration.
+-  // Instead, the user should expect the default app to use a `GoogleService-Info.plist` file,
+-  // alternatively they can also setup the default app first.
+-  if ([FIRApp defaultApp] == nil) {
+-    NSString *plistFile = [[NSBundle mainBundle] pathForResource:@"GoogleService-Info" ofType:@"plist"];
+-    if (plistFile) {
+-      [FIRApp configure];
+-    }
+-  }
+-  return YES;
+-}
+-
+-@end
+diff --git a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreInterface.h b/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreInterface.h
+deleted file mode 100644
+index 6ec8cef..0000000
+--- a/node_modules/expo-firebase-core/ios/EXFirebaseCore/EXFirebaseCoreInterface.h
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#import <Firebase/Firebase.h>
+-
+-@protocol EXFirebaseCoreInterface
+-
+-- (nullable FIRApp *)defaultApp;
+-
+-@end

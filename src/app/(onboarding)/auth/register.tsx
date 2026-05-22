@@ -18,6 +18,7 @@ import {
     InputOTPSeparator,
     InputOTPSlot,
 } from "@/components/ui/input-otp"
+import auth from '@react-native-firebase/auth';
 
 type Role = 'worker' | 'consumer'
 
@@ -45,11 +46,12 @@ export default function Register() {
     const [cooldown, setCooldown] = useState(0)
     const [resendingOtp, setResendingOtp] = useState(false)
 
-    // OTP modal states
     const [showOtpModal, setShowOtpModal] = useState(false)
     const [otp, setOtp] = useState('')
     const [verifyingOtp, setVerifyingOtp] = useState(false)
     const [showMediaPicker, setShowMediaPicker] = useState(false)
+    const [verificationId, setVerificationId] = useState('')
+
 
     // ── Cooldown countdown timer ─────────────────────────────────────────────
     useEffect(() => {
@@ -79,21 +81,14 @@ export default function Register() {
         }
         setLoading(true);
         try {
-            const { data, error } = await insforge.functions.invoke('send-otp', {
-                body: { mobile: phone }
-            });
-            if (error || data?.error) {
-                const errMsg = error?.message || data?.error || 'Failed to send OTP';
-                if (errMsg.includes('Spam detected')) {
-                    setCooldown(90);
-                }
-                throw new Error(errMsg);
-            }
-            Alert.alert('OTP Sent', data.message || 'OTP sent successfully!');
+            const confirmation = await auth().signInWithPhoneNumber('+91' + phone);
+            setVerificationId(confirmation.verificationId);
+            Alert.alert('OTP Sent', 'OTP sent successfully via Firebase!');
             setCooldown(30); // 30 seconds cooldown
             setShowOtpModal(true);
         } catch (err: any) {
-            Alert.alert('Error', err.message);
+            console.error('[Firebase OTP Error]', err);
+            Alert.alert('Error', err.message || 'Failed to send OTP');
         } finally {
             setLoading(false);
         }
@@ -103,19 +98,12 @@ export default function Register() {
         if (cooldown > 0) return;
         setResendingOtp(true);
         try {
-            const { data, error } = await insforge.functions.invoke('send-otp', {
-                body: { mobile: phone }
-            });
-            if (error || data?.error) {
-                const errMsg = error?.message || data?.error || 'Failed to send OTP';
-                if (errMsg.includes('Spam detected')) {
-                    setCooldown(90);
-                }
-                throw new Error(errMsg);
-            }
-            Alert.alert('OTP Sent', data.message || 'OTP resent successfully!');
+            const confirmation = await auth().signInWithPhoneNumber('+91' + phone);
+            setVerificationId(confirmation.verificationId);
+            Alert.alert('OTP Sent', 'OTP resent successfully via Firebase!');
             setCooldown(30);
         } catch (err: any) {
+            console.error('[Firebase OTP Resend Error]', err);
             Alert.alert('Error', err.message || 'Failed to resend OTP');
         } finally {
             setResendingOtp(false);
@@ -127,14 +115,8 @@ export default function Register() {
         if (otp.length < 6) return;
         setVerifyingOtp(true);
         try {
-            // Verify OTP
-            const { data: verifyData, error: verifyError } = await insforge.functions.invoke('verify-otp', {
-                body: { mobile: phone, otp_code: otp }
-            });
-
-            if (verifyError || !verifyData || verifyData.error) {
-                throw new Error(verifyError?.message || verifyData?.error || 'Verification failed');
-            }
+            const credential = auth.PhoneAuthProvider.credential(verificationId, otp);
+            await auth().signInWithCredential(credential);
 
             // Establish auth session (only if this isn't a Google-prefilled registration)
             let finalUserId = prefilledUserId;
@@ -249,6 +231,7 @@ export default function Register() {
 
     return (
         <View className='flex-1 pt-12 mt-16'>
+
             <BackButton />
             <Progress currentStep={1} totalSteps={4} />
 

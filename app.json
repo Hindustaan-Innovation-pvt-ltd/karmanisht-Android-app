@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -31,7 +32,7 @@
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.INTERNET"
       ],
-      "package": "com.developershre.mobileapp",
+      "package": "com.karmanisht",
       "config": {
         "googleMaps": {
           "apiKey": "[GCP_API_KEY]"
@@ -76,7 +77,9 @@
           ]
         }
       ],
-      "expo-build-properties"
+      "expo-build-properties",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth"
     ],
     "experiments": {
       "typedRoutes": true,
