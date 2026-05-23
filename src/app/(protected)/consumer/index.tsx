@@ -3,6 +3,7 @@ import { useCategories } from '@/hooks/queries';
 // @ts-nocheck
 // import HomeMap from '@/components/home-map';
 import SafeIcon from '@/components/safe-icon';
+import BannerStack from '@/components/banner-stack';
 import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,26 +36,6 @@ export default function ConsumerHome() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const [showLiveMap, setShowLiveMap] = useState(true);
-
-    const banners = [
-        require('../../../../assets/images/banner1.png'),
-        require('../../../../assets/images/banner2.png'),
-        require('../../../../assets/images/banner3.png'),
-    ];
-    const [bannerIndices, setBannerIndices] = useState([0, 1, 2]);
-
-    const cycleBanners = () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setBannerIndices(prev => [prev[1], prev[2], prev[0]]);
-    };
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            cycleBanners();
-        }, 4000);
-        return () => clearTimeout(timer);
-    }, [bannerIndices]);
-
     useEffect(() => {
         refreshProfile().catch(err => console.error('[ConsumerHome] refreshProfile error:', err));
     }, [refreshProfile]);
@@ -267,7 +248,7 @@ export default function ConsumerHome() {
             </View>
 
             {/* Welcome message & Search block */}
-            <View className="px-5 mt-6 gap-3">
+            <View className="px-5 mt-6 gap-3 mb-4">
                 <Text className="text-2xl font-black text-gray-900 dark:text-white leading-tight">
                     {t('helloUser', 'Hello')}, {user?.name || t('guest')}!
                 </Text>
@@ -287,71 +268,8 @@ export default function ConsumerHome() {
                 </TouchableOpacity>
             </View>
 
-            {/* Banners Stack */}
-            <View className="mt-6" style={{ height: 182, width: '100%', position: 'relative' }}>
-                {/* Third Banner (Back) */}
-                <View
-                    style={{
-                        position: 'absolute',
-                        top: 24,
-                        left: 36,
-                        right: 36,
-                        height: 150,
-                        zIndex: 1,
-                        opacity: 0.65,
-                    }}
-                >
-                    <Image
-                        source={banners[bannerIndices[2]]}
-                        className="w-full h-full rounded-3xl"
-                        resizeMode="cover"
-                    />
-                </View>
-
-                {/* Second Banner (Middle) */}
-                <View
-                    style={{
-                        position: 'absolute',
-                        top: 12,
-                        left: 28,
-                        right: 28,
-                        height: 150,
-                        zIndex: 2,
-                        opacity: 0.85,
-                    }}
-                >
-                    <Image
-                        source={banners[bannerIndices[1]]}
-                        className="w-full h-full rounded-3xl"
-                        resizeMode="cover"
-                    />
-                </View>
-
-                {/* First Banner (Front) */}
-                <TouchableOpacity
-                    activeOpacity={0.95}
-                    onPress={cycleBanners}
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 20,
-                        right: 20,
-                        height: 150,
-                        zIndex: 3,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.15,
-                        shadowRadius: 10,
-                        elevation: 5,
-                    }}
-                >
-                    <Image
-                        source={banners[bannerIndices[0]]}
-                        className="w-full h-full rounded-3xl"
-                        resizeMode="cover"
-                    />
-                </TouchableOpacity>
-            </View>
+            {/* Elegant Premium Animated Banners Stack */}
+            <BannerStack />
 
             {/* Your Contacts Section */}
             <View className="py-5 px-5">

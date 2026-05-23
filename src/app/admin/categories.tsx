@@ -5,7 +5,22 @@ import {
     TextInput, ActivityIndicator, Alert, Modal, Platform, RefreshControl
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+    AntDesign,
+    Entypo,
+    EvilIcons,
+    Feather,
+    FontAwesome,
+    FontAwesome5,
+    Fontisto,
+    Foundation,
+    Ionicons,
+    MaterialCommunityIcons,
+    MaterialIcons,
+    Octicons,
+    SimpleLineIcons,
+    Zocial
+} from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { insforge } from '@/lib/insforge';
 import { useAppStore } from '@/lib/store';
@@ -23,6 +38,200 @@ const shadowMd = Platform.OS === 'web'
 const shadow2xl = Platform.OS === 'web'
     ? { boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }
     : { elevation: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.25, shadowRadius: 16 };
+
+// Recommended/custom category icon representations in SafeIcon mapping
+const RECOMMENDED_ICONS = [
+    'zap', 'droplet', 'wind', 'refrigerator', 'washing-machine', 'tv', 'monitor',
+    'microwave', 'flame', 'hammer', 'brick', 'paint-bucket', 'shield-check', 'layout',
+    'construction', 'container', 'filter', 'bug', 'sparkles', 'fan', 'leaf', 'scissors',
+    'dumbbell', 'stethoscope', 'utensils', 'users', 'car', 'shield', 'shirt', 'package',
+    'key', 'waves', 'antenna', 'sun', 'battery-charging', 'wrench', 'palette', 'calendar',
+    'file-text', 'truck'
+];
+
+// Define icon lists by families
+const ICON_FAMILIES = {
+    recommended: { label: 'Recommended', icons: RECOMMENDED_ICONS },
+    antdesign: { label: 'AntDesign', icons: [] as string[] },
+    entypo: { label: 'Entypo', icons: [] as string[] },
+    evilicons: { label: 'EvilIcons', icons: [] as string[] },
+    feather: { label: 'Feather', icons: [] as string[] },
+    fontawesome: { label: 'FontAwesome', icons: [] as string[] },
+    fontawesome5: { label: 'FontAwesome5', icons: [] as string[] },
+    fontisto: { label: 'Fontisto', icons: [] as string[] },
+    foundation: { label: 'Foundation', icons: [] as string[] },
+    ionicons: { label: 'Ionicons', icons: [] as string[] },
+    materialcommunityicons: { label: 'MaterialCommunity', icons: [] as string[] },
+    materialicons: { label: 'MaterialIcons', icons: [] as string[] },
+    octicons: { label: 'Octicons', icons: [] as string[] },
+    simplelineicons: { label: 'SimpleLine', icons: [] as string[] },
+    zocial: { label: 'Zocial', icons: [] as string[] }
+};
+
+const fillFamilyIcons = (familyKey: keyof typeof ICON_FAMILIES, component: any) => {
+    try {
+        if (component && component.glyphMap) {
+            ICON_FAMILIES[familyKey].icons = Object.keys(component.glyphMap).sort();
+        }
+    } catch (e) {
+        console.warn(`Failed to load ${familyKey} icons glyphMap:`, e);
+    }
+};
+
+fillFamilyIcons('antdesign', AntDesign);
+fillFamilyIcons('entypo', Entypo);
+fillFamilyIcons('evilicons', EvilIcons);
+fillFamilyIcons('feather', Feather);
+fillFamilyIcons('fontawesome', FontAwesome);
+fillFamilyIcons('fontawesome5', FontAwesome5);
+fillFamilyIcons('fontisto', Fontisto);
+fillFamilyIcons('foundation', Foundation);
+fillFamilyIcons('ionicons', Ionicons);
+fillFamilyIcons('materialcommunityicons', MaterialCommunityIcons);
+fillFamilyIcons('materialicons', MaterialIcons);
+fillFamilyIcons('octicons', Octicons);
+fillFamilyIcons('simplelineicons', SimpleLineIcons);
+fillFamilyIcons('zocial', Zocial);
+
+function IconPickerModal({ visible, onClose, onSelect, currentIcon, isDark }: {
+    visible: boolean;
+    onClose: () => void;
+    onSelect: (name: string) => void;
+    currentIcon: string;
+    isDark: boolean;
+}) {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState<keyof typeof ICON_FAMILIES>('recommended');
+
+    useEffect(() => {
+        if (visible) {
+            setSearchQuery('');
+        }
+    }, [visible]);
+
+    const getFilteredIcons = () => {
+        const query = searchQuery.trim().toLowerCase();
+        const sourceList = ICON_FAMILIES[activeTab]?.icons || [];
+
+        if (!query) return sourceList;
+        return sourceList.filter(name => name.toLowerCase().includes(query));
+    };
+
+    const filteredIcons = getFilteredIcons();
+    // Limit to first 120 matching icons to keep the rendering extremely fast in React Native!
+    const displayedIcons = filteredIcons.slice(0, 120);
+
+    const bgClass = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
+    const textMainClass = isDark ? 'text-slate-100' : 'text-slate-900';
+
+    return (
+        <Modal
+            visible={visible}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={onClose}
+        >
+            <View className="flex-1 items-center justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                <View className={`w-full h-[85%] p-6 rounded-t-[36px] border-t ${bgClass}`} style={shadow2xl}>
+                    <View className={`w-12 h-1.5 rounded-full self-center mb-5 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+
+                    <View className="flex-row justify-between items-center mb-4">
+                        <View>
+                            <Text className={`text-xl font-black tracking-tight ${textMainClass}`}>Choose Category Icon</Text>
+                            <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Select an icon representation</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            className={`w-9 h-9 rounded-full items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
+                        >
+                            <Ionicons name="close" size={22} color={isDark ? '#94A3B8' : '#64748B'} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View className={`flex-row items-center px-4 py-3 rounded-2xl mb-4 border ${isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-550 border-slate-200'}`}>
+                        <Feather name="search" size={16} color="#64748B" />
+                        <TextInput
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="Search available icons by name..."
+                            placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+                            className={`flex-1 ml-3 text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}
+                        />
+                    </View>
+
+                    <View className="mb-4">
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+                        >
+                            {Object.entries(ICON_FAMILIES).map(([id, family]) => {
+                                const active = activeTab === id;
+                                return (
+                                    <TouchableOpacity
+                                        key={id}
+                                        onPress={() => setActiveTab(id as any)}
+                                        className={`px-4 py-2.5 rounded-full border ${active
+                                            ? 'bg-indigo-600 border-indigo-600'
+                                            : (isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-50 border-slate-200')
+                                            }`}
+                                    >
+                                        <Text className={`text-[10px] font-black uppercase tracking-wider ${active ? 'text-white' : 'text-slate-400'
+                                            }`}>
+                                            {family.label} ({family.icons.length})
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+
+                    <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+                        {displayedIcons.length === 0 ? (
+                            <View className="py-16 items-center justify-center">
+                                <Feather name="help-circle" size={40} color="#64748B" style={{ opacity: 0.4 }} />
+                                <Text className="text-xs font-bold text-slate-400 mt-3 tracking-widest uppercase">No icons found</Text>
+                            </View>
+                        ) : (
+                            <View className="flex-row flex-wrap gap-2.5 mb-10 justify-start">
+                                {displayedIcons.map(name => {
+                                    const isSelected = currentIcon === name;
+                                    return (
+                                        <TouchableOpacity
+                                            key={name}
+                                            onPress={() => {
+                                                onSelect(name);
+                                                onClose();
+                                            }}
+                                            className={`w-[22%] aspect-square rounded-2xl items-center justify-center border ${isSelected
+                                                ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500'
+                                                : 'bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-850'
+                                                }`}
+                                        >
+                                            <SafeIcon name={name} size={22} color={isSelected ? '#6366F1' : (isDark ? '#94A3B8' : '#475569')} />
+                                            <Text
+                                                className={`text-[8px] font-bold mt-1.5 text-center px-1 leading-tight ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}
+                                                numberOfLines={1}
+                                                ellipsizeMode="tail"
+                                            >
+                                                {name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        )}
+                        {filteredIcons.length > 120 && (
+                            <Text className="text-center text-[10px] text-slate-400 font-bold tracking-wider uppercase mb-10">
+                                showing first 120 matches (refine search for more)
+                            </Text>
+                        )}
+                    </ScrollView>
+                </View>
+            </View>
+        </Modal>
+    );
+}
 
 export default function AdminCategoriesConsole() {
     const router = useRouter();
@@ -63,6 +272,9 @@ export default function AdminCategoriesConsole() {
     const [selectedTag, setSelectedTag] = useState<any | null>(null);
     const [editTagName, setEditTagName] = useState('');
     const [updatingTag, setUpdatingTag] = useState(false);
+
+    // Icon Picker target selection state
+    const [pickerTarget, setPickerTarget] = useState<'create' | 'edit' | null>(null);
 
     const fetchCategoriesAndTags = async (isRef = false) => {
         if (isRef) setRefreshing(true);
@@ -405,11 +617,10 @@ export default function AdminCategoriesConsole() {
                                                         setSelectedCategory(cat);
                                                         setTagsModalVisible(true);
                                                     }}
-                                                    className={`w-10 h-10 rounded-2xl items-center justify-center border ${
-                                                        isActive 
-                                                            ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100/60 dark:border-indigo-900/30' 
-                                                            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                                                    }`}
+                                                    className={`w-10 h-10 rounded-2xl items-center justify-center border ${isActive
+                                                        ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100/60 dark:border-indigo-900/30'
+                                                        : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                                        }`}
                                                 >
                                                     <SafeIcon name={cat.icon || 'tool'} size={18} color={isActive ? "#6366F1" : "#64748B"} />
                                                 </TouchableOpacity>
@@ -442,8 +653,8 @@ export default function AdminCategoriesConsole() {
                                                 {categoryTags.length > 0 && (
                                                     <View className="flex-row flex-wrap gap-1 mt-3">
                                                         {categoryTags.slice(0, 2).map(tag => (
-                                                            <View 
-                                                                key={tag.id} 
+                                                            <View
+                                                                key={tag.id}
                                                                 className={`px-2 py-0.5 rounded-full border ${isDark ? 'bg-slate-950/40 border-slate-800/80' : 'bg-slate-50 border-slate-200'}`}
                                                             >
                                                                 <Text className={`text-[9px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{tag.name}</Text>
@@ -554,17 +765,23 @@ export default function AdminCategoriesConsole() {
                                 />
                             </View>
 
-                            <View>
-                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Feather Icon Identifier</Text>
-                                <TextInput
-                                    value={newCategoryIcon}
-                                    onChangeText={setNewCategoryIcon}
-                                    placeholder="e.g. tool, scissors, brush, home, tv, camera..."
-                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
-                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-50 text-slate-800 border-slate-200'
-                                        }`}
-                                />
-                                <Text className="text-[10px] text-slate-400 mt-1 ml-1 font-medium">Use any name from the Feather vector library.</Text>
+                            <View className="gap-2">
+                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Icon</Text>
+                                <View className="flex-row items-center gap-3">
+                                    <View className={`w-14 h-14 rounded-2xl items-center justify-center border ${isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-50 border-slate-200'}`}>
+                                        <SafeIcon name={newCategoryIcon} size={24} color="#6366F1" />
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className={`text-sm font-bold ${textMainClass}`}>{newCategoryIcon || 'None Selected'}</Text>
+                                        <Text className="text-[10px] text-slate-400 font-medium">Select a safe category icon from the picker</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => setPickerTarget('create')}
+                                        className="bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2.5 rounded-xl border border-indigo-100 dark:border-indigo-900/30"
+                                    >
+                                        <Text className="text-xs font-bold text-[#6366F1]">Choose Icon</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
 
                             <View className="flex-row gap-3 mt-4 mb-4">
@@ -723,17 +940,23 @@ export default function AdminCategoriesConsole() {
                                 />
                             </View>
 
-                            <View>
-                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Feather Icon Identifier</Text>
-                                <TextInput
-                                    value={editCategoryIcon}
-                                    onChangeText={setEditCategoryIcon}
-                                    placeholder="e.g. tool, scissors, brush, home, tv, camera..."
-                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
-                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-955 text-slate-100 border-slate-850' : 'bg-slate-550/5 text-slate-800 border-slate-200'
-                                        }`}
-                                />
-                                <Text className="text-[10px] text-slate-400 mt-1 ml-1 font-medium">Use any name from the Feather vector library.</Text>
+                            <View className="gap-2">
+                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Icon</Text>
+                                <View className="flex-row items-center gap-3">
+                                    <View className={`w-14 h-14 rounded-2xl items-center justify-center border ${isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-50 border-slate-200'}`}>
+                                        <SafeIcon name={editCategoryIcon} size={24} color="#6366F1" />
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className={`text-sm font-bold ${textMainClass}`}>{editCategoryIcon || 'None Selected'}</Text>
+                                        <Text className="text-[10px] text-slate-400 font-medium">Select a safe category icon from the picker</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => setPickerTarget('edit')}
+                                        className="bg-indigo-50 dark:bg-indigo-950/40 px-4 py-2.5 rounded-xl border border-indigo-100 dark:border-indigo-900/30"
+                                    >
+                                        <Text className="text-xs font-bold text-[#6366F1]">Choose Icon</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
 
                             <View className="flex-row gap-3 mt-4 mb-4">
@@ -808,6 +1031,20 @@ export default function AdminCategoriesConsole() {
                     </View>
                 </View>
             </Modal>
+            {/* Dynamic Premium Icon Picker Modal */}
+            <IconPickerModal
+                visible={pickerTarget !== null}
+                onClose={() => setPickerTarget(null)}
+                currentIcon={pickerTarget === 'create' ? newCategoryIcon : editCategoryIcon}
+                isDark={isDark}
+                onSelect={(selectedName) => {
+                    if (pickerTarget === 'create') {
+                        setNewCategoryIcon(selectedName);
+                    } else if (pickerTarget === 'edit') {
+                        setEditCategoryIcon(selectedName);
+                    }
+                }}
+            />
         </View>
     );
 }
