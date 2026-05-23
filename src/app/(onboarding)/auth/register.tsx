@@ -18,11 +18,13 @@ import {
     InputOTPSlot,
 } from "@/components/ui/input-otp"
 import auth from '@react-native-firebase/auth';
+import { useTranslation } from 'react-i18next'
 import CustomAlert from '@/components/ui/custom-alert';
 
 type Role = 'worker' | 'consumer'
 
 export default function Register() {
+    const { t } = useTranslation();
     const router = useRouter()
     const { updateDatabaseProfile, refreshProfile } = useAppStore()
     const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null)
@@ -184,11 +186,11 @@ export default function Register() {
                 // If sign in fails (likely because account doesn't exist during registration)
                 if (authError) {
                      const signUpRes = await insforge.auth.signUp({
-                         email: mockEmail,
-                         password: mockPassword
-                     });
-                     authData = signUpRes.data;
-                     authError = signUpRes.error;
+                          email: mockEmail,
+                          password: mockPassword
+                      });
+                      authData = signUpRes.data;
+                      authError = signUpRes.error;
                 }
 
                 if (authError || !authData?.user) {
@@ -247,7 +249,7 @@ export default function Register() {
                 setVerifyingOtp(false);
             }
         }
-    }
+    };
 
     const takePhoto = async () => {
         try {
@@ -277,12 +279,12 @@ export default function Register() {
 
     const handleSelectPhoto = () => {
         Alert.alert(
-            "Profile Photo",
-            "Select an option to add your photo",
+            t('profilePhoto'),
+            t('selectPhotoOption'),
             [
-                { text: "Take Photo", onPress: takePhoto },
-                { text: "Choose from Library", onPress: () => setShowMediaPicker(true) },
-                { text: "Cancel", style: "cancel" }
+                { text: t('takePhoto'), onPress: takePhoto },
+                { text: t('chooseFromLibrary'), onPress: () => setShowMediaPicker(true) },
+                { text: t('cancel'), style: "cancel" }
             ]
         );
     };
@@ -326,8 +328,6 @@ export default function Register() {
         }
     }
 
-
-
     return (
         <View className='flex-1 pt-12 mt-16'>
 
@@ -345,9 +345,9 @@ export default function Register() {
                     keyboardShouldPersistTaps="handled"
                 >
                     <View>
-                        <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Your basic details</Text>
+                        <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>{t('yourBasicDetails')}</Text>
                         <Text className='text-sm text-slate-500 mt-1'>
-                            Tell us a little about yourself so we can personalise your profile.
+                            {t('tellUsAboutYourself')}
                         </Text>
                     </View>
 
@@ -363,7 +363,7 @@ export default function Register() {
                             ) : (
                                 <View className="items-center justify-center">
                                     <Feather name="camera" size={28} color="#94A3B8" />
-                                    <Text className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">Add Photo</Text>
+                                    <Text className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">{t('addPhoto')}</Text>
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -371,7 +371,7 @@ export default function Register() {
 
                     {/* Full name */}
                     <View className='gap-1.5'>
-                        <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>Full Name</Text>
+                        <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>{t('fullName')}</Text>
                         <TextInput
                             value={fullName}
                             onChangeText={setFullName}
@@ -384,7 +384,7 @@ export default function Register() {
 
                     {/* Phone Number */}
                     <View className='gap-1.5'>
-                        <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>Phone Number</Text>
+                        <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>{t('phoneNumber2')}</Text>
                         <View className='flex-row items-center border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 px-4'>
                             <PhoneIcon size={18} color="#94A3B8" />
                             <TextInput
@@ -401,7 +401,7 @@ export default function Register() {
 
                     {/* Role selection */}
                     <View className='gap-3'>
-                        <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>I am a</Text>
+                        <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>{t('iAmA')}</Text>
                         <View className='flex-row gap-3'>
                             {/* Worker */}
                             <TouchableOpacity
@@ -412,8 +412,8 @@ export default function Register() {
                                 <View className={`size-10 rounded-full items-center justify-center mb-2 ${role === 'worker' ? 'bg-black' : 'bg-slate-100'}`}>
                                     <BriefcaseIcon size={18} color={role === 'worker' ? '#fff' : '#64748b'} />
                                 </View>
-                                <Text className={`text-base font-bold ${role === 'worker' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>Provider</Text>
-                                <Text className='text-xs text-slate-400 mt-0.5'>I want to work</Text>
+                                <Text className={`text-base font-bold ${role === 'worker' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>{t('provider')}</Text>
+                                <Text className='text-xs text-slate-400 mt-0.5'>{t('iWantToWork')}</Text>
                             </TouchableOpacity>
 
                             {/* Consumer */}
@@ -425,8 +425,8 @@ export default function Register() {
                                 <View className={`size-10 rounded-full items-center justify-center mb-2 ${role === 'consumer' ? 'bg-black' : 'bg-slate-100'}`}>
                                     <UserIcon size={18} color={role === 'consumer' ? '#fff' : '#64748b'} />
                                 </View>
-                                <Text className={`text-base font-bold ${role === 'consumer' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>Customer</Text>
-                                <Text className='text-xs text-slate-400 mt-0.5'>I need a service</Text>
+                                <Text className={`text-base font-bold ${role === 'consumer' ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>{t('customer')}</Text>
+                                <Text className='text-xs text-slate-400 mt-0.5'>{t('iNeedService')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -434,7 +434,7 @@ export default function Register() {
                     {/* Experience (workers only) */}
                     {role === 'worker' && (
                         <View className='gap-1.5'>
-                            <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>Years of Experience</Text>
+                            <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider'>{t('yearsOfExperience')}</Text>
                             <View className='flex-row items-center border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 px-4'>
                                 <ClockIcon size={18} color="#94A3B8" />
                                 <TextInput
@@ -462,7 +462,7 @@ export default function Register() {
                             <ActivityIndicator color="white" />
                         ) : (
                             <Text className={`text-base font-bold ${canContinue && cooldown === 0 ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>
-                                {cooldown > 0 ? `Resend in ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}` : 'Continue'}
+                                {cooldown > 0 ? `${t('resendIn', { time: `${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}` })}` : t('continueBtn')}
                             </Text>
                         )}
                     </TouchableOpacity>
@@ -484,9 +484,9 @@ export default function Register() {
                     <View className="bg-white dark:bg-slate-900 w-full rounded-3xl p-6"
                         style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
                     >
-                        <Text className="text-2xl font-bold text-slate-900 dark:text-white text-center">Verify Mobile</Text>
+                        <Text className="text-2xl font-bold text-slate-900 dark:text-white text-center">{t('verifyMobile')}</Text>
                         <Text className="text-slate-500 text-center mt-2 mb-6">
-                            We&apos;ve sent a 6-digit code to{' '}
+                            {t('sentCodeTo')}{' '}
                             <Text className="font-bold text-slate-900 dark:text-slate-100">{phone}</Text>
                         </Text>
 
@@ -510,7 +510,7 @@ export default function Register() {
                         <View className="flex-row justify-center items-center mb-6 h-6">
                             {cooldown > 0 ? (
                                 <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium">
-                                    Resend code in {Math.floor(cooldown / 60)}:{(cooldown % 60).toString().padStart(2, '0')}
+                                    {t('resendIn', { time: `${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}` })}
                                 </Text>
                             ) : (
                                 <TouchableOpacity onPress={handleResendOtp} disabled={resendingOtp} activeOpacity={0.7}>
@@ -518,7 +518,7 @@ export default function Register() {
                                         <ActivityIndicator size="small" color="#2563eb" />
                                     ) : (
                                         <Text className="text-blue-600 dark:text-blue-400 font-bold text-sm">
-                                            Resend OTP
+                                            {t('resendOtp')}
                                         </Text>
                                     )}
                                 </TouchableOpacity>
@@ -533,12 +533,12 @@ export default function Register() {
                             {verifyingOtp ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <Text className={`text-base font-bold ${otp.length === 6 && !resendingOtp ? 'text-white' : 'text-slate-400'}`}>Verify &amp; Continue</Text>
+                                <Text className={`text-base font-bold ${otp.length === 6 && !resendingOtp ? 'text-white' : 'text-slate-400'}`}>{t('verifyAndContinue')}</Text>
                             )}
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => setShowOtpModal(false)} className="mt-4" disabled={verifyingOtp || resendingOtp}>
-                            <Text className="text-center text-slate-500 font-medium">Cancel</Text>
+                            <Text className="text-center text-slate-500 font-medium">{t('cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -8,8 +8,10 @@ import { Feather } from '@expo/vector-icons';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import ScalePressable from '@/components/scale-pressable';
+import { useTranslation } from 'react-i18next';
 
 export default function AllSet() {
+    const { t } = useTranslation();
     const router = useRouter();
     const { user } = useAppStore();
     const isWorker = user?.role === 'worker';
@@ -40,10 +42,10 @@ export default function AllSet() {
 
                 {/* Main Titles */}
                 <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2 text-center">
-                    You&apos;re all set!
+                    {t('youreAllSet')}
                 </Text>
                 <Text className="text-slate-400 dark:text-slate-500 font-semibold mb-8 text-center">
-                    Profile created!
+                    {t('profileCreated')}
                 </Text>
 
                 {/* Custom cards based on role */}
@@ -54,15 +56,15 @@ export default function AllSet() {
                             <View className="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-[24px] flex-row justify-between items-center">
                                 <View className="flex-1 pr-2">
                                     <Text className="text-base font-bold text-slate-900 dark:text-white mb-1">
-                                        Available now
+                                        {t('availableNow')}
                                     </Text>
                                     <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                                        Customers can find you now
+                                        {t('customersCanFindYou')}
                                     </Text>
                                 </View>
                                 <View className="bg-emerald-100 dark:bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-900/30">
                                     <Text className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                                        Online
+                                        {t('online')}
                                     </Text>
                                 </View>
                             </View>
@@ -70,10 +72,10 @@ export default function AllSet() {
                             {/* Card 2: Service Hours */}
                             <View className="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-[24px] flex-col gap-2">
                                 <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                    SERVICE HOURS
+                                    {t('serviceHours')}
                                 </Text>
                                 <Text className="text-base font-bold text-slate-900 dark:text-white">
-                                    9 am – 8 pm
+                                    {t('hoursRange')}
                                 </Text>
                             </View>
                         </>
@@ -83,15 +85,15 @@ export default function AllSet() {
                             <View className="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-[24px] flex-row justify-between items-center">
                                 <View className="flex-1 pr-2">
                                     <Text className="text-base font-bold text-slate-900 dark:text-white mb-1">
-                                        Explore Services
+                                        {t('exploreServices')}
                                     </Text>
                                     <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                                        Find local professionals instantly
+                                        {t('findLocalPros')}
                                     </Text>
                                 </View>
                                 <View className="bg-blue-100 dark:bg-blue-950/30 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-900/30">
                                     <Text className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-wider">
-                                        Ready
+                                        {t('ready')}
                                     </Text>
                                 </View>
                             </View>
@@ -99,10 +101,10 @@ export default function AllSet() {
                             {/* Card 2: Secure Payments */}
                             <View className="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-[24px] flex-col gap-2">
                                 <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                    SECURE PAYMENTS
+                                    {t('securePayments')}
                                 </Text>
                                 <Text className="text-base font-bold text-slate-900 dark:text-white">
-                                    Pay safely via UPI or card
+                                    {t('paySafelyMsg')}
                                 </Text>
                             </View>
                         </>
@@ -119,11 +121,10 @@ export default function AllSet() {
                     className="w-full bg-[#18181B] dark:bg-slate-100 py-4 rounded-2xl items-center justify-center animate-bounce"
                 >
                     <Text className="text-white dark:text-slate-950 font-black text-base">
-                        Go to dashboard
+                        {t('goToDashboard')}
                     </Text>
                 </ScalePressable>
             </View>
         </SafeAreaView>
     );
 }
-

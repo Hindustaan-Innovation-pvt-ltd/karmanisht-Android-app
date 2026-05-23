@@ -49,28 +49,57 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
             }
 
             const dbTranslationsList: TranslationRecord[] = dbData || [];
-            const dbKeys = new Set(dbTranslationsList.map(row => row.key));
-            const newKeysToInsert: Array<{ key: string; en: string; hi: string }> = [];
+            const dbMap = new Map<string, TranslationRecord>();
+            dbTranslationsList.forEach(row => {
+                dbMap.set(row.key, row);
+            });
 
-            // Compare static keys and push missing ones
+            // Compare static keys and push missing or basic dummy ones
             const staticEn = staticResources.en.translation;
             const staticHi = staticResources.hi.translation;
+            const keysToUpsert: Array<{ key: string; en: string; hi: string }> = [];
 
             Object.keys(staticEn).forEach((key) => {
-                if (!dbKeys.has(key)) {
-                    const enVal = staticEn[key as keyof typeof staticEn] || key;
-                    const hiVal = staticHi[key as keyof typeof staticHi] || key;
-                    newKeysToInsert.push({ key, en: enVal, hi: hiVal });
-                    dbTranslationsList.push({ key, en: enVal, hi: hiVal });
+                const enStaticVal = staticEn[key as keyof typeof staticEn] || key;
+                const hiStaticVal = staticHi[key as keyof typeof staticHi] || key;
+                const dbRow = dbMap.get(key);
+
+                if (!dbRow) {
+                    // New key entirely
+                    const newRow = { key, en: enStaticVal, hi: hiStaticVal };
+                    dbTranslationsList.push(newRow);
+                    dbMap.set(key, newRow);
+                    keysToUpsert.push(newRow);
+                } else {
+                    // Key exists in DB, check if it's a dummy value (e.g. equal to key)
+                    // and we have a better static translation.
+                    let needsUpdate = false;
+                    let updatedEn = dbRow.en;
+                    let updatedHi = dbRow.hi;
+
+                    if (dbRow.en === key && enStaticVal !== key) {
+                        updatedEn = enStaticVal;
+                        needsUpdate = true;
+                    }
+                    if (dbRow.hi === key && hiStaticVal !== key) {
+                        updatedHi = hiStaticVal;
+                        needsUpdate = true;
+                    }
+
+                    if (needsUpdate) {
+                        dbRow.en = updatedEn;
+                        dbRow.hi = updatedHi;
+                        keysToUpsert.push({ key, en: updatedEn, hi: updatedHi });
+                    }
                 }
             });
 
-            if (newKeysToInsert.length > 0) {
-                const { error: insertError } = await insforge.database
+            if (keysToUpsert.length > 0) {
+                const { error: upsertError } = await insforge.database
                     .from('translations')
-                    .upsert(newKeysToInsert, { onConflict: 'key', ignoreDuplicates: true });
-                if (insertError) {
-                    console.warn('[Zustand i18n] Failed to populate database with new static keys:', insertError);
+                    .upsert(keysToUpsert, { onConflict: 'key' });
+                if (upsertError) {
+                    console.warn('[Zustand i18n] Failed to update dummy/missing keys in database:', upsertError);
                 }
             }
 
@@ -81,6 +110,9 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
                     if (row.hi) i18n.addResource('hi', 'translation', row.key, row.hi);
                 }
             });
+
+            // Set global language cache for synconous initialization in i18n.ts
+            (global as any).__appLanguageCache = savedLanguage;
 
             set({
                 dbTranslations: dbTranslationsList,
@@ -98,6 +130,7 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
             (global as any).__appLanguageCache = lang;
             await i18n.changeLanguage(lang);
             await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+            (global as any).__appLanguageCache = lang;
             set({ currentLanguage: lang });
         } catch (err) {
             console.error('[Zustand i18n] Failed to change language:', err);
@@ -144,11 +177,17 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
 
     registerMissingKey: async (key: string, defaultVal?: string) => {
         if (!key || key.trim() === '') return;
-        const fallbackValue = defaultVal || key;
+        const staticEn = staticResources.en.translation;
+        const staticHi = staticResources.hi.translation;
+        
+        // Use static translations as fallback if available to prevent dummy values
+        const fallbackEn = staticEn[key as keyof typeof staticEn] || defaultVal || key;
+        const fallbackHi = staticHi[key as keyof typeof staticHi] || defaultVal || key;
+
         try {
             const { error } = await insforge.database
                 .from('translations')
-                .upsert([{ key, en: fallbackValue, hi: fallbackValue }], { onConflict: 'key', ignoreDuplicates: true });
+                .upsert([{ key, en: fallbackEn, hi: fallbackHi }], { onConflict: 'key', ignoreDuplicates: true });
 
             if (error) {
                 console.warn('[Zustand i18n] Failed to save missing key:', key, error);
@@ -156,14 +195,14 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
             }
 
             // Update local resource in i18n
-            i18n.addResource('en', 'translation', key, fallbackValue);
-            i18n.addResource('hi', 'translation', key, fallbackValue);
+            i18n.addResource('en', 'translation', key, fallbackEn);
+            i18n.addResource('hi', 'translation', key, fallbackHi);
 
             // Add to local state if missing
             const exists = get().dbTranslations.some(item => item.key === key);
             if (!exists) {
                 set({
-                    dbTranslations: [...get().dbTranslations, { key, en: fallbackValue, hi: fallbackValue }]
+                    dbTranslations: [...get().dbTranslations, { key, en: fallbackEn, hi: fallbackHi }]
                 });
             }
         } catch (err) {

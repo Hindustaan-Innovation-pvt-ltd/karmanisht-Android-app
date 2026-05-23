@@ -8,6 +8,7 @@ import SafeIcon from '@/components/safe-icon'
 import { useAppStore } from '@/lib/store'
 import { insforge } from '@/lib/insforge'
 import { useTheme } from '@/lib/theme'
+import { useTranslation } from 'react-i18next'
 
 const VIBRANT_COLORS = [
     '#EF4444', // Red
@@ -39,6 +40,7 @@ const getVibrantColor = (service: any) => {
 };
 
 export default function Profession() {
+    const { t } = useTranslation()
     const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
     const router = useRouter()
     const { isDark } = useTheme()
@@ -92,16 +94,16 @@ export default function Profession() {
                 <Progress currentStep={3} totalSteps={5} />
 
                 <View className='px-5 pt-4 pb-5'>
-                    <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Your profession</Text>
+                    <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>{t('yourProfession', 'Your profession')}</Text>
                     <Text className='text-sm text-slate-500 mt-1'>
-                        Select the primary service category you provide.
+                        {t('selectProfessionDesc', 'Select the primary service category you provide.')}
                     </Text>
                 </View>
 
                 {loading ? (
                     <View className="flex-1 justify-center items-center">
                         <ActivityIndicator size="large" color="#000" />
-                        <Text className="text-slate-500 mt-2">Loading professions...</Text>
+                        <Text className="text-slate-500 mt-2">{t('loadingProfessions', 'Loading professions...')}</Text>
                     </View>
                 ) : (
                     <FlatList
@@ -130,7 +132,7 @@ export default function Profession() {
                                 >
                                     <SafeIcon name={icon} size={34} color="white" />
                                     <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter" numberOfLines={2}>
-                                        {item.name}
+                                        {t(item.name)}
                                     </Text>
                                 </TouchableOpacity>
                             );
@@ -146,7 +148,7 @@ export default function Profession() {
                         className={`py-4 rounded-2xl items-center ${selected ? 'bg-black dark:bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'}`}
                     >
                         <Text className={`text-base font-bold ${selected ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>
-                            Continue
+                            {t('continue', 'Continue')}
                         </Text>
                     </TouchableOpacity>
                 </View>
