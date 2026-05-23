@@ -14,6 +14,7 @@ import { getOnboardingRoute } from '@/lib/utils'
 import ScalePressable from '@/components/scale-pressable'
 import auth from '@react-native-firebase/auth';
 import { useTranslation } from 'react-i18next';
+import CustomAlert from '@/components/ui/custom-alert';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -25,6 +26,31 @@ export default function Login() {
     const [mobile, setMobile] = useState('')
     const [loading, setLoading] = useState(false)
     const [cooldown, setCooldown] = useState(0)
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type: 'error' | 'success' | 'info' | 'warning';
+        onClose?: () => void;
+    } | null>(null);
+
+    const showAlert = (
+        title: string,
+        message: string,
+        type: 'error' | 'success' | 'info' | 'warning' = 'error',
+        onClose?: () => void
+    ) => {
+        setAlertConfig({
+            visible: true,
+            title,
+            message,
+            type,
+            onClose: () => {
+                setAlertConfig(null);
+                if (onClose) onClose();
+            }
+        });
+    };
 
     // ── OTP countdown timer ──────────────────────────────────────────────────
     useEffect(() => {
@@ -45,13 +71,13 @@ export default function Login() {
 
     // ── Mobile OTP: verify account exists then send OTP ──────────────────────
     const handleGetOtp = async () => {
-        if (!/^[7-9]\d{9}$/.test(mobile)) {
-            Alert.alert(t('invalidMobile'), t('invalidMobileMsg'));
+        if (!/^[6-9]\d{9}$/.test(mobile)) {
+            showAlert(t('invalidMobile'), t('invalidMobileMsg'), 'error');
             return;
         }
 
         if (cooldown > 0) {
-            Alert.alert(t('pleaseWait'), t('cooldownMsg', { time: cooldown }));
+            showAlert(t('pleaseWait'), t('cooldownMsg', { time: cooldown }), 'warning');
             return;
         }
 
@@ -70,7 +96,7 @@ export default function Login() {
             if (!checkRes || !checkRes.exists) {
                 const title = t('accountNotFound');
                 const message = t('accountNotFoundMsg');
-                Alert.alert(title, message);
+                showAlert(title, message, 'error');
                 return;
             }
 
@@ -83,17 +109,17 @@ export default function Login() {
                 verificationId = confirmation.verificationId;
             }
 
-            Alert.alert(t('otpSent'), t('otpSentMsg'));
             setCooldown(30); // 30 seconds cooldown
-
-            // Pass the confirmation object's verificationId to the next screen
-            router.push({
-                pathname: '/(onboarding)/auth/otp',
-                params: { mobile, initialCooldown: '30', verificationId: verificationId }
+            showAlert(t('otpSent'), t('otpSentMsg'), 'success', () => {
+                // Pass the confirmation object's verificationId to the next screen
+                router.push({
+                    pathname: '/(onboarding)/auth/otp',
+                    params: { mobile, initialCooldown: '30', verificationId: verificationId }
+                });
             });
         } catch (err: any) {
             console.error('[Firebase OTP Error]', err);
-            Alert.alert(t('error'), err.message || 'Failed to send OTP');
+            showAlert(t('error'), err.message || 'Failed to send OTP', 'error');
         } finally {
             setLoading(false);
         }
@@ -179,13 +205,13 @@ export default function Login() {
                     });
                 }
             } else if (result.type === 'cancel' || result.type === 'dismiss') {
-                Alert.alert(t('error'), 'Google sign-in was cancelled.');
+                showAlert(t('error'), 'Google sign-in was cancelled.', 'warning');
             } else {
                 throw new Error('Sign in flow failed.');
             }
         } catch (error: any) {
             console.error('[Google Auth]', error);
-            Alert.alert(t('error'), error.message || 'An unexpected error occurred.');
+            showAlert(t('error'), error.message || 'An unexpected error occurred.', 'error');
         } finally {
             setLoading(false);
         }
@@ -259,6 +285,16 @@ export default function Login() {
                     </View>
                 </View>
             </KeyboardAvoidingView>
+            
+            {alertConfig && (
+                <CustomAlert
+                    visible={alertConfig.visible}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    type={alertConfig.type}
+                    onClose={alertConfig.onClose || (() => setAlertConfig(null))}
+                />
+            )}
         </SafeAreaView>
     )
 }

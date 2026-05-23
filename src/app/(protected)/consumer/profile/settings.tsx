@@ -137,13 +137,13 @@ export default function SettingsScreen() {
     };
 
     const handleCallSupport = () => {
-        Linking.openURL('tel:+919876543210').catch(() => {
+        Linking.openURL('tel:0771-2994005').catch(() => {
             Alert.alert(t('error'), t('unableOpenDialer'));
         });
     };
 
     const handleEmailSupport = () => {
-        Linking.openURL('mailto:support@hindustaninnovations.com?subject=Consumer Support Request').catch(() => {
+        Linking.openURL('mailto:support@hindustaan.in?subject=Consumer Support Request').catch(() => {
             Alert.alert(t('error'), t('unableOpenEmail'));
         });
     };
@@ -478,7 +478,7 @@ export default function SettingsScreen() {
 
                 {/* Footer Brand */}
                 <Text className="text-center text-slate-350 dark:text-slate-700 text-[10px] font-black mb-16 tracking-widest uppercase">
-                    HINDUSTAAN INNOVATIONS Pvt Ltd • {Application.nativeApplicationVersion}
+                    HINDUSTAAN INNOVATIONS PVT. LTD. • {Application.nativeApplicationVersion}
                 </Text>
             </ScrollView>
 
@@ -671,7 +671,7 @@ export default function SettingsScreen() {
                             </View>
                             <View className="ml-4 flex-1">
                                 <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{t('emailSupport')}</Text>
-                                <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">support@hindustaninnovations.com</Text>
+                                <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">support@hindustaan.in</Text>
                             </View>
                             <Feather name="external-link" size={16} color="#CBD5E1" />
                         </ScalePressable>

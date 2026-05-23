@@ -421,7 +421,7 @@ export default function WorkerSettings() {
                     </View>
 
                     <Text className="text-center text-slate-300 text-[10px] font-bold mt-2 mb-12 tracking-widest">
-                        HINDUSTAN INNOVATIONS • {Application.nativeApplicationVersion}
+                        HINDUSTAAN INNOVATIONS PVT. LTD. • {Application.nativeApplicationVersion}
                     </Text>
                 </ScrollView>
                 {/* Service Radius Selector Modal */}
@@ -603,7 +603,7 @@ export default function WorkerSettings() {
                             <TouchableOpacity
                                 onPress={() => {
                                     setSupportVisible(false);
-                                    Linking.openURL('mailto:support@hindustaninnovations.com').catch(() => {
+                                    Linking.openURL('mailto:support@hindustaan.in').catch(() => {
                                         Alert.alert("Error", "Could not open mail app.");
                                     });
                                 }}
@@ -624,7 +624,7 @@ export default function WorkerSettings() {
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Email Us</Text>
-                                    <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>support@hindustaninnovations.com</Text>
+                                    <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>support@hindustaan.in</Text>
                                 </View>
                                 <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
                             </TouchableOpacity>
@@ -633,7 +633,7 @@ export default function WorkerSettings() {
                             <TouchableOpacity
                                 onPress={() => {
                                     setSupportVisible(false);
-                                    Linking.openURL('tel:+919876543210').catch(() => {
+                                    Linking.openURL('tel:07712994005').catch(() => {
                                         Alert.alert("Error", "Could not place phone call.");
                                     });
                                 }}
@@ -653,8 +653,8 @@ export default function WorkerSettings() {
                                     <Ionicons name="call" size={22} color={isDark ? '#34d399' : '#16a34a'} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Phone / WhatsApp</Text>
-                                    <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>+91 98765 43210</Text>
+                                    <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Phone</Text>
+                                    <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>0771-2994005</Text>
                                 </View>
                                 <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
                             </TouchableOpacity>
