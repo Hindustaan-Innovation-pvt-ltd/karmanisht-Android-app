@@ -193,7 +193,7 @@ export default function VerifyIdentity() {
                         />
                         <View className="flex-row items-center gap-2 px-3 py-2.5 bg-green-50 dark:bg-green-950/30">
                             <CheckCircleIcon size={14} color="#16A34A" />
-                            <Text className="text-xs font-semibold text-green-700 dark:text-green-400 flex-1">{t('documentUploaded', { label: label }, `${label} uploaded`)}</Text>
+                            <Text className="text-xs font-semibold text-green-700 dark:text-green-400 flex-1">{t('documentUploaded', { defaultValue: `${label} uploaded`, label: label })}</Text>
                             <Text className="text-[10px] text-green-600 font-medium">{t('tapToChange', 'Tap to change')}</Text>
                         </View>
                     </View>
@@ -493,7 +493,7 @@ export default function VerifyIdentity() {
                             <>
                                 <Ionicons name="shield-checkmark" size={18} color="white" />
                                 <Text className='text-white text-base font-bold'>
-                                    {allDocsUploaded ? t('submitForReview', 'Submit for Review') : t('docsUploadedProgress', { count: [!!aadhaarFront, !!aadhaarBack, !!panFront].filter(Boolean).length }, `${[!!aadhaarFront, !!aadhaarBack, !!panFront].filter(Boolean).length}/3 documents uploaded`)}
+                                    {allDocsUploaded ? t('submitForReview', 'Submit for Review') : t('docsUploadedProgress', { defaultValue: `${[!!aadhaarFront, !!aadhaarBack, !!panFront].filter(Boolean).length}/3 documents uploaded`, count: [!!aadhaarFront, !!aadhaarBack, !!panFront].filter(Boolean).length })}
                                 </Text>
                             </>
                         )}

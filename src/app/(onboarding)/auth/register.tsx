@@ -319,8 +319,11 @@ export default function Register() {
 
             await refreshProfile();
 
-            // Both roles go to location screen first
-            router.replace('/(location)/locationinfo');
+            if (role === 'worker') {
+                router.replace('/(location)/locationinfo');
+            } else {
+                router.replace('/(protected)/consumer');
+            }
         } catch (err: any) {
             showAlert(t('registrationError', 'Registration Error'), err.message, 'error');
         } finally {

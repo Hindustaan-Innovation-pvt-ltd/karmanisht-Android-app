@@ -45,7 +45,9 @@ export default function Services() {
         async function fetchTags() {
            
             if (!professionId || professionId === 'undefined' || professionId === 'null') {
-                console.warn('[Services] Invalid or missing professionId. Cannot fetch tags.');
+                if (categories && categories.length > 0) {
+                    console.warn('[Services] Invalid or missing professionId. Cannot fetch tags.');
+                }
                 setLoading(false);
                 return;
             }
@@ -110,8 +112,8 @@ export default function Services() {
     return (
         <SafeAreaProvider>
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
-                <BackButton />
                 <Progress currentStep={4} totalSteps={5} />
+                <BackButton onPress={() => router.back()} />
 
                 <View className='px-5 pt-4 pb-3'>
                     <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>{t('yourServices', 'Your services')}</Text>

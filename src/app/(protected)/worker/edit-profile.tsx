@@ -119,7 +119,7 @@ export default function EditProfile() {
     };
 
     return (
-        <SafeAreaProvider>
+        <SafeAreaProvider style={{ flex: 1, backgroundColor: isDark ? '#090d16' : '#ffffff' }}>
             {/* ── Image Source Selection Modal (Bottom Sheet style) ── */}
             <Modal
                 visible={showSourceModal}
@@ -259,8 +259,8 @@ export default function EditProfile() {
                 </View>
             </Modal>
  
-            <SafeAreaView className="flex-1 bg-white">
-                <View className="flex-row items-center px-5 py-4 border-b border-slate-100">
+            <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+                <View className="flex-row items-center px-5 py-4 border-b border-slate-100 dark:border-slate-900 bg-white dark:bg-slate-950">
                     <TouchableOpacity onPress={() => {
                         if (fromSettings) {
                             router.replace('/(protected)/worker/settings');
@@ -268,9 +268,9 @@ export default function EditProfile() {
                             router.back();
                         }
                     }} className="p-2">
-                        <Ionicons name="arrow-back" size={24} color="black" />
+                        <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold ml-4">{t('editProfile')}</Text>
+                    <Text className="text-xl font-bold ml-4 text-slate-900 dark:text-slate-100">{t('editProfile')}</Text>
                 </View>
  
                 <KeyboardAvoidingView
@@ -278,23 +278,23 @@ export default function EditProfile() {
                     className="flex-1"
                 >
                     {fetching ? (
-                        <View className="flex-1 items-center justify-center">
-                            <ActivityIndicator size="large" color="black" />
-                            <Text className="mt-4 text-slate-500 font-medium">{t('loadingDetails')}</Text>
+                        <View className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
+                            <ActivityIndicator size="large" color={isDark ? '#fff' : '#000'} />
+                            <Text className="mt-4 text-slate-500 dark:text-slate-400 font-medium">{t('loadingDetails')}</Text>
                         </View>
                     ) : (
-                        <ScrollView contentContainerStyle={{ padding: 20 }}>
+                        <ScrollView contentContainerStyle={{ padding: 20 }} className="bg-white dark:bg-slate-950">
                             {/* Profile Photo Section */}
                             <View className="items-center mb-8">
                                 <View className="relative">
                                     <Image
                                         source={{ uri: selectedImage?.uri || user?.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'Worker')}&background=0D8ABC&color=fff` }}
-                                        className="w-32 h-32 rounded-[32px] border-4 border-slate-100 bg-slate-50"
+                                        className="w-32 h-32 rounded-[32px] border-4 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"
                                     />
                                     <TouchableOpacity
                                         onPress={handleSelectPhoto}
                                         activeOpacity={0.8}
-                                        className="absolute bottom-0 right-0 w-10 h-10 bg-black rounded-xl items-center justify-center border-4 border-white"
+                                        className="absolute bottom-0 right-0 w-10 h-10 bg-black dark:bg-blue-600 rounded-xl items-center justify-center border-4 border-white dark:border-slate-950"
                                     >
                                         <Feather name="camera" size={18} color="white" />
                                     </TouchableOpacity>
@@ -303,23 +303,25 @@ export default function EditProfile() {
  
                             {/* Name */}
                             <View className="mb-6">
-                                <Text className="text-sm font-bold text-slate-500 uppercase mb-2">{t('fullName')}</Text>
+                                <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">{t('fullName')}</Text>
                                 <TextInput
-                                    className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base"
+                                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-base text-slate-900 dark:text-slate-100 font-semibold"
                                     value={fullName}
                                     onChangeText={setFullName}
                                     placeholder={t('enterFullName')}
+                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
                                 />
                             </View>
  
                             {/* Bio */}
                             <View className="mb-6">
-                                <Text className="text-sm font-bold text-slate-500 uppercase mb-2">{t('bioDescription')}</Text>
+                                <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">{t('bioDescription')}</Text>
                                 <TextInput
-                                    className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base h-32"
+                                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-base text-slate-900 dark:text-slate-100 font-semibold h-32"
                                     value={bio}
                                     onChangeText={setBio}
                                     placeholder={t('describeSkillsExperience')}
+                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
                                     multiline
                                     textAlignVertical="top"
                                 />
@@ -329,7 +331,7 @@ export default function EditProfile() {
                             <TouchableOpacity
                                 onPress={handleSave}
                                 disabled={loading}
-                                className={`py-4 rounded-2xl items-center shadow-lg ${loading ? 'bg-slate-400' : 'bg-black'}`}
+                                className={`py-4 rounded-2xl items-center shadow-lg ${loading ? 'bg-slate-400' : 'bg-black dark:bg-blue-600'}`}
                             >
                                 {loading ? (
                                     <ActivityIndicator color="white" />

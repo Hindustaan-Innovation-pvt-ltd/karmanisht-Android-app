@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, TouchableOpacity, ScrollView,
     ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
-    Modal
+    Modal, useColorScheme
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -23,6 +23,8 @@ export default function EditProfession() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const fromSettings = params?.from === 'settings';
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
     useEffect(() => {
         fetchCategories();
@@ -158,7 +160,7 @@ export default function EditProfession() {
     };
 
     return (
-        <SafeAreaProvider>
+        <SafeAreaProvider style={{ flex: 1, backgroundColor: isDark ? '#090d16' : '#ffffff' }}>
             {/* ── Custom Success Modal ── */}
             <Modal
                 visible={showSuccessModal}
@@ -167,19 +169,19 @@ export default function EditProfession() {
                 onRequestClose={() => { }}
             >
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
-                    <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
+                    <View style={{ backgroundColor: isDark ? '#1e293b' : '#fff', borderRadius: 24, padding: 32, width: '100%', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
                         {/* Green circle with checkmark */}
-                        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#f0fdf4', borderWidth: 2, borderColor: '#bbf7d0', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#f0fdf4', borderWidth: 2, borderColor: isDark ? '#16a34a' : '#bbf7d0', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                             <Ionicons name="checkmark" size={38} color="#16a34a" />
                         </View>
 
-                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>{t('professionServicesUpdated', 'Profession & Services Updated!')}</Text>
-                        <Text style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>{t('professionServicesUpdatedSuccess', 'Your profession and services have been updated successfully.')}</Text>
+                        <Text style={{ fontSize: 20, fontWeight: '800', color: isDark ? '#fff' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>{t('professionServicesUpdated', 'Profession & Services Updated!')}</Text>
+                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>{t('professionServicesUpdatedSuccess', 'Your profession and services have been updated successfully.')}</Text>
 
                         <TouchableOpacity
                             onPress={handleSuccessOk}
                             activeOpacity={0.85}
-                            style={{ backgroundColor: '#000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
+                            style={{ backgroundColor: isDark ? '#2563eb' : '#000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
                         >
                             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{t('ok', 'OK')}</Text>
                         </TouchableOpacity>
@@ -187,8 +189,8 @@ export default function EditProfession() {
                 </View>
             </Modal>
 
-            <SafeAreaView className="flex-1 bg-white">
-                <View className="flex-row items-center px-5 py-4 border-b border-slate-100">
+            <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+                <View className="flex-row items-center px-5 py-4 border-b border-slate-100 dark:border-slate-900 bg-white dark:bg-slate-950">
                     <TouchableOpacity onPress={() => {
                         if (fromSettings) {
                             router.replace('/(protected)/worker/settings');
@@ -196,9 +198,9 @@ export default function EditProfession() {
                             router.back();
                         }
                     }} className="p-2">
-                        <Ionicons name="arrow-back" size={24} color="black" />
+                        <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold ml-4">{t('editProfessionAndServices', 'Edit Profession & Services')}</Text>
+                    <Text className="text-xl font-bold ml-4 text-slate-900 dark:text-slate-100">{t('editProfessionAndServices', 'Edit Profession & Services')}</Text>
                 </View>
 
                 <KeyboardAvoidingView
@@ -206,25 +208,25 @@ export default function EditProfession() {
                     className="flex-1"
                 >
                     {fetching ? (
-                        <View className="flex-1 items-center justify-center">
-                            <ActivityIndicator size="large" color="black" />
-                            <Text className="mt-4 text-slate-500 font-medium">{t('loadingProfessionDetails', 'Loading profession details...')}</Text>
+                        <View className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
+                            <ActivityIndicator size="large" color={isDark ? '#fff' : '#000'} />
+                            <Text className="mt-4 text-slate-500 dark:text-slate-400 font-medium">{t('loadingProfessionDetails', 'Loading profession details...')}</Text>
                         </View>
                     ) : (
-                        <ScrollView contentContainerStyle={{ padding: 20 }}>
+                        <ScrollView contentContainerStyle={{ padding: 20 }} className="bg-white dark:bg-slate-950">
                             {/* Profession Selection */}
                             <View className="mb-6">
-                                <Text className="text-sm font-bold text-slate-500 uppercase mb-3">{t('selectProfession', 'Select Profession')}</Text>
+                                <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">{t('selectProfession', 'Select Profession')}</Text>
 
                                 {/* Category Dropdown Trigger */}
                                 <TouchableOpacity
                                     onPress={() => setShowCategoryDropdown(v => !v)}
-                                    className="flex-row items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 mb-1"
+                                    className="flex-row items-center justify-between bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 mb-1"
                                     activeOpacity={0.7}
                                 >
                                     <View className="flex-row items-center gap-2 flex-1">
-                                        <Feather name="briefcase" size={16} color="#475569" />
-                                        <Text className={`text-base font-semibold flex-1 ${savedCategoryId ? 'text-slate-900' : 'text-slate-400'
+                                        <Feather name="briefcase" size={16} color={isDark ? '#94a3b8' : '#475569'} />
+                                        <Text className={`text-base font-semibold flex-1 ${savedCategoryId ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'
                                             }`}>
                                             {savedCategoryId
                                                 ? t(categories.find(c => c.id === savedCategoryId)?.name || 'Select profession')
@@ -235,14 +237,14 @@ export default function EditProfession() {
                                     <Ionicons
                                         name={showCategoryDropdown ? 'chevron-up' : 'chevron-down'}
                                         size={18}
-                                        color="#94a3b8"
+                                        color={isDark ? '#64748b' : '#94a3b8'}
                                     />
                                 </TouchableOpacity>
 
                                 {/* Dropdown List */}
                                 {showCategoryDropdown && (
                                     <View
-                                        className="border border-slate-200 rounded-2xl bg-white mb-4 overflow-hidden"
+                                        className="border border-slate-200 dark:border-slate-850 rounded-2xl bg-white dark:bg-slate-900 mb-4 overflow-hidden shadow-sm"
                                         style={{ maxHeight: 280 }}
                                     >
                                         <ScrollView
@@ -254,16 +256,16 @@ export default function EditProfession() {
                                                 <TouchableOpacity
                                                     key={cat.id}
                                                     onPress={() => handleCategoryChange(cat.id)}
-                                                    className={`flex-row items-center px-4 py-3.5 ${idx !== categories.length - 1 ? 'border-b border-slate-100' : ''
-                                                        } ${savedCategoryId === cat.id ? 'bg-slate-50' : 'bg-white'}`}
+                                                    className={`flex-row items-center px-4 py-3.5 ${idx !== categories.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/80' : ''
+                                                        } ${savedCategoryId === cat.id ? 'bg-slate-50 dark:bg-slate-800/40' : 'bg-white dark:bg-slate-900'}`}
                                                     activeOpacity={0.6}
                                                 >
-                                                    <Text className={`flex-1 text-sm font-medium ${savedCategoryId === cat.id ? 'text-black font-bold' : 'text-slate-700'
+                                                    <Text className={`flex-1 text-sm font-medium ${savedCategoryId === cat.id ? 'text-black dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'
                                                         }`}>
                                                         {t(cat.name)}
                                                     </Text>
                                                     {savedCategoryId === cat.id && (
-                                                        <Ionicons name="checkmark-circle" size={18} color="#000" />
+                                                        <Ionicons name="checkmark-circle" size={18} color={isDark ? '#fff' : '#000'} />
                                                     )}
                                                 </TouchableOpacity>
                                             ))}
@@ -276,18 +278,18 @@ export default function EditProfession() {
                             {savedCategoryId ? (
                                 <View className="mb-8">
                                     <View className="flex-row items-center justify-between mb-3">
-                                        <Text className="text-sm font-bold text-slate-500 uppercase">{t('servicesSpecialities', 'Services / Specialities')}</Text>
+                                        <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase">{t('servicesSpecialities', 'Services / Specialities')}</Text>
                                         {savedTagIds.length > 0 && (
                                             <TouchableOpacity onPress={() => { setSavedTagIds([]); }}>
-                                                <Text className="text-xs text-red-400 font-semibold">{t('clearAll', 'Clear all')}</Text>
+                                                <Text className="text-xs text-red-400 dark:text-red-300 font-semibold">{t('clearAll', 'Clear all')}</Text>
                                             </TouchableOpacity>
                                         )}
                                     </View>
 
                                     {tagsLoading ? (
-                                        <ActivityIndicator color="#000" size="small" />
+                                        <ActivityIndicator color={isDark ? '#fff' : '#000'} size="small" />
                                     ) : availableTags.length === 0 ? (
-                                        <Text className="text-sm text-slate-400 italic">{t('noSubServices', 'No sub-services for this category yet.')}</Text>
+                                        <Text className="text-sm text-slate-400 dark:text-slate-550 italic">{t('noSubServices', 'No sub-services for this category yet.')}</Text>
                                     ) : (
                                         <View className="flex-row flex-wrap">
                                             {availableTags.map(tag => {
@@ -298,14 +300,14 @@ export default function EditProfession() {
                                                         onPress={() => toggleTag(tag.id)}
                                                         activeOpacity={0.75}
                                                         className={`flex-row items-center px-3 py-1.5 rounded-full border mr-2 mb-2 ${selected
-                                                                ? 'bg-black border-black'
-                                                                : 'bg-white border-slate-300'
+                                                                ? 'bg-black border-black dark:bg-blue-600 dark:border-blue-600'
+                                                                : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-750'
                                                             }`}
                                                     >
                                                         {selected && (
                                                             <Ionicons name="checkmark" size={12} color="#fff" style={{ marginRight: 4 }} />
                                                         )}
-                                                        <Text className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-700'
+                                                        <Text className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-700 dark:text-slate-350'
                                                             }`}>
                                                             {t(tag.name)}
                                                         </Text>
@@ -316,7 +318,7 @@ export default function EditProfession() {
                                     )}
 
                                     {!tagsLoading && (
-                                        <Text className="text-xs text-slate-400 mt-2">
+                                        <Text className="text-xs text-slate-400 dark:text-slate-500 mt-2">
                                             {t('servicesSelectedCount', '{{count}} services selected', { count: savedTagIds.length })}
                                         </Text>
                                     )}
@@ -327,7 +329,7 @@ export default function EditProfession() {
                             <TouchableOpacity
                                 onPress={handleSave}
                                 disabled={loading}
-                                className={`py-4 rounded-2xl items-center shadow-lg ${loading ? 'bg-slate-400' : 'bg-black'}`}
+                                className={`py-4 rounded-2xl items-center shadow-lg ${loading ? 'bg-slate-400' : 'bg-black dark:bg-blue-600'}`}
                             >
                                 {loading ? (
                                     <ActivityIndicator color="white" />

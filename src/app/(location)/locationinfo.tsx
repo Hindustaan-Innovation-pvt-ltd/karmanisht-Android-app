@@ -35,6 +35,9 @@ export default function LocationInfo() {
     const [locationLabel, setLocationLabel] = React.useState(user?.location || 'Shankar Nagar, Raipur')
     const [loadingLocation, setLoadingLocation] = React.useState(false)
     const [cityWide, setCityWide] = React.useState(user?.role === 'worker' && user?.searchRadiusKm >= 30 ? true : false)
+    const [coords, setCoords] = React.useState<{ latitude: number; longitude: number } | null>(
+        user?.latitude && user?.longitude ? { latitude: user.latitude, longitude: user.longitude } : null
+    )
 
     React.useEffect(() => {
         if (user?.searchRadiusKm) {
@@ -46,7 +49,10 @@ export default function LocationInfo() {
         if (user?.location) {
             setLocationLabel(user.location)
         }
-    }, [user?.searchRadiusKm, user?.location, user?.role])
+        if (user?.latitude && user?.longitude) {
+            setCoords({ latitude: user.latitude, longitude: user.longitude })
+        }
+    }, [user?.searchRadiusKm, user?.location, user?.role, user?.latitude, user?.longitude])
 
     const handleFinish = async () => {
         if (!locationLabel.trim()) {
@@ -54,11 +60,30 @@ export default function LocationInfo() {
             return;
         }
 
+        let finalCoords = coords;
+        if (!finalCoords) {
+            try {
+                const geo = await Location.geocodeAsync(locationLabel.trim());
+                if (geo && geo.length > 0) {
+                    finalCoords = { latitude: geo[0].latitude, longitude: geo[0].longitude };
+                }
+            } catch (e) {
+                console.log("Geocoding address failed during finish:", e);
+            }
+        }
+
+        // If still no coords, fallback to Raipur defaults so the provider profile remains valid/searchable
+        if (!finalCoords) {
+            finalCoords = { latitude: 21.2514, longitude: 81.6296 };
+        }
+
         const finalRadius = (user?.role === 'worker' && cityWide) ? 50 : radiusKm;
 
         await updateDatabaseProfile({
             location: locationLabel.trim(),
-            searchRadiusKm: finalRadius
+            searchRadiusKm: finalRadius,
+            latitude: finalCoords.latitude,
+            longitude: finalCoords.longitude
         });
 
         if (fromSettings) {
@@ -72,15 +97,38 @@ export default function LocationInfo() {
         }
     }
 
-    const detectCurrentLocation = async () => {
+    const handleSelectPopularArea = async (area: string) => {
+        const label = `${area}, Raipur`;
+        setLocationLabel(label);
+        try {
+            const geo = await Location.geocodeAsync(label);
+            if (geo && geo.length > 0) {
+                setCoords({ latitude: geo[0].latitude, longitude: geo[0].longitude });
+            }
+        } catch (e) {
+            console.log("Failed to geocode popular area:", e);
+        }
+    };
+
+    const detectCurrentLocation = async (isManual = false) => {
         setLoadingLocation(true);
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert(t('permissionDenied'), t('locationPermissionMsg'));
+                if (isManual) {
+                    Alert.alert(t('permissionDenied'), t('locationPermissionMsg'));
+                }
                 return;
             }
-            const loc = await Location.getCurrentPositionAsync({});
+            let loc = null;
+            try {
+                loc = await Location.getLastKnownPositionAsync();
+            } catch (e) {
+                console.log("Error getting last known position:", e);
+            }
+            if (!loc) {
+                loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            }
             const reverseGeocode = await Location.reverseGeocodeAsync({
                 latitude: loc.coords.latitude,
                 longitude: loc.coords.longitude
@@ -91,16 +139,28 @@ export default function LocationInfo() {
                 const city = place.city || 'Raipur';
                 const label = area ? `${area}, ${city}` : city;
                 setLocationLabel(label);
+                setCoords({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
             } else {
-                Alert.alert(t('unableToResolve'), t('coordinatesResolveError'));
+                if (isManual) {
+                    Alert.alert(t('unableToResolve'), t('coordinatesResolveError'));
+                }
             }
         } catch (err) {
             console.log("Geocoding error:", err);
-            Alert.alert(t('error'), t('detectLocationError'));
+            if (isManual) {
+                Alert.alert(t('error'), t('detectLocationError'));
+            }
         } finally {
             setLoadingLocation(false);
         }
     };
+
+    React.useEffect(() => {
+        // Auto-detect current location on onboarding if it's the default Shankar Nagar location or not set
+        if (!user?.location || user.location === 'Shankar Nagar, Raipur' || !user?.latitude || !user?.longitude) {
+            detectCurrentLocation(false);
+        }
+    }, []);
 
     // Radar pulse animation shared value
     const radarPulse = useSharedValue(1);
@@ -167,7 +227,7 @@ export default function LocationInfo() {
                                     onChangeText={setLocationLabel}
                                 />
                                 <TouchableOpacity
-                                    onPress={detectCurrentLocation}
+                                    onPress={() => detectCurrentLocation(true)}
                                     disabled={loadingLocation}
                                     className='bg-slate-200/60 dark:bg-slate-800 p-2 rounded-full'
                                 >
@@ -187,7 +247,7 @@ export default function LocationInfo() {
                                 {POPULAR_AREAS.map((area) => (
                                     <TouchableOpacity
                                         key={area}
-                                        onPress={() => setLocationLabel(`${area}, Raipur`)}
+                                        onPress={() => handleSelectPopularArea(area)}
                                         className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-4 py-2.5 rounded-full"
                                     >
                                         <Text className="text-xs font-bold text-slate-600 dark:text-slate-300">{area}</Text>
@@ -235,6 +295,22 @@ export default function LocationInfo() {
                             <Text className="absolute top-2 left-2 text-[10px] font-bold text-slate-100 bg-slate-800/30 dark:bg-slate-100 py-2 px-6  rounded-2xl dark:text-slate-500 uppercase tracking-wider self-start">
                                 {t('coverageAreaPreview')}
                             </Text>
+
+                            {/* Coverage Info Badge */}
+                            <View className="w-full flex-row justify-between items-center bg-black/25 dark:bg-black/45 py-2.5 px-4 rounded-2xl mt-2">
+                                <View className="flex-1 mr-3">
+                                    <Text className="text-[8px] font-black text-slate-300 dark:text-slate-400 uppercase tracking-widest">{t('serviceArea', 'Service Area')}</Text>
+                                    <Text className="text-xs font-bold text-white leading-tight mt-0.5" numberOfLines={1}>
+                                        {locationLabel || t('locationNotSet')}
+                                    </Text>
+                                </View>
+                                <View className="items-end">
+                                    <Text className="text-[8px] font-black text-slate-300 dark:text-slate-400 uppercase tracking-widest">{t('range', 'Range')}</Text>
+                                    <Text className="text-xs font-black text-white mt-0.5">
+                                        {cityWide ? '50 KM (City-wide)' : `${radiusKm} KM`}
+                                    </Text>
+                                </View>
+                            </View>
                         </LinearGradient>
                     </View>
 
