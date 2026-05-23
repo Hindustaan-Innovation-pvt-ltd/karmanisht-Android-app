@@ -18,6 +18,7 @@ import {
     InputOTPSlot,
 } from "@/components/ui/input-otp"
 import auth from '@react-native-firebase/auth';
+import CustomAlert from '@/components/ui/custom-alert';
 
 type Role = 'worker' | 'consumer'
 
@@ -25,6 +26,31 @@ export default function Register() {
     const router = useRouter()
     const { updateDatabaseProfile, refreshProfile } = useAppStore()
     const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null)
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type: 'error' | 'success' | 'info' | 'warning';
+        onClose?: () => void;
+    } | null>(null);
+
+    const showAlert = (
+        title: string,
+        message: string,
+        type: 'error' | 'success' | 'info' | 'warning' = 'error',
+        onClose?: () => void
+    ) => {
+        setAlertConfig({
+            visible: true,
+            title,
+            message,
+            type,
+            onClose: () => {
+                setAlertConfig(null);
+                if (onClose) onClose();
+            }
+        });
+    };
 
     const {
         mobile: paramMobile,
@@ -84,12 +110,12 @@ export default function Register() {
     // ── Step 1: Send OTP ─────────────────────────────────────────────────────
     const handleContinue = async () => {
         if (!canContinue) return
-        if (!/^[7-9]\d{9}$/.test(phone)) {
-            Alert.alert('Invalid Mobile', 'Please enter a valid 10-digit Indian mobile number starting with 7, 8, or 9.');
+        if (!/^[6-9]\d{9}$/.test(phone)) {
+            showAlert('Invalid Mobile', 'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.', 'error');
             return;
         }
         if (cooldown > 0) {
-            Alert.alert('Please Wait', `You can request another OTP in ${cooldown} seconds.`);
+            showAlert('Please Wait', `You can request another OTP in ${cooldown} seconds.`, 'warning');
             return;
         }
         setLoading(true);
@@ -103,12 +129,13 @@ export default function Register() {
             }
 
             setVerificationId(vId);
-            Alert.alert('OTP Sent', 'OTP sent successfully!');
             setCooldown(30); // 30 seconds cooldown
-            setShowOtpModal(true);
+            showAlert('OTP Sent', 'OTP sent successfully!', 'success', () => {
+                setShowOtpModal(true);
+            });
         } catch (err: any) {
             console.error('[Firebase OTP Error]', err);
-            Alert.alert('Error', err.message || 'Failed to send OTP');
+            showAlert('Error', err.message || 'Failed to send OTP', 'error');
         } finally {
             setLoading(false);
         }
@@ -127,11 +154,11 @@ export default function Register() {
             }
 
             setVerificationId(vId);
-            Alert.alert('OTP Sent', 'OTP resent successfully!');
             setCooldown(30);
+            showAlert('OTP Sent', 'OTP resent successfully!', 'success');
         } catch (err: any) {
             console.error('[Firebase OTP Resend Error]', err);
-            Alert.alert('Error', err.message || 'Failed to resend OTP');
+            showAlert('Error', err.message || 'Failed to resend OTP', 'error');
         } finally {
             setResendingOtp(false);
         }
@@ -187,7 +214,7 @@ export default function Register() {
             setShowOtpModal(false);
             await finalizeRegistration(finalUserId || '');
         } catch (err: any) {
-            Alert.alert('Verification Failed', err.message);
+            showAlert('Verification Failed', err.message, 'error');
             hasProcessedRef.current = false; // allow retry
         } finally {
             setVerifyingOtp(false);
@@ -216,7 +243,7 @@ export default function Register() {
                 console.log('User is already authenticated in register, bypassing session-expired error...');
                 await handleSuccessfulRegistration();
             } else {
-                Alert.alert('Verification Failed', err.message);
+                showAlert('Verification Failed', err.message, 'error');
                 setVerifyingOtp(false);
             }
         }
@@ -226,7 +253,7 @@ export default function Register() {
         try {
             const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
             if (!permissionResult.granted) {
-                Alert.alert("Permission Required", "Camera permission is required to take a photo.");
+                showAlert("Permission Required", "Camera permission is required to take a photo.", "warning");
                 return;
             }
 
@@ -244,7 +271,7 @@ export default function Register() {
                 });
             }
         } catch (err: any) {
-            Alert.alert("Error capturing photo", err.message);
+            showAlert("Error capturing photo", err.message, "error");
         }
     };
 
@@ -293,7 +320,7 @@ export default function Register() {
             // Both roles go to location screen first
             router.replace('/(location)/locationinfo');
         } catch (err: any) {
-            Alert.alert('Registration Error', err.message);
+            showAlert('Registration Error', err.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -522,6 +549,16 @@ export default function Register() {
                 onClose={() => setShowMediaPicker(false)}
                 onSelect={(img) => setSelectedImage(img)}
             />
+
+            {alertConfig && (
+                <CustomAlert
+                    visible={alertConfig.visible}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    type={alertConfig.type}
+                    onClose={alertConfig.onClose || (() => setAlertConfig(null))}
+                />
+            )}
         </View>
     )
 }

@@ -2,8 +2,8 @@ import { StateCreator } from 'zustand';
 import { AppStoreType, TranslationSlice, TranslationRecord } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
-import { insforge } from '../../insforge';
-import i18n, { LANGUAGE_KEY, staticResources } from '../../i18n';
+import { insforge } from '@/lib/insforge';
+import i18n, { LANGUAGE_KEY, staticResources } from '@/lib/i18n';
 
 export const createTranslationSlice: StateCreator<AppStoreType, [], [], TranslationSlice> = (set, get) => ({
     currentLanguage: 'en',
@@ -31,6 +31,7 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
             console.warn('[Zustand i18n] Failed to load language setting:', err);
         }
 
+        (global as any).__appLanguageCache = savedLanguage;
         set({ currentLanguage: savedLanguage });
         if (i18n.language !== savedLanguage) {
             await i18n.changeLanguage(savedLanguage);
@@ -94,6 +95,7 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
 
     changeLanguage: async (lang: string) => {
         try {
+            (global as any).__appLanguageCache = lang;
             await i18n.changeLanguage(lang);
             await AsyncStorage.setItem(LANGUAGE_KEY, lang);
             set({ currentLanguage: lang });
