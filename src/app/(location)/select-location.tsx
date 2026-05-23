@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, Platform, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, Platform, ActivityIndicator, Alert, Modal } from 'react-native';
 import CustomAlert from '@/components/ui/custom-alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -393,7 +393,28 @@ export default function SelectLocation() {
             if (Platform.OS !== 'web') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
             }
-            showAlert(t('success', 'Success'), t('addressSavedSuccess', 'Address saved successfully!'), 'success');
+            
+            const cleanLine = addressLine.replace(/^[A-Z0-9]{4,}\+[A-Z0-9]+,\s*/i, '');
+            await updateDatabaseProfile({
+                location: cleanLine
+            });
+
+            useAppStore.setState({
+                userLocation: {
+                    coords: {
+                        latitude: Number(formCoords.latitude),
+                        longitude: Number(formCoords.longitude),
+                        altitude: 0,
+                        accuracy: 5,
+                        altitudeAccuracy: 5,
+                        heading: 0,
+                        speed: 0
+                    },
+                    timestamp: Date.now()
+                }
+            });
+
+            showAlert('Success', 'Address saved successfully!', 'success');
             setShowAddForm(false);
             fetchSavedAddresses();
         } catch (err: any) {
@@ -486,355 +507,360 @@ export default function SelectLocation() {
                 <Text style={styles.headerTitle}>{t('selectLocationTitle', 'Select a location')}</Text>
             </View>
 
-            {showAddForm ? (
-                /* Address Add Form view */
-                <Animated.View 
-                    entering={FadeInRight.duration(350).springify().damping(20)} 
-                    exiting={FadeOutLeft.duration(200)}
-                    style={styles.formContainer}
-                >
-                    <Text style={styles.formSectionTitle}>{t('confirmLocationTitle', 'Confirm your location')}</Text>
-                    <View style={styles.mapWrapper}>
-                        <LocationMapPicker
-                            coords={formCoords}
-                            region={formRegion}
-                            onRegionChange={handleRegionChange}
-                            onRegionChangeComplete={handleRegionChangeComplete}
+            {/* Address Listing view */}
+            <Animated.View 
+                entering={FadeInLeft.duration(350).springify().damping(20)} 
+                style={styles.listingContainer}
+            >
+                <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                    {/* Search Bar */}
+                    <View style={styles.searchContainer}>
+                        <Ionicons name="search" size={22} color="#059669" style={styles.searchIcon} />
+                        <TextInput
+                            placeholder="Search saved or search places online..."
+                            placeholderTextColor="#94A3B8"
+                            style={styles.searchInput}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
                         />
-                        {/* Centered pin overlay */}
-                        {Platform.OS !== 'web' && (
-                            <View style={styles.pinOverlayContainer} pointerEvents="none">
-                                <Animated.View style={[styles.centerPin, animatedPinStyle]}>
-                                    <FontAwesome5 name="map-marker-alt" size={38} color="#059669" />
-                                </Animated.View>
-                                <Animated.View style={[styles.centerPinShadow, animatedShadowStyle]} />
-                            </View>
+                        {searchQuery.length > 0 && (
+                            <ScalePressable onPress={() => setSearchQuery('')} hapticType="light">
+                                <Ionicons name="close-circle" size={20} color="#94A3B8" />
+                            </ScalePressable>
                         )}
-                        <View style={styles.mapPinOverlay}>
-                            <Text style={styles.mapPinText}>{t('dragMapAdjust', 'Drag map to adjust pin')}</Text>
-                        </View>
                     </View>
 
-                    <ScrollView style={styles.formFields} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                        <Text style={styles.formLabel}>{t('saveAddressAs', 'Save Address As')}</Text>
-                        <View style={styles.typeButtonsRow}>
-                            {['Home', 'Office', 'Other'].map((type) => {
-                                const isSelected = addressName === type;
-                                const iconName = type === 'Home' ? 'home' : type === 'Office' ? 'business' : 'location';
-                                return (
-                                    <ScalePressable
-                                        key={type}
-                                        style={[
-                                            styles.typeButton,
-                                            isSelected && styles.typeButtonActive
-                                        ]}
-                                        hapticType="selection"
-                                        onPress={() => {
-                                            setAddressName(type);
-                                        }}
-                                    >
-                                        <Ionicons
-                                            name={iconName}
-                                            size={18}
-                                            color={isSelected ? '#FFFFFF' : '#64748B'}
-                                            style={{ marginRight: 6 }}
-                                        />
-                                        <Text style={[
-                                            styles.typeButtonText,
-                                            isSelected && styles.typeButtonTextActive
-                                        ]}>
-                                            {type === 'Home' ? t('home', 'Home') : type === 'Office' ? t('office', 'Office') : t('other', 'Other')}
-                                        </Text>
-                                    </ScalePressable>
-                                );
-                            })}
-                        </View>
+                    {searchQuery.trim().length === 0 ? (
+                        <>
+                            {/* Option: Use current location */}
+                            <ScalePressable style={styles.optionRow} hapticType="medium" onPress={handleUseCurrentLocation}>
+                                <View style={styles.optionIconContainer}>
+                                    <MaterialCommunityIcons name="crosshairs-gps" size={22} color="#059669" />
+                                </View>
+                                <View style={styles.optionTextContainer}>
+                                    <Text style={styles.optionTitle}>Use current location</Text>
+                                    <Text style={styles.optionSubtext} numberOfLines={2}>
+                                        {currentAddress}
+                                    </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                            </ScalePressable>
 
-                        {addressName === 'Other' && (
-                            <TextInput
-                                style={styles.formInput}
-                                placeholder={t('enterCustomLabel', "Enter custom label (e.g. Gym, Friend's house)")}
-                                placeholderTextColor="#94A3B8"
-                                value={customName}
-                                onChangeText={setCustomName}
-                            />
-                        )}
+                            {/* Option: Add Address */}
+                            <ScalePressable style={styles.optionRow} hapticType="medium" onPress={handleUseCurrentLocation}>
+                                <View style={styles.optionIconContainer}>
+                                    <Ionicons name="add" size={22} color="#059669" />
+                                </View>
+                                <View style={styles.optionTextContainer}>
+                                    <Text style={styles.optionTitle}>Add Address</Text>
+                                    <Text style={styles.optionSubtext}>Select custom location on map</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+                            </ScalePressable>
 
-                        <Text style={styles.formLabel}>{t('addressDetails', 'Address Details')}</Text>
-                        <TextInput
-                            style={[styles.formInput, styles.textArea]}
-                            placeholder={t('enterCompleteAddress', 'Enter complete address details')}
-                            placeholderTextColor="#94A3B8"
-                            value={addressLine}
-                            onChangeText={setAddressLine}
-                            multiline
-                            numberOfLines={3}
-                        />
+                            {/* SAVED ADDRESSES */}
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionHeaderText}>SAVED ADDRESSES</Text>
+                            </View>
 
-                        <ScalePressable
-                            style={styles.saveBtn}
-                            onPress={handleSaveAddress}
-                            disabled={savingAddress}
-                            hapticType="success"
-                        >
-                            {savingAddress ? (
-                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            {loadingAddresses ? (
+                                <ActivityIndicator size="large" color="#059669" style={{ marginVertical: 20 }} />
+                            ) : filteredAddresses.length === 0 ? (
+                                <Text style={styles.noAddressText}>No saved addresses found.</Text>
                             ) : (
-                                <Text style={styles.saveBtnText}>{t('saveAddress', 'Save Address')}</Text>
-                            )}
-                        </ScalePressable>
+                                filteredAddresses.map((address, index) => {
+                                    const distance = userLocation?.coords
+                                        ? getDistance(
+                                            userLocation.coords.latitude,
+                                            userLocation.coords.longitude,
+                                            Number(address.latitude),
+                                            Number(address.longitude)
+                                        )
+                                        : null;
 
-                        <ScalePressable
-                            style={styles.cancelBtn}
-                            onPress={() => setShowAddForm(false)}
-                            hapticType="light"
-                        >
-                            <Text style={styles.cancelBtnText}>{t('cancel', 'Cancel')}</Text>
-                        </ScalePressable>
-                    </ScrollView>
-                </Animated.View>
-            ) : (
-                /* Address Listing view */
-                <Animated.View 
-                    entering={FadeInLeft.duration(350).springify().damping(20)} 
-                    exiting={FadeOutRight.duration(200)}
-                    style={styles.listingContainer}
-                >
-                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                        {/* Search Bar */}
-                        <View style={styles.searchContainer}>
-                            <Ionicons name="search" size={22} color="#059669" style={styles.searchIcon} />
-                            <TextInput
-                                placeholder={t('searchPlaceholder', 'Search saved or search places online...')}
-                                placeholderTextColor="#94A3B8"
-                                style={styles.searchInput}
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                            />
-                            {searchQuery.length > 0 && (
-                                <ScalePressable onPress={() => setSearchQuery('')} hapticType="light">
-                                    <Ionicons name="close-circle" size={20} color="#94A3B8" />
-                                </ScalePressable>
+                                    const distanceStr = distance !== null
+                                        ? (distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`)
+                                        : '';
+
+                                    const isHome = address.name === 'Home';
+                                    const isWork = address.name === 'Office';
+                                    const iconName = isHome ? 'home-outline' : isWork ? 'business-outline' : 'location-outline';
+
+                                    return (
+                                        <Animated.View 
+                                            key={address.id}
+                                            entering={FadeInDown.delay(index * 40).springify().damping(15)}
+                                            style={styles.savedCard}
+                                        >
+                                            <ScalePressable
+                                                style={styles.savedCardTop}
+                                                hapticType="light"
+                                                onPress={() => handleSelectAddress(address)}
+                                            >
+                                                <View style={styles.addressIconBox}>
+                                                    <Ionicons name={iconName} size={20} color="#64748B" />
+                                                    {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
+                                                </View>
+                                                <View style={styles.addressDetails}>
+                                                    <Text style={styles.addressName}>{address.name}</Text>
+                                                    <Text style={styles.addressFull} numberOfLines={2}>
+                                                        {address.address_line}
+                                                    </Text>
+                                                </View>
+                                            </ScalePressable>
+                                            <View style={styles.savedCardActions}>
+                                                <ScalePressable
+                                                    style={styles.deleteBtn}
+                                                    hapticType="heavy"
+                                                    onPress={() => handleDeleteAddress(address.id)}
+                                                >
+                                                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                </ScalePressable>
+                                            </View>
+                                        </Animated.View>
+                                    );
+                                })
                             )}
+                        </>
+                    ) : (
+                        <>
+                            {/* Places & Locations Online Autocomplete */}
+                            {searchQuery.trim().length > 2 && (
+                                <View style={styles.onlineSuggestionsWrapper}>
+                                    <View style={styles.sectionHeader}>
+                                        <Text style={styles.sectionHeaderText}>PLACES & LOCATIONS (OSM)</Text>
+                                    </View>
+                                    {loadingSuggestions ? (
+                                        <View style={styles.suggestionLoadingRow}>
+                                            <ActivityIndicator size="small" color="#059669" />
+                                            <Text style={styles.suggestionLoadingText}>Searching places online...</Text>
+                                        </View>
+                                    ) : onlineSuggestions.length === 0 ? (
+                                        <Text style={styles.noAddressText}>No matching online places found.</Text>
+                                    ) : (
+                                        onlineSuggestions.map((suggestion, index) => (
+                                            <Animated.View key={index} entering={FadeInDown.delay(index * 40).springify()}>
+                                                <ScalePressable
+                                                    style={styles.suggestionRow}
+                                                    hapticType="selection"
+                                                    onPress={() => {
+                                                        const lat = suggestion.latitude;
+                                                        const lng = suggestion.longitude;
+                                                        setFormCoords({ latitude: lat, longitude: lng });
+                                                        setFormRegion({
+                                                            latitude: lat,
+                                                            longitude: lng,
+                                                            latitudeDelta: 0.00922,
+                                                            longitudeDelta: 0.00421,
+                                                        });
+                                                        setAddressLine(suggestion.display_name);
+                                                        setAddressName('Home');
+                                                        setCustomName('');
+                                                        setShowAddForm(true);
+                                                    }}
+                                                >
+                                                    <View style={styles.suggestionIconBox}>
+                                                        <Ionicons name="map-outline" size={20} color="#059669" />
+                                                    </View>
+                                                    <View style={styles.suggestionDetails}>
+                                                        <Text style={styles.suggestionTitle} numberOfLines={1}>
+                                                            {suggestion.display_name.split(',')[0]}
+                                                        </Text>
+                                                        <Text style={styles.suggestionSubtext} numberOfLines={2}>
+                                                            {suggestion.display_name}
+                                                        </Text>
+                                                    </View>
+                                                    <Ionicons name="chevron-forward" size={16} color="#059669" />
+                                                </ScalePressable>
+                                            </Animated.View>
+                                        ))
+                                    )}
+                                </View>
+                            )}
+
+                            {/* Filtered Saved Addresses */}
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionHeaderText}>{`SAVED ADDRESSES MATCHING "${searchQuery.toUpperCase()}"`}</Text>
+                            </View>
+                            {filteredAddresses.length === 0 ? (
+                                <Text style={styles.noAddressText}>No matching saved addresses found.</Text>
+                            ) : (
+                                filteredAddresses.map((address, index) => {
+                                    const distance = userLocation?.coords
+                                        ? getDistance(
+                                            userLocation.coords.latitude,
+                                            userLocation.coords.longitude,
+                                            Number(address.latitude),
+                                            Number(address.longitude)
+                                        )
+                                        : null;
+
+                                    const distanceStr = distance !== null
+                                        ? (distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`)
+                                        : '';
+
+                                    const isHome = address.name === 'Home';
+                                    const isWork = address.name === 'Office';
+                                    const iconName = isHome ? 'home-outline' : isWork ? 'business-outline' : 'location-outline';
+
+                                    return (
+                                        <Animated.View 
+                                            key={address.id}
+                                            entering={FadeInDown.delay(index * 40).springify().damping(15)}
+                                            style={styles.savedCard}
+                                        >
+                                            <ScalePressable
+                                                style={styles.savedCardTop}
+                                                hapticType="light"
+                                                onPress={() => handleSelectAddress(address)}
+                                            >
+                                                <View style={styles.addressIconBox}>
+                                                    <Ionicons name={iconName} size={20} color="#64748B" />
+                                                    {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
+                                                </View>
+                                                <View style={styles.addressDetails}>
+                                                    <Text style={styles.addressName}>{address.name}</Text>
+                                                    <Text style={styles.addressFull} numberOfLines={2}>
+                                                        {address.address_line}
+                                                    </Text>
+                                                </View>
+                                            </ScalePressable>
+                                            <View style={styles.savedCardActions}>
+                                                <ScalePressable
+                                                    style={styles.deleteBtn}
+                                                    hapticType="heavy"
+                                                    onPress={() => handleDeleteAddress(address.id)}
+                                                >
+                                                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                                                </ScalePressable>
+                                            </View>
+                                        </Animated.View>
+                                    );
+                                })
+                            )}
+                        </>
+                    )}
+                </ScrollView>
+            </Animated.View>
+
+            {/* Address Add Form Modal */}
+            <Modal
+                visible={showAddForm}
+                animationType="slide"
+                onRequestClose={() => setShowAddForm(false)}
+            >
+                <SafeAreaView style={styles.container}>
+                    {/* Modal Header */}
+                    <View style={styles.header}>
+                        <ScalePressable onPress={() => setShowAddForm(false)} style={styles.backButton} hapticType="light">
+                            <Ionicons name="close" size={28} color="#1E293B" />
+                        </ScalePressable>
+                        <Text style={styles.headerTitle}>Confirm your location</Text>
+                    </View>
+
+                    <View style={[styles.formContainer, { flex: 1, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]}>
+                        <Text style={styles.formSectionTitle}>Confirm your location</Text>
+                        <View style={styles.mapWrapper}>
+                            <LocationMapPicker
+                                coords={formCoords}
+                                region={formRegion}
+                                onRegionChange={handleRegionChange}
+                                onRegionChangeComplete={handleRegionChangeComplete}
+                            />
+                            {/* Centered pin overlay */}
+                            {Platform.OS !== 'web' && (
+                                <View style={styles.pinOverlayContainer} pointerEvents="none">
+                                    <Animated.View style={[styles.centerPin, animatedPinStyle]}>
+                                        <FontAwesome5 name="map-marker-alt" size={38} color="#059669" />
+                                    </Animated.View>
+                                    <Animated.View style={[styles.centerPinShadow, animatedShadowStyle]} />
+                                </View>
+                            )}
+                            <View style={styles.mapPinOverlay}>
+                                <Text style={styles.mapPinText}>Drag map to adjust pin</Text>
+                            </View>
                         </View>
 
-                        {searchQuery.trim().length === 0 ? (
-                            <>
-                                {/* Option: Use current location */}
-                                <ScalePressable style={styles.optionRow} hapticType="medium" onPress={handleUseCurrentLocation}>
-                                    <View style={styles.optionIconContainer}>
-                                        <MaterialCommunityIcons name="crosshairs-gps" size={22} color="#059669" />
-                                    </View>
-                                    <View style={styles.optionTextContainer}>
-                                        <Text style={styles.optionTitle}>{t('useCurrentLocation', 'Use current location')}</Text>
-                                        <Text style={styles.optionSubtext} numberOfLines={2}>
-                                            {currentAddress}
-                                        </Text>
-                                    </View>
-                                    <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
-                                </ScalePressable>
+                        <ScrollView style={styles.formFields} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                            <Text style={styles.formLabel}>Save Address As</Text>
+                            <View style={styles.typeButtonsRow}>
+                                {['Home', 'Office', 'Other'].map((type) => {
+                                    const isSelected = addressName === type;
+                                    const iconName = type === 'Home' ? 'home' : type === 'Office' ? 'business' : 'location';
+                                    return (
+                                        <ScalePressable
+                                            key={type}
+                                            style={[
+                                                styles.typeButton,
+                                                isSelected && styles.typeButtonActive
+                                            ]}
+                                            hapticType="selection"
+                                            onPress={() => {
+                                                setAddressName(type);
+                                            }}
+                                        >
+                                            <Ionicons
+                                                name={iconName}
+                                                size={18}
+                                                color={isSelected ? '#FFFFFF' : '#64748B'}
+                                                style={{ marginRight: 6 }}
+                                            />
+                                            <Text style={[
+                                                styles.typeButtonText,
+                                                isSelected && styles.typeButtonTextActive
+                                            ]}>
+                                                {type}
+                                            </Text>
+                                        </ScalePressable>
+                                    );
+                                })}
+                            </View>
 
-                                {/* Option: Add Address */}
-                                <ScalePressable style={styles.optionRow} hapticType="medium" onPress={handleUseCurrentLocation}>
-                                    <View style={styles.optionIconContainer}>
-                                        <Ionicons name="add" size={22} color="#059669" />
-                                    </View>
-                                    <View style={styles.optionTextContainer}>
-                                        <Text style={styles.optionTitle}>{t('addAddress', 'Add Address')}</Text>
-                                        <Text style={styles.optionSubtext}>{t('selectCustomMap', 'Select custom location on map')}</Text>
-                                    </View>
-                                    <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
-                                </ScalePressable>
+                            {addressName === 'Other' && (
+                                <TextInput
+                                    style={styles.formInput}
+                                    placeholder="Enter custom label (e.g. Gym, Friend's house)"
+                                    placeholderTextColor="#94A3B8"
+                                    value={customName}
+                                    onChangeText={setCustomName}
+                                />
+                            )}
 
-                                {/* SAVED ADDRESSES */}
-                                <View style={styles.sectionHeader}>
-                                    <Text style={styles.sectionHeaderText}>{t('savedAddresses', 'SAVED ADDRESSES')}</Text>
-                                </View>
+                            <Text style={styles.formLabel}>Address Details</Text>
+                            <TextInput
+                                style={[styles.formInput, styles.textArea]}
+                                placeholder="Enter complete address details"
+                                placeholderTextColor="#94A3B8"
+                                value={addressLine}
+                                onChangeText={setAddressLine}
+                                multiline
+                                numberOfLines={3}
+                            />
 
-                                {loadingAddresses ? (
-                                    <ActivityIndicator size="large" color="#059669" style={{ marginVertical: 20 }} />
-                                ) : filteredAddresses.length === 0 ? (
-                                    <Text style={styles.noAddressText}>{t('noSavedAddresses', 'No saved addresses found.')}</Text>
+                            <ScalePressable
+                                style={styles.saveBtn}
+                                onPress={handleSaveAddress}
+                                disabled={savingAddress}
+                                hapticType="success"
+                            >
+                                {savingAddress ? (
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
                                 ) : (
-                                    filteredAddresses.map((address, index) => {
-                                        const distance = userLocation?.coords
-                                            ? getDistance(
-                                                userLocation.coords.latitude,
-                                                userLocation.coords.longitude,
-                                                Number(address.latitude),
-                                                Number(address.longitude)
-                                            )
-                                            : null;
-
-                                        const distanceStr = distance !== null
-                                            ? (distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`)
-                                            : '';
-
-                                        const isHome = address.name === 'Home';
-                                        const isWork = address.name === 'Office';
-                                        const iconName = isHome ? 'home-outline' : isWork ? 'business-outline' : 'location-outline';
-
-                                        return (
-                                            <Animated.View 
-                                                key={address.id}
-                                                entering={FadeInDown.delay(index * 40).springify().damping(15)}
-                                                style={styles.savedCard}
-                                            >
-                                                <ScalePressable
-                                                    style={styles.savedCardTop}
-                                                    hapticType="light"
-                                                    onPress={() => handleSelectAddress(address)}
-                                                >
-                                                    <View style={styles.addressIconBox}>
-                                                        <Ionicons name={iconName} size={20} color="#64748B" />
-                                                        {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
-                                                    </View>
-                                                    <View style={styles.addressDetails}>
-                                                        <Text style={styles.addressName}>
-                                                            {address.name === 'Home' ? t('home', 'Home') : address.name === 'Office' ? t('office', 'Office') : address.name === 'Other' ? t('other', 'Other') : address.name}
-                                                        </Text>
-                                                        <Text style={styles.addressFull} numberOfLines={2}>
-                                                            {address.address_line}
-                                                        </Text>
-                                                    </View>
-                                                </ScalePressable>
-                                                <View style={styles.savedCardActions}>
-                                                    <ScalePressable
-                                                        style={styles.deleteBtn}
-                                                        hapticType="heavy"
-                                                        onPress={() => handleDeleteAddress(address.id)}
-                                                    >
-                                                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                                                    </ScalePressable>
-                                                </View>
-                                            </Animated.View>
-                                        );
-                                    })
+                                    <Text style={styles.saveBtnText}>Save Address</Text>
                                 )}
-                            </>
-                        ) : (
-                            <>
-                                {/* Places & Locations Online Autocomplete */}
-                                {searchQuery.trim().length > 2 && (
-                                    <View style={styles.onlineSuggestionsWrapper}>
-                                        <View style={styles.sectionHeader}>
-                                            <Text style={styles.sectionHeaderText}>{t('placesOsm', 'PLACES & LOCATIONS (OSM)')}</Text>
-                                        </View>
-                                        {loadingSuggestions ? (
-                                            <View style={styles.suggestionLoadingRow}>
-                                                <ActivityIndicator size="small" color="#059669" />
-                                                <Text style={styles.suggestionLoadingText}>{t('searchingOnline', 'Searching places online...')}</Text>
-                                            </View>
-                                        ) : onlineSuggestions.length === 0 ? (
-                                            <Text style={styles.noAddressText}>{t('noOnlineMatching', 'No matching online places found.')}</Text>
-                                        ) : (
-                                            onlineSuggestions.map((suggestion, index) => (
-                                                <Animated.View key={index} entering={FadeInDown.delay(index * 40).springify()}>
-                                                    <ScalePressable
-                                                        style={styles.suggestionRow}
-                                                        hapticType="selection"
-                                                        onPress={() => {
-                                                            const lat = suggestion.latitude;
-                                                            const lng = suggestion.longitude;
-                                                            setFormCoords({ latitude: lat, longitude: lng });
-                                                            setFormRegion({
-                                                                latitude: lat,
-                                                                longitude: lng,
-                                                                latitudeDelta: 0.00922,
-                                                                longitudeDelta: 0.00421,
-                                                            });
-                                                            setAddressLine(suggestion.display_name);
-                                                            setAddressName('Home');
-                                                            setCustomName('');
-                                                            setShowAddForm(true);
-                                                        }}
-                                                    >
-                                                        <View style={styles.suggestionIconBox}>
-                                                            <Ionicons name="map-outline" size={20} color="#059669" />
-                                                        </View>
-                                                        <View style={styles.suggestionDetails}>
-                                                            <Text style={styles.suggestionTitle} numberOfLines={1}>
-                                                                {suggestion.display_name.split(',')[0]}
-                                                            </Text>
-                                                            <Text style={styles.suggestionSubtext} numberOfLines={2}>
-                                                                {suggestion.display_name}
-                                                            </Text>
-                                                        </View>
-                                                        <Ionicons name="chevron-forward" size={16} color="#059669" />
-                                                    </ScalePressable>
-                                                </Animated.View>
-                                            ))
-                                        )}
-                                    </View>
-                                )}
+                            </ScalePressable>
 
-                                {/* Filtered Saved Addresses */}
-                                <View style={styles.sectionHeader}>
-                                    <Text style={styles.sectionHeaderText}>{t('savedAddressesMatching', { query: searchQuery.toUpperCase() }, `SAVED ADDRESSES MATCHING "${searchQuery.toUpperCase()}"`)}</Text>
-                                </View>
-                                {filteredAddresses.length === 0 ? (
-                                    <Text style={styles.noAddressText}>{t('noSavedAddresses', 'No saved addresses found.')}</Text>
-                                ) : (
-                                    filteredAddresses.map((address, index) => {
-                                        const distance = userLocation?.coords
-                                            ? getDistance(
-                                                userLocation.coords.latitude,
-                                                userLocation.coords.longitude,
-                                                Number(address.latitude),
-                                                Number(address.longitude)
-                                            )
-                                            : null;
-
-                                        const distanceStr = distance !== null
-                                            ? (distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`)
-                                            : '';
-
-                                        const isHome = address.name === 'Home';
-                                        const isWork = address.name === 'Office';
-                                        const iconName = isHome ? 'home-outline' : isWork ? 'business-outline' : 'location-outline';
-
-                                        return (
-                                            <Animated.View 
-                                                key={address.id}
-                                                entering={FadeInDown.delay(index * 40).springify().damping(15)}
-                                                style={styles.savedCard}
-                                            >
-                                                <ScalePressable
-                                                    style={styles.savedCardTop}
-                                                    hapticType="light"
-                                                    onPress={() => handleSelectAddress(address)}
-                                                >
-                                                    <View style={styles.addressIconBox}>
-                                                        <Ionicons name={iconName} size={20} color="#64748B" />
-                                                        {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
-                                                    </View>
-                                                    <View style={styles.addressDetails}>
-                                                        <Text style={styles.addressName}>
-                                                            {address.name === 'Home' ? t('home', 'Home') : address.name === 'Office' ? t('office', 'Office') : address.name === 'Other' ? t('other', 'Other') : address.name}
-                                                        </Text>
-                                                        <Text style={styles.addressFull} numberOfLines={2}>
-                                                            {address.address_line}
-                                                        </Text>
-                                                    </View>
-                                                </ScalePressable>
-                                                <View style={styles.savedCardActions}>
-                                                    <ScalePressable
-                                                        style={styles.deleteBtn}
-                                                        hapticType="heavy"
-                                                        onPress={() => handleDeleteAddress(address.id)}
-                                                    >
-                                                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                                                    </ScalePressable>
-                                                </View>
-                                            </Animated.View>
-                                        );
-                                    })
-                                )}
-                            </>
-                        )}
-                    </ScrollView>
-                </Animated.View>
-            )}
+                            <ScalePressable
+                                style={styles.cancelBtn}
+                                onPress={() => setShowAddForm(false)}
+                                hapticType="light"
+                            >
+                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                            </ScalePressable>
+                        </ScrollView>
+                    </View>
+                </SafeAreaView>
+            </Modal>
 
             {alertConfig && (
                 <CustomAlert

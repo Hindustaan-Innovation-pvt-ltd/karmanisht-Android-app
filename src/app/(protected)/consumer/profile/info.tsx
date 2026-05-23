@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadToInsForge } from '@/lib/insforge';
+import { uploadToInsForge, insforge } from '@/lib/insforge';
 import MediaLibraryPicker from '@/components/media-library-picker';
 import { useTranslation } from 'react-i18next';
 
@@ -41,6 +41,30 @@ export default function ProfileInfoScreen() {
             setLocation(user.location || '');
         }
     }, [user]);
+
+    // Fetch the user's most recent saved address from DB to sync the location field
+    useEffect(() => {
+        if (!user?.id) return;
+        async function fetchSavedAddress() {
+            try {
+                const { data } = await insforge.database
+                    .from('user_addresses')
+                    .select('address_line')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (data) {
+                    const clean = data.address_line.replace(/^[A-Z0-9]{4,}\+[A-Z0-9]+,\s*/i, '');
+                    setLocation(clean);
+                }
+            } catch (err) {
+                console.error("Error fetching saved address inside profile info:", err);
+            }
+        }
+        fetchSavedAddress();
+    }, [user?.id]);
 
     // Photo selection helpers
     const takePhoto = async () => {
@@ -289,27 +313,27 @@ export default function ProfileInfoScreen() {
 
                             {/* Location */}
                             <View className="mb-4">
-                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('location')}</Text>
-                                <View className={`bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 py-3.5 border flex-row items-center ${
-                                    focusedField === 'location' 
-                                        ? 'border-blue-500 bg-white dark:bg-slate-900/60' 
-                                        : 'border-slate-100 dark:border-slate-800'
-                                }`}>
-                                    <Feather 
-                                        name="map-pin" 
-                                        size={18} 
-                                        color={focusedField === 'location' ? '#3B82F6' : '#94A3B8'} 
-                                        style={{ marginRight: 12 }} 
-                                    />
-                                    <TextInput
-                                        className="flex-1 text-base font-semibold text-slate-850 dark:text-slate-100"
-                                        value={location}
-                                        onChangeText={setLocation}
-                                        placeholder={t('enterLocation')}
-                                        placeholderTextColor="#94A3B8"
-                                        onFocus={() => setFocusedField('location')}
-                                        onBlur={() => setFocusedField(null)}
-                                    />
+                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-2 ml-1">{t('location')}</Text>
+                                <View className="bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 py-3.5 border border-slate-100 dark:border-slate-800 flex-row items-center">
+                                    
+                                    
+                                    <View className="flex-1 flex-row items-center overflow-hidden">
+                                        <Feather 
+                                            name="map-pin" 
+                                            size={18} 
+                                            color="#94A3B8" 
+                                            style={{ marginRight: 8 }} 
+                                        />
+                                        <Text className="flex-1 text-base font-semibold text-slate-850 dark:text-slate-100" numberOfLines={2}>
+                                            {location || t('noAddressSaved') || 'No address saved'}
+                                        </Text>
+                                        <TouchableOpacity 
+                                        onPress={() => router.push('/(location)/select-location' as any)}
+                                        className="bg-blue-50 dark:bg-blue-950/40 px-3 py-2 rounded-xl flex-row items-center active:scale-95 border border-blue-100 dark:border-blue-900/40"
+                                    >
+                                        <Feather name="edit-2" size={14} color="#3B82F6" />
+                                    </TouchableOpacity>
+                                    </View>
                                 </View>
                             </View>
                         </View>
