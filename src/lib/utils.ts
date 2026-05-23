@@ -16,6 +16,9 @@ export function getOnboardingRoute(user: any): string | null {
     }
     return '/(onboarding)/auth/register';
   }
+  if (!user.location) {
+    return '/(location)/locationinfo';
+  }
   if (user.role === 'worker') {
     if (!user.profession) {
       return '/(onboarding)/worker/profession';

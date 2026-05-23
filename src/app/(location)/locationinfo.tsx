@@ -60,13 +60,30 @@ export default function LocationInfo() {
             return;
         }
 
+        let finalCoords = coords;
+        if (!finalCoords) {
+            try {
+                const geo = await Location.geocodeAsync(locationLabel.trim());
+                if (geo && geo.length > 0) {
+                    finalCoords = { latitude: geo[0].latitude, longitude: geo[0].longitude };
+                }
+            } catch (e) {
+                console.log("Geocoding address failed during finish:", e);
+            }
+        }
+
+        // If still no coords, fallback to Raipur defaults so the provider profile remains valid/searchable
+        if (!finalCoords) {
+            finalCoords = { latitude: 21.2514, longitude: 81.6296 };
+        }
+
         const finalRadius = (user?.role === 'worker' && cityWide) ? 50 : radiusKm;
 
         await updateDatabaseProfile({
             location: locationLabel.trim(),
             searchRadiusKm: finalRadius,
-            latitude: coords ? coords.latitude : undefined,
-            longitude: coords ? coords.longitude : undefined
+            latitude: finalCoords.latitude,
+            longitude: finalCoords.longitude
         });
 
         if (fromSettings) {
@@ -80,6 +97,19 @@ export default function LocationInfo() {
         }
     }
 
+    const handleSelectPopularArea = async (area: string) => {
+        const label = `${area}, Raipur`;
+        setLocationLabel(label);
+        try {
+            const geo = await Location.geocodeAsync(label);
+            if (geo && geo.length > 0) {
+                setCoords({ latitude: geo[0].latitude, longitude: geo[0].longitude });
+            }
+        } catch (e) {
+            console.log("Failed to geocode popular area:", e);
+        }
+    };
+
     const detectCurrentLocation = async (isManual = false) => {
         setLoadingLocation(true);
         try {
@@ -90,7 +120,15 @@ export default function LocationInfo() {
                 }
                 return;
             }
-            const loc = await Location.getCurrentPositionAsync({});
+            let loc = null;
+            try {
+                loc = await Location.getLastKnownPositionAsync();
+            } catch (e) {
+                console.log("Error getting last known position:", e);
+            }
+            if (!loc) {
+                loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            }
             const reverseGeocode = await Location.reverseGeocodeAsync({
                 latitude: loc.coords.latitude,
                 longitude: loc.coords.longitude
@@ -209,7 +247,7 @@ export default function LocationInfo() {
                                 {POPULAR_AREAS.map((area) => (
                                     <TouchableOpacity
                                         key={area}
-                                        onPress={() => setLocationLabel(`${area}, Raipur`)}
+                                        onPress={() => handleSelectPopularArea(area)}
                                         className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-4 py-2.5 rounded-full"
                                     >
                                         <Text className="text-xs font-bold text-slate-600 dark:text-slate-300">{area}</Text>

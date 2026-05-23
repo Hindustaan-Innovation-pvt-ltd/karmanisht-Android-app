@@ -45,7 +45,9 @@ export default function Services() {
         async function fetchTags() {
            
             if (!professionId || professionId === 'undefined' || professionId === 'null') {
-                console.warn('[Services] Invalid or missing professionId. Cannot fetch tags.');
+                if (categories && categories.length > 0) {
+                    console.warn('[Services] Invalid or missing professionId. Cannot fetch tags.');
+                }
                 setLoading(false);
                 return;
             }
