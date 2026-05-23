@@ -199,13 +199,13 @@ export default function CustomPolicyModel({ visible, onClose, role, type }: Cust
         </View>
 
         {/* Scrollable Content */}
-        <ScrollView 
-          className="flex-1 px-6 pt-6" 
+        <ScrollView
+          className="flex-1 px-6 pt-6"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 40 }}
         >
           {doc.sections.map((section) => (
-            <View 
+            <View
               key={section.id}
               className="bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-850 rounded-2xl p-5 mb-4 shadow-sm"
             >

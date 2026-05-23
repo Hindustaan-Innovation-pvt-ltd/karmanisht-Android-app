@@ -177,6 +177,19 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
 
     registerMissingKey: async (key: string, defaultVal?: string) => {
         if (!key || key.trim() === '') return;
+
+        // If translations are not fully synced yet, do not register missing keys
+        // to avoid race conditions or overwriting existing keys before load completes.
+        if (!get().hasSyncedTranslations) {
+            return;
+        }
+
+        // Check if the key already exists in local DB cache
+        const exists = get().dbTranslations.some(item => item.key === key);
+        if (exists) {
+            return;
+        }
+
         const staticEn = staticResources.en.translation;
         const staticHi = staticResources.hi.translation;
         
@@ -187,24 +200,21 @@ export const createTranslationSlice: StateCreator<AppStoreType, [], [], Translat
         try {
             const { error } = await insforge.database
                 .from('translations')
-                .upsert([{ key, en: fallbackEn, hi: fallbackHi }], { onConflict: 'key', ignoreDuplicates: true });
+                .upsert([{ key, en: fallbackEn, hi: fallbackHi }], { onConflict: 'key' });
 
             if (error) {
                 console.warn('[Zustand i18n] Failed to save missing key:', key, error);
                 return;
             }
 
-            // Update local resource in i18n
+            // Update in-memory active i18n resources
             i18n.addResource('en', 'translation', key, fallbackEn);
             i18n.addResource('hi', 'translation', key, fallbackHi);
 
-            // Add to local state if missing
-            const exists = get().dbTranslations.some(item => item.key === key);
-            if (!exists) {
-                set({
-                    dbTranslations: [...get().dbTranslations, { key, en: fallbackEn, hi: fallbackHi }]
-                });
-            }
+            // Add to local state
+            set({
+                dbTranslations: [...get().dbTranslations, { key, en: fallbackEn, hi: fallbackHi }]
+            });
         } catch (err) {
             console.error('[Zustand i18n] Error in registerMissingKey:', err);
         }

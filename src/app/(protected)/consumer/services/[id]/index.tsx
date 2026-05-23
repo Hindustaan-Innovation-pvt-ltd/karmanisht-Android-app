@@ -1,8 +1,8 @@
+// @ts-nocheck
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import { useSubCategories, useProviders, useCityPricing, useActivePasses } from '@/hooks/queries';
 import { useQueryClient } from '@tanstack/react-query';
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Dimensions, Modal, Clipboard, Linking, Pressable, Animated, useColorScheme } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -486,7 +486,8 @@ export default function ServiceDetailScreen() {
     const { data: providers = [], isLoading: loadingProviders } = useProviders(
         id,
         userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null,
-        name
+        name,
+        user?.id
     );
     const { data: cityPricingData, isLoading: loadingPricing } = useCityPricing(
         id,
@@ -496,6 +497,11 @@ export default function ServiceDetailScreen() {
 
     const isUnlocked = (providerId: string, categoryId?: string) => {
         if (unlockedContacts.includes(providerId)) return true;
+
+        // Dynamic check from the secure database RPC response
+        const providerObj = providers.find(p => p.provider_id === providerId);
+        if (providerObj && providerObj.is_unlocked) return true;
+
         if (categoryId) {
             const now = new Date().toISOString();
             return activePasses.some(p => p.profession_id === categoryId && p.expires_at > now && p.payment_status === 'paid');
@@ -681,14 +687,18 @@ export default function ServiceDetailScreen() {
                     console.error("Failed to insert unlock lead transaction:", txError);
                 }
 
-                // Refresh passes & profile state
+                // Refresh passes, profile state AND the secure providers RPC
                 if (fetchActivePasses) {
                     await fetchActivePasses();
                 }
                 await refreshProfile();
 
                 if (user?.id) {
+                    // Invalidate active passes
                     queryClient.invalidateQueries({ queryKey: ['activePasses', user.id] });
+                    // Invalidate providers — forces re-call of get_nearby_providers_secure RPC
+                    // which will now return is_unlocked=true and real contact details
+                    queryClient.invalidateQueries({ queryKey: ['providers', id] });
                 }
 
                 setTempProviderForSuccess(providerToUnlock);
@@ -758,14 +768,16 @@ export default function ServiceDetailScreen() {
                 await refreshProfile();
 
                 if (user?.id) {
+                    // Invalidate active passes
                     queryClient.invalidateQueries({ queryKey: ['activePasses', user.id] });
+                    // Invalidate providers — forces re-call of get_nearby_providers_secure RPC
+                    // All providers in this category will now return is_unlocked=true with real contacts
+                    queryClient.invalidateQueries({ queryKey: ['providers', id] });
                 }
 
-                showAlert(
-                    t('unlockSuccessTitle'),
-                    t('unlockSuccessMsg', { count: providers.length, category: t(name), time: durationHours }),
-                    'success'
-                );
+                // Show the same success modal as single-unlock for consistent UX
+                setTempProviderForSuccess(providers[0] || null);
+                setShowSuccessModal(true);
             } else {
                 showAlert(t('paymentCancelled'), t('paymentNotCompleted'), 'warning');
             }
@@ -819,7 +831,7 @@ export default function ServiceDetailScreen() {
                 >
                     <SafeIcon name={(icon as any) || 'lightning-bolt'} size={44} color="white" />
                     <Text
-                        style={{ fontSize: adjustHindiFont(t(name), 48, 1.1) }}
+                        style={{ fontSize: adjustHindiFont(t(name), 28, 1.1) }}
                         className="font-bold text-white ml-3 flex-1"
                         numberOfLines={2}
                         adjustsFontSizeToFit
@@ -866,7 +878,7 @@ export default function ServiceDetailScreen() {
             {/* Sub Categories (Tags) Collapsible Grid */}
             {!loadingTags && subCategories.length > 0 && (
                 <View className="mb-6 px-5">
-                    <View className="flex-row flex-wrap gap-3">
+                    <View className="flex-row items-center flex-wrap gap-3">
                         {/* Combined list of options */}
                         {(() => {
                             const allOptions = [
@@ -877,52 +889,46 @@ export default function ServiceDetailScreen() {
                             // Show only 4 items if not expanded
                             const visibleOptions = isExpanded ? allOptions : allOptions.slice(0, 4);
 
-                            return visibleOptions
-                                .reduce((acc: any[][], _, i, arr) =>
-                                    (i % 2 === 0 ? [...acc, arr.slice(i, i + 2)] : acc), []
-                                )
-                                .flatMap((row) =>
-                                    row.map((item) => {
-                                        const isSelected = item.name === null
-                                            ? selectedSubCategories.length === 0
-                                            : selectedSubCategories.includes(item.name);
+                            return visibleOptions.map((item) => {
+                                const isSelected = item.name === null
+                                    ? selectedSubCategories.length === 0
+                                    : selectedSubCategories.includes(item.name);
 
-                                        return (
-                                            <TouchableOpacity
-                                                key={item.id}
-                                                onPress={() => toggleSubCategory(item.name)}
-                                                style={{
-                                                    width: (width - 40 - 12) / 2,
-                                                    ...(isSelected ? {
-                                                        shadowColor: '#000',
-                                                        shadowOffset: { width: 0, height: 1 },
-                                                        shadowOpacity: 0.05,
-                                                        shadowRadius: 2,
-                                                        elevation: 1
-                                                    } : {})
-                                                }} // 2 columns logic + shadow
-                                                className={`py-3 rounded-2xl border flex-row items-center justify-center px-3 ${isSelected
-                                                    ? 'bg-black border-black'
-                                                    : 'bg-slate-50 border-slate-100'
-                                                    }`}
-                                            >
-                                                <Ionicons
-                                                    name={isSelected ? "checkmark-circle" : "add-circle-outline"}
-                                                    size={18}
-                                                    color={isSelected ? "white" : "#64748B"}
-                                                />
-                                                <Text
-                                                    numberOfLines={1}
-                                                    style={{ fontSize: adjustHindiFont(item.label, 14, 1.15) }}
-                                                    className={`ml-2 font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-600'
-                                                        }`}
-                                                >
-                                                    {t(item.label)}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        );
-                                    })
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        onPress={() => toggleSubCategory(item.name)}
+                                        style={{
+                                            width: width - 40,
+                                            ...(isSelected ? {
+                                                shadowColor: '#000',
+                                                shadowOffset: { width: 0, height: 1 },
+                                                shadowOpacity: 0.05,
+                                                shadowRadius: 2,
+                                                elevation: 1
+                                            } : {})
+                                        }} // 1 column logic + shadow
+                                        className={`py-3 rounded-2xl border flex-row items-center justify-start ml-2 px-3 ${isSelected
+                                            ? 'bg-black border-black'
+                                            : 'bg-slate-50 border-slate-100'
+                                            }`}
+                                    >
+                                        <Ionicons
+                                            name={isSelected ? "checkmark-circle" : "add-circle-outline"}
+                                            size={18}
+                                            color={isSelected ? "white" : "#64748B"}
+                                        />
+                                        <Text
+                                            numberOfLines={1}
+                                            style={{ fontSize: adjustHindiFont(item.label, 14, 1.15) }}
+                                            className={`ml-2 font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-600'
+                                                }`}
+                                        >
+                                            {t(item.label)}
+                                        </Text>
+                                    </TouchableOpacity>
                                 );
+                            });
                         })()}
                     </View>
 
@@ -1080,6 +1086,15 @@ export default function ServiceDetailScreen() {
                                 <Text className="text-white text-xs ml-1">{t('yearsExperience', { count: provider.experience_years || 0 })}</Text>
                             </View>
 
+                            {provider.is_unlocked && provider.unlock_expires_in_seconds > 0 && (
+                                <View style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                    <Ionicons name="lock-open" size={12} color="#4ADE80" />
+                                    <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold', marginLeft: 4 }}>
+                                        {t('unlocked')} ({Math.ceil(provider.unlock_expires_in_seconds / 3600)}h left)
+                                    </Text>
+                                </View>
+                            )}
+
                             {/* Skills Tags */}
                             <View className="flex-row flex-wrap">
                                 <View className="px-2 py-1 rounded-full mr-2 mb-2 border border-white/50 bg-white/10">
@@ -1133,7 +1148,9 @@ export default function ServiceDetailScreen() {
                 onClose={() => {
                     setShowSuccessModal(false);
                     if (tempProviderForSuccess) {
-                        setSelectedContact(tempProviderForSuccess);
+                        // Read fresh unmasked data from the re-fetched providers list
+                        const freshProvider = providers.find(p => p.provider_id === tempProviderForSuccess.provider_id) || tempProviderForSuccess;
+                        setSelectedContact(freshProvider);
                         setShowContactModal(true);
                     }
                 }}
