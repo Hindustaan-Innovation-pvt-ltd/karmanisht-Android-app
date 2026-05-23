@@ -1,6 +1,9 @@
 // @ts-nocheck
-import React, { useEffect } from 'react'
-import { ActivityIndicator, Image, Text, TouchableOpacity, View } from 'react-native'
+import React, { useEffect, useState, useRef } from 'react'
+import {
+    ActivityIndicator, Image, Text, TouchableOpacity, View,
+    Modal, Pressable, Animated, Platform
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useAppStore } from '@/lib/store'
@@ -9,6 +12,8 @@ import { Vector as Leaf } from '@/svg/leaf'
 import { Vector as Wheel } from '@/svg/wheel'
 import { Vector as Fan } from '@/svg/fan'
 import { Vector as Bolt } from '@/svg/bolt'
+import { useTranslation } from 'react-i18next'
+import { Ionicons } from '@expo/vector-icons'
 
 
 const BackgroundPattern = () => {
@@ -71,9 +76,34 @@ const BackgroundPattern = () => {
 
 export default function Index() {
     const router = useRouter()
+    const { t, i18n } = useTranslation()
     const user = useAppStore(state => state.user)
     const isLoading = useAppStore(state => state.isLoading)
     const hasCheckedAuth = useAppStore(state => state.hasCheckedAuth)
+    const changeLanguage = useAppStore(state => state.changeLanguage)
+    const currentLanguage = useAppStore(state => state.currentLanguage)
+
+    const [langPickerVisible, setLangPickerVisible] = useState(false)
+    const [selectedLang, setSelectedLang] = useState<'en' | 'hi'>(
+        (i18n.language === 'hi' ? 'hi' : 'en') as 'en' | 'hi'
+    )
+    const [applyingLang, setApplyingLang] = useState(false)
+
+    // Sheet slide-up animation
+    const slideAnim = useRef(new Animated.Value(400)).current
+
+    useEffect(() => {
+        if (langPickerVisible) {
+            Animated.spring(slideAnim, {
+                toValue: 0,
+                useNativeDriver: true,
+                damping: 20,
+                stiffness: 200,
+            }).start()
+        } else {
+            slideAnim.setValue(400)
+        }
+    }, [langPickerVisible])
 
     useEffect(() => {
         if (!hasCheckedAuth || isLoading) return;
@@ -88,6 +118,29 @@ export default function Index() {
         }
         // If no user, fall through and render the landing page below
     }, [isLoading, hasCheckedAuth, user, router])
+
+    // Keep selectedLang in sync if language was changed elsewhere (e.g. settings)
+    useEffect(() => {
+        setSelectedLang(currentLanguage === 'hi' ? 'hi' : 'en')
+    }, [currentLanguage])
+
+    const handleGetStarted = () => {
+        setLangPickerVisible(true)
+    }
+
+    const handleContinue = async () => {
+        if (applyingLang) return
+        setApplyingLang(true)
+        try {
+            await changeLanguage(selectedLang)
+        } catch (e) {
+            console.warn('[LangPicker] Failed to apply language', e)
+        } finally {
+            setApplyingLang(false)
+        }
+        setLangPickerVisible(false)
+        router.push('/(onboarding)/auth/login')
+    }
 
     // Show a spinner while checking auth on app boot
     if (isLoading) {
@@ -113,20 +166,142 @@ export default function Index() {
                     />
 
                     <Text className='text-[3rem] font-black text-center text-slate-900 dark:text-slate-100'>Karma<Text className='text-orange-500'>nisht</Text></Text>
-                    <Text className='text-base font-bold text-center text-slate-500 dark:text-slate-400 mt-2'>Every service you need, at your screen</Text>
+                    <Text className='text-base font-bold text-center text-slate-500 dark:text-slate-400 mt-2'>{t('tagline')}</Text>
                 </View>
 
                 <View className='gap-4'>
                     <TouchableOpacity
                         className='bg-black dark:bg-slate-800 py-5 rounded-2xl items-center'
-                        style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+                        style={Platform.OS === 'web' ? { boxShadow: '0 1px 2px rgba(0,0,0,0.05)' } : {}}
                         activeOpacity={0.8}
-                        onPress={() => router.push('/(onboarding)/auth/login')}
+                        onPress={handleGetStarted}
                     >
-                        <Text className='text-xl font-bold text-white'>Get Started</Text>
+                        <Text className='text-xl font-bold text-white'>{t('getStarted')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
+
+            {/* ── Language Picker Bottom Sheet ── */}
+            <Modal
+                visible={langPickerVisible}
+                transparent
+                animationType="none"
+                onRequestClose={() => setLangPickerVisible(false)}
+                statusBarTranslucent
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+                    {/* Backdrop tap to dismiss */}
+                    <Pressable
+                        style={{ flex: 1 }}
+                        onPress={() => setLangPickerVisible(false)}
+                    />
+
+                    <Animated.View
+                        style={{
+                            transform: [{ translateY: slideAnim }],
+                            backgroundColor: 'white',
+                            borderTopLeftRadius: 32,
+                            borderTopRightRadius: 32,
+                            paddingHorizontal: 24,
+                            paddingTop: 12,
+                            paddingBottom: 40,
+                        }}
+                    >
+                        {/* Handle bar */}
+                        <View style={{ width: 48, height: 5, borderRadius: 3, backgroundColor: '#E2E8F0', alignSelf: 'center', marginBottom: 24 }} />
+
+                        {/* Globe icon + title */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6, gap: 10 }}>
+                            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
+                                <Ionicons name="language" size={24} color="#3B82F6" />
+                            </View>
+                            <View>
+                                <Text style={{ fontSize: 20, fontWeight: '800', color: '#0F172A' }}>{t('chooseLanguage')}</Text>
+                                <Text style={{ fontSize: 12, color: '#94A3B8', fontWeight: '500', marginTop: 2 }}>{t('chooseLanguageDesc')}</Text>
+                            </View>
+                        </View>
+
+                        <View style={{ height: 1, backgroundColor: '#F1F5F9', marginVertical: 20 }} />
+
+                        {/* English option */}
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setSelectedLang('en')}
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                padding: 18,
+                                borderRadius: 18,
+                                borderWidth: 2,
+                                borderColor: selectedLang === 'en' ? '#3B82F6' : '#F1F5F9',
+                                backgroundColor: selectedLang === 'en' ? '#EFF6FF' : '#FAFAFA',
+                                marginBottom: 14,
+                            }}
+                        >
+                            <Text style={{ fontSize: 28, marginRight: 14 }}>🇬🇧</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: selectedLang === 'en' ? '#1D4ED8' : '#0F172A' }}>English</Text>
+                                <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>Continue in English</Text>
+                            </View>
+                            {selectedLang === 'en' && (
+                                <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="checkmark" size={16} color="white" />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        {/* Hindi option */}
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setSelectedLang('hi')}
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                padding: 18,
+                                borderRadius: 18,
+                                borderWidth: 2,
+                                borderColor: selectedLang === 'hi' ? '#3B82F6' : '#F1F5F9',
+                                backgroundColor: selectedLang === 'hi' ? '#EFF6FF' : '#FAFAFA',
+                                marginBottom: 28,
+                            }}
+                        >
+                            <Text style={{ fontSize: 28, marginRight: 14 }}>🇮🇳</Text>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: selectedLang === 'hi' ? '#1D4ED8' : '#0F172A' }}>हिंदी</Text>
+                                <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>हिंदी में जारी रखें</Text>
+                            </View>
+                            {selectedLang === 'hi' && (
+                                <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Ionicons name="checkmark" size={16} color="white" />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        {/* Continue button */}
+                        <TouchableOpacity
+                            activeOpacity={0.85}
+                            onPress={handleContinue}
+                            disabled={applyingLang}
+                            style={{
+                                backgroundColor: '#000',
+                                borderRadius: 18,
+                                paddingVertical: 18,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                opacity: applyingLang ? 0.7 : 1,
+                            }}
+                        >
+                            {applyingLang ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text style={{ color: 'white', fontSize: 16, fontWeight: '800' }}>
+                                    {selectedLang === 'hi' ? 'जारी रखें →' : 'Continue →'}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </Animated.View>
+                </View>
+            </Modal>
         </SafeAreaView>
     )
 }

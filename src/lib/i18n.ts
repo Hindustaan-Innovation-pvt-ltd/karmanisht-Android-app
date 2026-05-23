@@ -1,8 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import * as Localization from 'expo-localization';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { insforge } from './insforge';
+
+export const LANGUAGE_KEY = '@@app_language';
 
 export const staticResources = {
   en: {
@@ -167,6 +166,15 @@ export const staticResources = {
       home: "Home",
       services: "Services",
       contact: "Contact",
+
+      // Landing screen
+      getStarted: "Get Started",
+      tagline: "Every service you need, at your screen",
+      chooseLanguage: "Choose Your Language",
+      chooseLanguageDesc: "Select your preferred language to continue",
+      continueBtn: "Continue",
+      english: "English",
+      hindi: "हिंदी (Hindi)",
 
       // Language Modal
       selectLanguage: "Select Language",
@@ -470,6 +478,15 @@ export const staticResources = {
       services: "सेवाएं",
       contact: "संपर्क",
 
+      // Landing screen
+      getStarted: "शुरू करें",
+      tagline: "आपकी हर सेवा, आपकी स्क्रीन पर",
+      chooseLanguage: "अपनी भाषा चुनें",
+      chooseLanguageDesc: "जारी रखने के लिए अपनी पसंदीदा भाषा चुनें",
+      continueBtn: "जारी रखें",
+      english: "English",
+      hindi: "हिंदी",
+
       // Language Modal
       selectLanguage: "भाषा चुनें",
 
@@ -611,13 +628,26 @@ export const staticResources = {
   }
 };
 
-const LANGUAGE_KEY = '@@app_language';
+// Try to synchronously read the previously saved language from AsyncStorage
+// (MMKVStorage would be instant, but AsyncStorage only has async API, so we
+// keep 'en' as the safe default and let initTranslations() update it before
+// the first screen mounts — enforced by the _layout.tsx gate below)
+let initialLang = 'en';
+try {
+  // React Native AsyncStorage does not have a sync API; instead we piggyback on
+  // a tiny in-process cache that the translationSlice writes when it inits.
+  // This is populated in < 1 render cycle before _layout shows any children.
+  const cachedLang = (global as any).__appLanguageCache;
+  if (cachedLang && ['en', 'hi'].includes(cachedLang)) {
+    initialLang = cachedLang;
+  }
+} catch { /* no-op */ }
 
 i18n
   .use(initReactI18next)
   .init({
     resources: staticResources,
-    lng: 'en',
+    lng: initialLang,
     fallbackLng: 'en',
     compatibilityJSON: 'v4',
     saveMissing: true,
@@ -636,4 +666,3 @@ i18n
   });
 
 export default i18n;
-export { LANGUAGE_KEY };

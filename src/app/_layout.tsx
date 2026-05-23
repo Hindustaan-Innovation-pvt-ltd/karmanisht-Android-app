@@ -1,7 +1,7 @@
 // @ts-nocheck
 import 'react-native-url-polyfill/auto';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -10,7 +10,7 @@ import * as WebBrowser from 'expo-web-browser';
 import '@/lib/i18n';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppStore } from '@/lib/store';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { queryClient, queryPersister } from '@/lib/queryClient';
 
@@ -58,10 +58,26 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const refreshProfile = useAppStore(state => state.refreshProfile);
   const initTranslations = useAppStore(state => state.initTranslations);
+  const isTranslationLoading = useAppStore(state => state.isTranslationLoading);
+  const hasSyncedTranslations = useAppStore(state => state.hasSyncedTranslations);
+  const [langReady, setLangReady] = useState(false);
+
   useEffect(() => {
-    refreshProfile();
-    initTranslations();
+    // Run translations first (reads saved language from AsyncStorage), then profile
+    initTranslations().then(() => {
+      setLangReady(true);
+      refreshProfile();
+    });
   }, [refreshProfile, initTranslations]);
+
+  // Show a tiny spinner while we load the saved language — prevents English flash
+  if (!langReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
   return (
     <PersistQueryClientProvider
