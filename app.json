@@ -60,7 +60,7 @@
       "package": "com.karmanisht",
       "config": {
         "googleMaps": {
-          "apiKey": "[GCP_API_KEY]"
+          "apiKey": "AIzaSyDYxBWqUSsPo8w87bmpuAL0P-y4Y6xKZac"
         }
       },
       "runtimeVersion": {

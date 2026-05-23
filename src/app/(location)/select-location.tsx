@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, Platform, ActivityIndicator, Alert } from 'react-native';
+import CustomAlert from '@/components/ui/custom-alert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -26,6 +27,32 @@ export default function SelectLocation() {
     const user = useAppStore(state => state.user);
     const userLocation = useAppStore(state => state.userLocation);
     const updateDatabaseProfile = useAppStore(state => state.updateDatabaseProfile);
+
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type: 'error' | 'success' | 'info' | 'warning';
+        onClose?: () => void;
+    } | null>(null);
+
+    const showAlert = (
+        title: string,
+        message: string,
+        type: 'error' | 'success' | 'info' | 'warning' = 'error',
+        onClose?: () => void
+    ) => {
+        setAlertConfig({
+            visible: true,
+            title,
+            message,
+            type,
+            onClose: () => {
+                setAlertConfig(null);
+                if (onClose) onClose();
+            }
+        });
+    };
 
     const [currentAddress, setCurrentAddress] = useState('Locating current address...');
     const [searchQuery, setSearchQuery] = useState('');
@@ -222,7 +249,7 @@ export default function SelectLocation() {
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'Location permission is required to use this feature.');
+                showAlert('Permission Denied', 'Location permission is required to use this feature.', 'warning');
                 return;
             }
 
@@ -334,12 +361,12 @@ export default function SelectLocation() {
             if (Platform.OS !== 'web') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
             }
-            Alert.alert('Validation Error', 'Please enter address details.');
+            showAlert('Validation Error', 'Please enter address details.', 'error');
             return;
         }
 
         if (!user?.id) {
-            Alert.alert('Authentication Error', 'User session not found. Please log in again.');
+            showAlert('Authentication Error', 'User session not found. Please log in again.', 'error');
             return;
         }
 
@@ -364,12 +391,12 @@ export default function SelectLocation() {
             if (Platform.OS !== 'web') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
             }
-            Alert.alert('Success', 'Address saved successfully!');
+            showAlert('Success', 'Address saved successfully!', 'success');
             setShowAddForm(false);
             fetchSavedAddresses();
         } catch (err: any) {
             console.error('Error saving address:', err);
-            Alert.alert('Error', err.message || 'Error saving address');
+            showAlert('Error', err.message || 'Error saving address', 'error');
         } finally {
             setSavingAddress(false);
         }
@@ -429,11 +456,11 @@ export default function SelectLocation() {
 
                             if (error) throw error;
 
-                            Alert.alert('Success', 'Address deleted successfully!');
+                            showAlert('Success', 'Address deleted successfully!', 'success');
                             fetchSavedAddresses();
                         } catch (err) {
                             console.error('Delete error:', err);
-                            Alert.alert('Error', 'Failed to delete address');
+                            showAlert('Error', 'Failed to delete address', 'error');
                         }
                     }
                 }
@@ -801,6 +828,16 @@ export default function SelectLocation() {
                         )}
                     </ScrollView>
                 </Animated.View>
+            )}
+
+            {alertConfig && (
+                <CustomAlert
+                    visible={alertConfig.visible}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    type={alertConfig.type}
+                    onClose={alertConfig.onClose || (() => setAlertConfig(null))}
+                />
             )}
         </SafeAreaView>
     );
