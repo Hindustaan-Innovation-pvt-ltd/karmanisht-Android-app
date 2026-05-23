@@ -28,11 +28,16 @@ export default function Services() {
     }, [categories, fetchCategories]);
 
     // Resolve professionName
-    const rawProfessionName = paramProfessionName || storeUser?.profession;
+    const rawProfessionName = paramProfessionName && paramProfessionName !== 'undefined' && paramProfessionName !== 'null'
+        ? paramProfessionName
+        : storeUser?.profession;
     const professionName = Array.isArray(rawProfessionName) ? rawProfessionName[0] : rawProfessionName;
 
     // Resolve professionId (either param, store, or categories list lookup by name)
-    const rawProfessionId = paramProfessionId || storeUser?.professionId || (professionName ? categories.find(c => c.name === professionName)?.id : null);
+    const cleanParamId = paramProfessionId && paramProfessionId !== 'undefined' && paramProfessionId !== 'null' ? paramProfessionId : null;
+    const cleanStoreId = storeUser?.professionId && storeUser?.professionId !== 'undefined' && storeUser?.professionId !== 'null' ? storeUser?.professionId : null;
+
+    const rawProfessionId = cleanParamId || cleanStoreId || (professionName ? categories.find(c => c.name === professionName)?.id : null);
     const professionId = Array.isArray(rawProfessionId) ? rawProfessionId[0] : rawProfessionId;
     
     const [selected, setSelected] = useState<Set<string>>(new Set())

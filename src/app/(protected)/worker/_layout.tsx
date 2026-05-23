@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { Tabs, usePathname } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { BackHandler } from 'react-native';
 import { HomeIcon, BriefcaseIcon, SettingsIcon } from '@/svg/icons';
 import { useTheme } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +17,22 @@ export default function WorkerProtectedLayout() {
                       pathname === '/worker/leads/' || 
                       pathname === '/worker/settings' ||
                       pathname === '/worker/settings/';
+
+    useEffect(() => {
+        const onBackPress = () => {
+            if (isMainTab) {
+                // Exit app instead of returning to onboarding screens
+                BackHandler.exitApp();
+                return true;
+            }
+            return false;
+        };
+
+        const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+        return () => {
+            subscription.remove();
+        };
+    }, [isMainTab]);
 
     return (
         <Tabs
