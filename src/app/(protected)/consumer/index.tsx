@@ -694,7 +694,7 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 30).springify().damping(10)}
+            entering={FadeInDown.duration(400)}
             className="w-[31%] aspect-square mb-4"
         >
             <ScalePressable

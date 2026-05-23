@@ -193,7 +193,7 @@ const BannerCard = memo(
                 <Image
                     source={source}
                     resizeMode="cover"
-                    fadeDuration={0}
+                    fadeDuration={0.5}
                     progressiveRenderingEnabled
                     style={styles.image}
                 />

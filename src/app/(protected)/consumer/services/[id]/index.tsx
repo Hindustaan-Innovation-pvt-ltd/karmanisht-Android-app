@@ -867,12 +867,7 @@ export default function ServiceDetailScreen() {
             )
             : true;
 
-        // Calculate range overlaps
-        const consumerRadius = user?.searchRadiusKm || 5;
-        const providerRadius = p.service_radius_km || 5;
-        const matchesLocationRange = p.distance_km <= consumerRadius && p.distance_km <= providerRadius;
-
-        return matchesSearch && matchesSubCat && matchesLocationRange;
+        return matchesSearch && matchesSubCat;
     });
 
     const colorScheme = useColorScheme()
