@@ -5,7 +5,7 @@ import {
     Modal, Pressable, Animated, Platform, useColorScheme
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useRootNavigationState } from 'expo-router'
 import { useAppStore } from '@/lib/store'
 import { getOnboardingRoute } from '@/lib/utils'
 import { Vector as Leaf } from '@/svg/leaf'
@@ -76,6 +76,7 @@ const BackgroundPattern = () => {
 
 export default function Index() {
     const router = useRouter()
+    const navigationState = useRootNavigationState()
     const isDark = useColorScheme() === 'dark'
     const { t, i18n } = useTranslation()
     const user = useAppStore(state => state.user)
@@ -107,7 +108,7 @@ export default function Index() {
     }, [langPickerVisible])
 
     useEffect(() => {
-        if (!hasCheckedAuth || isLoading) return;
+        if (!hasCheckedAuth || isLoading || !navigationState?.key) return;
 
         if (user?.id) {
             const nextRoute = getOnboardingRoute(user);
@@ -118,7 +119,7 @@ export default function Index() {
             }
         }
         // If no user, fall through and render the landing page below
-    }, [isLoading, hasCheckedAuth, user, router])
+    }, [isLoading, hasCheckedAuth, user, router, navigationState?.key])
 
     // Keep selectedLang in sync if language was changed elsewhere (e.g. settings)
     useEffect(() => {

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Tabs, usePathname } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { Platform, BackHandler } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,22 @@ export default function ConsumerLayout() {
                     pathname === '/consumer/contact/' || 
                     pathname === '/consumer/profile' ||
                     pathname === '/consumer/profile/';
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (isMainTab) {
+        // Exit app instead of returning to onboarding screens
+        BackHandler.exitApp();
+        return true;
+      }
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => {
+      subscription.remove();
+    };
+  }, [isMainTab]);
 
   return (
     <Tabs
