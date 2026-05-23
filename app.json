@@ -74,6 +74,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-localization",
       [
         "expo-speech-recognition",
         {

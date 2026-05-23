@@ -11,6 +11,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import SafeIcon from '@/components/safe-icon';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
+import { adjustHindiFont } from '@/lib/utils';
 
 const { width } = Dimensions.get('window');
 
@@ -23,20 +25,21 @@ interface ContactDetailModalProps {
 }
 
 const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryName }: ContactDetailModalProps) => {
+    const { t } = useTranslation();
     if (!provider) return null;
 
     const handleCall = () => {
         if (provider.mobile) {
             Linking.openURL(`tel:${provider.mobile}`);
         } else {
-            Alert.alert('Error', 'Phone number not available');
+            Alert.alert(t('error'), t('phoneNotAvailable'));
         }
     };
 
     const handleCopy = () => {
         if (provider.mobile) {
             Clipboard.setString(provider.mobile);
-            Alert.alert('Copied', 'Phone number copied to clipboard!');
+            Alert.alert(t('copied'), t('copiedMsg'));
         }
     };
 
@@ -74,7 +77,7 @@ const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryNa
                             resizeMode="cover"
                         />
                         <Text className="text-2xl font-bold text-slate-800">{provider.full_name}</Text>
-                        <Text className="text-sm font-semibold text-slate-400 mt-1">{categoryName} Specialist</Text>
+                        <Text className="text-sm font-semibold text-slate-400 mt-1">{t('exploreCategory', { category: t(categoryName) })}</Text>
                     </View>
 
                     {/* Phone Number Field */}
@@ -84,7 +87,7 @@ const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryNa
                                 <Ionicons name="call" size={24} color={themeColor} />
                             </View>
                             <View className="ml-3">
-                                <Text className="text-xs text-slate-400 font-bold uppercase tracking-wider">Phone Number</Text>
+                                <Text className="text-xs text-slate-400 font-bold uppercase tracking-wider">{t('phoneNumber')}</Text>
                                 <Text className="text-lg font-bold text-slate-800 mt-0.5">{provider.mobile}</Text>
                             </View>
                         </View>
@@ -103,7 +106,7 @@ const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryNa
                             style={{ flex: 1 }}
                             className="bg-slate-100 py-4 rounded-2xl items-center justify-center border border-slate-200"
                         >
-                            <Text className="text-base font-bold text-slate-600">Cancel</Text>
+                            <Text className="text-base font-bold text-slate-600">{t('cancel')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -112,7 +115,7 @@ const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryNa
                             className="py-4 rounded-2xl items-center justify-center flex-row"
                         >
                             <Ionicons name="call" size={20} color="white" style={{ marginRight: 8 }} />
-                            <Text className="text-base font-bold text-white">Call Now</Text>
+                            <Text className="text-base font-bold text-white">{t('callNow')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -128,6 +131,7 @@ interface SuccessModalProps {
 }
 
 const SuccessModal = ({ visible, onClose, themeColor }: SuccessModalProps) => {
+    const { t } = useTranslation();
     const scaleAnim = React.useRef(new Animated.Value(0)).current;
     const opacityAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -196,9 +200,9 @@ const SuccessModal = ({ visible, onClose, themeColor }: SuccessModalProps) => {
                     </View>
 
                     {/* Success message */}
-                    <Text className="text-2xl font-bold text-slate-800 text-center">Unlock Successful!</Text>
+                    <Text className="text-2xl font-bold text-slate-800 text-center">{t('unlockSuccessful')}</Text>
                     <Text className="text-sm text-slate-500 text-center mt-3 leading-relaxed">
-                        Contact unlocked! You can now call and message this service professional.
+                        {t('contactUnlockedMsg')}
                     </Text>
 
                     {/* Button */}
@@ -207,7 +211,7 @@ const SuccessModal = ({ visible, onClose, themeColor }: SuccessModalProps) => {
                         style={{ backgroundColor: themeColor, width: '100%', borderRadius: 18, marginTop: 28 }}
                         className="py-4 items-center justify-center flex-row"
                     >
-                        <Text className="text-base font-bold text-white">View Contact</Text>
+                        <Text className="text-base font-bold text-white">{t('viewContact')}</Text>
                         <Ionicons name="arrow-forward-outline" size={20} color="white" style={{ marginLeft: 8 }} />
                     </TouchableOpacity>
                 </Animated.View>
@@ -237,6 +241,7 @@ const UnlockCategoryPassModal = ({
     price,
     durationHours
 }: UnlockCategoryPassModalProps) => {
+    const { t } = useTranslation();
     if (!visible) return null;
 
     return (
@@ -270,22 +275,22 @@ const UnlockCategoryPassModal = ({
                         <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: `${themeColor}20`, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                             <Ionicons name="key" size={28} color={themeColor} />
                         </View>
-                        <Text className="text-2xl font-black text-slate-800 text-center">Unlock Contact</Text>
+                        <Text className="text-2xl font-black text-slate-800 text-center">{t('unlockContactTitle')}</Text>
                         <Text className="text-sm text-slate-500 text-center mt-2 px-4 leading-relaxed">
-                            Get instant access to contact details for all {categoryName}s in {cityName}.
+                            {t('unlockContactMsg', { category: t(categoryName), city: cityName })}
                         </Text>
                     </View>
 
                     {/* Pass Details Card */}
                     <View className="bg-slate-50 border border-slate-100 rounded-2xl mb-6 p-4">
                         <View className="flex-row justify-between items-center mb-4">
-                            <Text className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Pass Duration</Text>
+                            <Text className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">{t('passDuration')}</Text>
                             <View className="bg-blue-50 px-3 py-1 rounded-full">
-                                <Text className="text-blue-600 font-bold text-xs">{durationHours} Hours Active</Text>
+                                <Text className="text-blue-600 font-bold text-xs">{t('hoursActive', { count: durationHours })}</Text>
                             </View>
                         </View>
                         <View className="flex-row justify-between items-center">
-                            <Text className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">Price</Text>
+                            <Text className="text-slate-400 font-bold uppercase text-[10px] tracking-wider">{t('priceLabel')}</Text>
                             <Text className="text-2xl font-black text-slate-900">₹{price}</Text>
                         </View>
                     </View>
@@ -294,15 +299,15 @@ const UnlockCategoryPassModal = ({
                     <View className="mb-6 gap-3">
                         <View className="flex-row items-center">
                             <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
-                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">Call & message all professionals directly</Text>
+                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">{t('featureCallDirectly')}</Text>
                         </View>
                         <View className="flex-row items-center">
                             <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
-                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">No commission fees or middleman charges</Text>
+                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">{t('featureNoCommission')}</Text>
                         </View>
                         <View className="flex-row items-center">
                             <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
-                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">Valid for any provider in this category</Text>
+                            <Text className="text-slate-600 text-sm font-semibold ml-2.5">{t('featureValidAnyProvider')}</Text>
                         </View>
                     </View>
 
@@ -313,7 +318,7 @@ const UnlockCategoryPassModal = ({
                             style={{ flex: 1 }}
                             className="bg-slate-100 py-4 rounded-2xl items-center justify-center border border-slate-200"
                         >
-                            <Text className="text-base font-bold text-slate-600">Cancel</Text>
+                            <Text className="text-base font-bold text-slate-600">{t('cancel')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -322,7 +327,7 @@ const UnlockCategoryPassModal = ({
                             className="py-4 rounded-2xl items-center justify-center flex-row"
                         >
                             <Ionicons name="card" size={20} color="white" style={{ marginRight: 8 }} />
-                            <Text className="text-base font-bold text-white">Proceed to Pay</Text>
+                            <Text className="text-base font-bold text-white">{t('proceedToPay')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -349,6 +354,7 @@ const CategoryPassModal = ({
     visible, onClose, onConfirm, themeColor,
     categoryName, providerCount, price, durationHours, loading
 }: CategoryPassModalProps) => {
+    const { t } = useTranslation();
     if (!visible) return null;
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -373,10 +379,10 @@ const CategoryPassModal = ({
                             <Ionicons name="people" size={32} color="#fff" />
                         </LinearGradient>
                         <Text style={{ fontSize: 22, fontWeight: '900', color: '#0F172A', textAlign: 'center' }}>
-                            Unlock All {categoryName}s
+                            {t('unlockAllTitle', { category: t(categoryName) })}
                         </Text>
                         <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', marginTop: 6, paddingHorizontal: 16, lineHeight: 19 }}>
-                            One payment. Instant access to all {providerCount} professionals in your area.
+                            {t('unlockAllMsg', { count: providerCount })}
                         </Text>
                     </View>
 
@@ -385,28 +391,28 @@ const CategoryPassModal = ({
                         colors={['#F0FDF4', '#DCFCE7']}
                         style={{ borderRadius: 20, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#BBF7D0' }}
                     >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                            <Text style={{ fontSize: 11, fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: 0.5 }}>Category Pass</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'space-between' }}>
+                            <Text style={{ fontSize: 11, fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('categoryPass')}</Text>
                             <View style={{ backgroundColor: '#16A34A', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
-                                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>BEST VALUE</Text>
+                                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{t('bestValue')}</Text>
                             </View>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
                             <Text style={{ fontSize: 36, fontWeight: '900', color: '#0F172A' }}>₹{price}</Text>
                             <Text style={{ fontSize: 13, color: '#94A3B8', textDecorationLine: 'line-through' }}>₹{price * providerCount}</Text>
-                            <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '700' }}>total</Text>
+                            <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: '700' }}>{t('total')}</Text>
                         </View>
                         <Text style={{ fontSize: 11, color: '#16A34A', fontWeight: '600', marginTop: 4 }}>
-                            Save ₹{Math.max(0, price * providerCount - price)} vs individual unlocks
+                            {t('savePassMsg', { amount: Math.max(0, price * providerCount - price) })}
                         </Text>
                     </LinearGradient>
 
                     {/* Feature rows */}
                     <View style={{ gap: 10, marginBottom: 24 }}>
                         {[
-                            { icon: 'call', text: `Call all ${providerCount} ${categoryName}s directly` },
-                            { icon: 'time-outline', text: `Valid for ${durationHours} hours from purchase` },
-                            { icon: 'shield-checkmark-outline', text: 'No commission or hidden fees' },
+                            { icon: 'call', text: t('callAllMsg', { count: providerCount, category: t(categoryName) }) },
+                            { icon: 'time-outline', text: t('validHoursMsg', { count: durationHours }) },
+                            { icon: 'shield-checkmark-outline', text: t('noCommissionHiddenFees') },
                         ].map(({ icon, text }) => (
                             <View key={icon} style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Ionicons name={icon as any} size={17} color="#16A34A" />
@@ -421,7 +427,7 @@ const CategoryPassModal = ({
                             onPress={onClose}
                             style={{ flex: 1, backgroundColor: '#F1F5F9', borderRadius: 18, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' }}
                         >
-                            <Text style={{ color: '#64748B', fontWeight: '700', fontSize: 14 }}>Cancel</Text>
+                            <Text style={{ color: '#64748B', fontWeight: '700', fontSize: 14 }}>{t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={onConfirm}
@@ -438,7 +444,7 @@ const CategoryPassModal = ({
                                 ) : (
                                     <>
                                         <Ionicons name="card" size={18} color="#fff" />
-                                        <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Pay ₹{price}</Text>
+                                        <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>{t('payAmount', { price: price })}</Text>
                                     </>
                                 )}
                             </LinearGradient>
@@ -451,6 +457,7 @@ const CategoryPassModal = ({
 };
 
 export default function ServiceDetailScreen() {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const user = useAppStore(state => state.user);
     const refreshProfile = useAppStore(state => state.refreshProfile);
@@ -530,16 +537,16 @@ export default function ServiceDetailScreen() {
 
         return new Promise((resolve) => {
             Alert.alert(
-                "Voice Search Access Required",
-                "HINDUSTAAN INNOVATIONS needs speech recognition and microphone permissions to search for services by voice.",
+                t('voiceSearchAccessRequired'),
+                t('voiceSearchPermissionMsg'),
                 [
                     {
-                        text: "Cancel",
+                        text: t('cancel'),
                         style: "cancel",
                         onPress: () => resolve(false)
                     },
                     {
-                        text: "Allow",
+                        text: t('allow'),
                         onPress: async () => {
                             const requestResult = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
                             resolve(requestResult.granted);
@@ -562,7 +569,7 @@ export default function ServiceDetailScreen() {
 
         const permissionGranted = await checkAndRequestVoicePermission();
         if (!permissionGranted) {
-            Alert.alert("Permission Denied", "Microphone access is required to use Voice Search.");
+            Alert.alert(t('permissionDenied'), t('micPermissionRequired'));
             return;
         }
 
@@ -573,7 +580,7 @@ export default function ServiceDetailScreen() {
             });
         } catch (err: any) {
             console.error("Failed to start speech recognition:", err);
-            Alert.alert("Error", "Could not start voice recognition. Please try again.");
+            Alert.alert(t('error'), t('voiceRecognitionError'));
         }
     };
 
@@ -601,7 +608,7 @@ export default function ServiceDetailScreen() {
 
     const handleUnlockContact = async (provider: any) => {
         if (!user?.id) {
-            Alert.alert('Login Required', 'Please login to contact providers.');
+            Alert.alert(t('loginRequired'), t('pleaseLoginContact'));
             return;
         }
 
@@ -673,10 +680,10 @@ export default function ServiceDetailScreen() {
                 setTempProviderForSuccess(providerToUnlock);
                 setShowSuccessModal(true);
             } else {
-                Alert.alert('Payment Cancelled', 'The payment process was not completed.');
+                Alert.alert(t('paymentCancelled'), t('paymentNotCompleted'));
             }
         } catch (err: any) {
-            Alert.alert('Payment Error', err.message);
+            Alert.alert(t('paymentError'), err.message);
         } finally {
             setLoading(false);
             setProviderToUnlock(null);
@@ -686,7 +693,7 @@ export default function ServiceDetailScreen() {
     // ── Category pass: one payment → all providers in category unlocked ──────
     const handleBuyCategoryPass = async () => {
         if (!user?.id) {
-            Alert.alert('Login Required', 'Please login to continue.');
+            Alert.alert(t('loginRequired'), t('pleaseLoginContinue'));
             return;
         }
         setShowCategoryPassModal(false);
@@ -741,15 +748,15 @@ export default function ServiceDetailScreen() {
                 }
 
                 Alert.alert(
-                    '🎉 All Contacts Unlocked!',
-                    `You now have access to all ${providers.length} ${name} professionals for the next ${durationHours} hours.`,
-                    [{ text: 'Great!', style: 'default' }]
+                    t('unlockSuccessTitle'),
+                    t('unlockSuccessMsg', { count: providers.length, category: t(name), time: durationHours }),
+                    [{ text: t('ok'), style: 'default' }]
                 );
             } else {
-                Alert.alert('Payment Cancelled', 'The payment was not completed.');
+                Alert.alert(t('paymentCancelled'), t('paymentNotCompleted'));
             }
         } catch (err: any) {
-            Alert.alert('Payment Error', err.message);
+            Alert.alert(t('paymentError'), err.message);
         } finally {
             setCategoryPassLoading(false);
         }
@@ -798,11 +805,12 @@ export default function ServiceDetailScreen() {
                 >
                     <SafeIcon name={(icon as any) || 'lightning-bolt'} size={44} color="white" />
                     <Text
-                        className="text-5xl font-bold text-white ml-3 flex-1"
+                        style={{ fontSize: adjustHindiFont(t(name), 48, 1.1) }}
+                        className="font-bold text-white ml-3 flex-1"
                         numberOfLines={2}
                         adjustsFontSizeToFit
                     >
-                        {name}
+                        {t(name)}
                     </Text>
                 </View>
             </View>
@@ -821,7 +829,7 @@ export default function ServiceDetailScreen() {
                 >
                     <Ionicons name="search-outline" size={20} color="#6d737eff" />
                     <TextInput
-                        placeholder={isListening ? "Listening..." : "Search your required services"}
+                        placeholder={isListening ? t('listening') : t('searchRequiredServices')}
                         className="flex-1 ml-2 text-sm text-gray-700"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -848,8 +856,8 @@ export default function ServiceDetailScreen() {
                         {/* Combined list of options */}
                         {(() => {
                             const allOptions = [
-                                { id: 'all', name: null, label: 'All' },
-                                ...subCategories.map(s => ({ ...s, label: s.name }))
+                                { id: 'all', name: null, label: t('all') },
+                                ...subCategories.map(s => ({ ...s, label: t(s.name) }))
                             ];
 
                             // Show only 4 items if not expanded
@@ -891,7 +899,8 @@ export default function ServiceDetailScreen() {
                                                 />
                                                 <Text
                                                     numberOfLines={1}
-                                                    className={`ml-2 text-sm font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-600'
+                                                    style={{ fontSize: adjustHindiFont(item.label, 14, 1.15) }}
+                                                    className={`ml-2 font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-600'
                                                         }`}
                                                 >
                                                     {item.label}
@@ -916,7 +925,7 @@ export default function ServiceDetailScreen() {
                         >
                             <View className="flex-row items-center">
                                 <Text className="text-slate-500 font-bold text-xs uppercase tracking-widest">
-                                    {isExpanded ? 'Show Less' : `View More (${subCategories.length - 3} More)`}
+                                    {isExpanded ? t('showLess') : t('viewMore', { count: subCategories.length - 3 })}
                                 </Text>
                                 <Ionicons
                                     name={isExpanded ? "chevron-up" : "chevron-down"}
@@ -932,10 +941,10 @@ export default function ServiceDetailScreen() {
 
             {/* Available Providers header + Category Pass banner */}
             <View className="px-5 mb-3 flex-row items-center justify-between">
-                <Text className="text-xl font-bold text-gray-900">Available Providers</Text>
+                <Text className="text-xl font-bold text-gray-900">{t('availableProviders')}</Text>
                 {providers.length > 0 && (
                     <View style={{ backgroundColor: `${color}20`, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 3 }}>
-                        <Text style={{ color: color || '#3B82F6', fontSize: 11, fontWeight: '800' }}>{providers.length} near you</Text>
+                        <Text style={{ color: color || '#3B82F6', fontSize: 11, fontWeight: '800' }}>{t('nearYou', { count: providers.length })}</Text>
                     </View>
                 )}
             </View>
@@ -958,15 +967,15 @@ export default function ServiceDetailScreen() {
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={{ color: '#fff', fontSize: 14, fontWeight: '900', marginBottom: 2 }}>
-                                    Unlock All {name} Contacts
+                                    {t('unlockAllContacts', { category: t(name) })}
                                 </Text>
                                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '600' }}>
-                                    {providers.length} professionals • Pay just ₹{pricingConfig?.unlock_price || 49}
+                                    {t('prosCountPay', { count: providers.length, price: pricingConfig?.unlock_price || 49 })}
                                 </Text>
                             </View>
                         </View>
                         <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7, marginLeft: 8 }}>
-                            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>Unlock All</Text>
+                            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '800' }}>{t('unlockAll')}</Text>
                         </View>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -984,7 +993,7 @@ export default function ServiceDetailScreen() {
         }
         return (
             <View className="items-center justify-center py-10 px-5">
-                <Text className="text-gray-400 font-medium text-center">No providers found nearby.</Text>
+                <Text className="text-gray-400 font-medium text-center">{t('noProvidersFound')}</Text>
             </View>
         );
     };
@@ -1002,7 +1011,7 @@ export default function ServiceDetailScreen() {
                     color={colorScheme === 'dark' ? '#ffffff' : '#000000'}
                     onPress={() => router.back()}
                 />
-                <Text className="text-xl font-bold text-gray-900">Explore {name}</Text>
+                <Text className="text-xl font-bold text-gray-900">{t('exploreCategory', { category: t(name) })}</Text>
             </View>
 
             {/* Category card + search + tags + Available Providers + cards — all scroll together */}
@@ -1054,18 +1063,18 @@ export default function ServiceDetailScreen() {
                             </View>
                             <View className="flex-row items-center mb-3">
                                 <Feather name="briefcase" size={14} color="white" />
-                                <Text className="text-white text-xs ml-1">{provider.experience_years || 0} years experience</Text>
+                                <Text className="text-white text-xs ml-1">{t('yearsExperience', { count: provider.experience_years || 0 })}</Text>
                             </View>
 
                             {/* Skills Tags */}
                             <View className="flex-row flex-wrap">
                                 <View className="px-2 py-1 rounded-full mr-2 mb-2 border border-white/50 bg-white/10">
-                                    <Text className="text-[10px] text-white font-semibold">{name}</Text>
+                                    <Text className="text-[10px] text-white font-semibold">{t(name)}</Text>
                                 </View>
                                 {provider.is_premium && (
                                     <View style={{ backgroundColor: '#FBBF24' }} className="px-2 py-1 rounded-full mr-2 mb-2 flex-row items-center">
                                         <Ionicons name="sparkles" size={10} color="#78350F" />
-                                        <Text style={{ color: '#78350F', fontSize: 10, fontWeight: 'bold', marginLeft: 2 }}>Top Verified</Text>
+                                        <Text style={{ color: '#78350F', fontSize: 10, fontWeight: 'bold', marginLeft: 2 }}>{t('topVerified')}</Text>
                                     </View>
                                 )}
                             </View>
@@ -1125,7 +1134,7 @@ export default function ServiceDetailScreen() {
                 onConfirm={handleConfirmUnlock}
                 themeColor={color || '#3B82F6'}
                 categoryName={name || 'Service Provider'}
-                cityName={cityConfig?.name || 'Raipur'}
+                cityName={t(cityConfig?.name || 'Raipur')}
                 price={pricingConfig?.unlock_price || 49}
                 durationHours={pricingConfig?.unlock_duration_hours || 5}
             />

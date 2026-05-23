@@ -104,6 +104,17 @@ export default function AdminCategoriesConsole() {
                 ]);
             if (error) throw error;
 
+            // Proactively register/upsert translation key for the category name
+            try {
+                await useAppStore.getState().upsertTranslation(
+                    newCategoryName.trim(),
+                    newCategoryName.trim(),
+                    newCategoryName.trim()
+                );
+            } catch (transErr) {
+                console.warn('[CategoriesConsole] Failed to register category translation key:', transErr);
+            }
+
             Alert.alert("Success", "Category created successfully!");
             setNewCategoryName('');
             setNewCategoryIcon('tool');
@@ -136,6 +147,17 @@ export default function AdminCategoriesConsole() {
                     }
                 ]);
             if (error) throw error;
+
+            // Proactively register/upsert translation key for the tag name
+            try {
+                await useAppStore.getState().upsertTranslation(
+                    newTagName.trim(),
+                    newTagName.trim(),
+                    newTagName.trim()
+                );
+            } catch (transErr) {
+                console.warn('[CategoriesConsole] Failed to register tag translation key:', transErr);
+            }
 
             setNewTagName('');
             await fetchCategoriesAndTags();

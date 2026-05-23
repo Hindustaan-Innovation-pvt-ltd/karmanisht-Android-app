@@ -10,12 +10,14 @@ import { useRouter } from 'expo-router';
 import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
 import { useAppStore } from '@/lib/store';
+import { useTranslation } from 'react-i18next';
 
 const shadowSm = Platform.OS === 'web'
     ? { boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
     : { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 };
 
 export default function AdminDashboard() {
+    const { t } = useTranslation();
     const router = useRouter();
     const { signOut } = useAppStore();
     const { isDark } = useTheme();
@@ -136,8 +138,8 @@ export default function AdminDashboard() {
                         <Ionicons name="chevron-back" size={24} color="#6366F1" />
                     </TouchableOpacity>
                     <View>
-                        <Text className={`text-2xl font-black tracking-tight ${textMainClass}`}>Console</Text>
-                        <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Global Admin Dashboard</Text>
+                        <Text className={`text-2xl font-black tracking-tight ${textMainClass}`}>{t('adminConsole', 'Console')}</Text>
+                        <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{t('adminGlobalDashboard', 'Global Admin Dashboard')}</Text>
                     </View>
                 </View>
                 <View className="flex-row items-center gap-2">
@@ -150,12 +152,12 @@ export default function AdminDashboard() {
                     <TouchableOpacity
                         onPress={async () => {
                             Alert.alert(
-                                "Sign Out",
-                                "Are you sure you want to sign out?",
+                                t('signOut', 'Sign Out'),
+                                t('signOutConfirm', 'Are you sure you want to sign out?'),
                                 [
-                                    { text: "Cancel", style: "cancel" },
+                                    { text: t('cancel', 'Cancel'), style: "cancel" },
                                     {
-                                        text: "Sign Out",
+                                        text: t('signOut', 'Sign Out'),
                                         style: "destructive",
                                         onPress: async () => {
                                             await signOut();
@@ -175,7 +177,7 @@ export default function AdminDashboard() {
             {loading ? (
                 <View className="flex-1 items-center justify-center">
                     <ActivityIndicator size="large" color="#6366F1" />
-                    <Text className="text-xs font-bold text-slate-500 mt-4 tracking-widest uppercase">Calculating Metrics...</Text>
+                    <Text className="text-xs font-bold text-slate-500 mt-4 tracking-widest uppercase">{t('adminCalculatingMetrics', 'Calculating Metrics...')}</Text>
                 </View>
             ) : (
                 <ScrollView
@@ -190,10 +192,10 @@ export default function AdminDashboard() {
                         <View className="absolute right-0 bottom-0 opacity-10">
                             <Feather name="trending-up" size={150} color="white" />
                         </View>
-                        <Text className="text-white text-xs font-black uppercase tracking-widest opacity-80">Welcome back</Text>
-                        <Text className="text-white text-2xl font-black mt-1">Platform Telemetry</Text>
+                        <Text className="text-white text-xs font-black uppercase tracking-widest opacity-80">{t('adminWelcomeBack', 'Welcome back')}</Text>
+                        <Text className="text-white text-2xl font-black mt-1">{t('adminPlatformTelemetry', 'Platform Telemetry')}</Text>
                         <Text className="text-indigo-100 text-xs font-medium mt-1.5 leading-relaxed">
-                            Monitor user compliance, configure skill classes, and audit removal processes globally.
+                            {t('adminDashboardDesc', 'Monitor user compliance, configure skill classes, and audit removal processes globally.')}
                         </Text>
                     </View>
 
@@ -205,12 +207,12 @@ export default function AdminDashboard() {
                                 <View className="w-8 h-8 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}>
                                     <Feather name="users" size={16} color="#6366F1" />
                                 </View>
-                                <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Total</Text>
+                                <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{t('total', 'Total')}</Text>
                             </View>
-                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Consumers</Text>
+                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('adminConsumers', 'Consumers')}</Text>
                             <Text className={`text-2xl font-black mt-0.5 ${textMainClass}`}>{stats.consumersCount}</Text>
                             <View className="mt-3 flex-row items-center justify-between">
-                                <Text className="text-[9px] font-bold text-slate-400">Active: {stats.activeConsumers}</Text>
+                                <Text className="text-[9px] font-bold text-slate-400">{t('active', 'Active')}: {stats.activeConsumers}</Text>
                                 <Text className="text-[9px] font-black text-green-500">{activeConsumersPercent}%</Text>
                             </View>
                             <View className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
@@ -224,12 +226,12 @@ export default function AdminDashboard() {
                                 <View className="w-8 h-8 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(14, 165, 233, 0.1)' }}>
                                     <Feather name="tool" size={16} color="#0EA5E9" />
                                 </View>
-                                <Text className="text-[10px] font-black text-sky-500 uppercase tracking-widest">Total</Text>
+                                <Text className="text-[10px] font-black text-sky-500 uppercase tracking-widest">{t('total', 'Total')}</Text>
                             </View>
-                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Workers</Text>
+                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('adminWorkers', 'Workers')}</Text>
                             <Text className={`text-2xl font-black mt-0.5 ${textMainClass}`}>{stats.workersCount}</Text>
                             <View className="mt-3 flex-row items-center justify-between">
-                                <Text className="text-[9px] font-bold text-slate-400">Active: {stats.activeWorkers}</Text>
+                                <Text className="text-[9px] font-bold text-slate-400">{t('active', 'Active')}: {stats.activeWorkers}</Text>
                                 <Text className="text-[9px] font-black text-sky-500">{activeWorkersPercent}%</Text>
                             </View>
                             <View className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
@@ -243,12 +245,12 @@ export default function AdminDashboard() {
                                 <View className="w-8 h-8 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(244, 63, 94, 0.1)' }}>
                                     <Feather name="trash-2" size={16} color="#F43F5E" />
                                 </View>
-                                <Text className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Pending</Text>
+                                <Text className="text-[10px] font-black text-rose-500 uppercase tracking-widest">{t('adminPending', 'Pending')}</Text>
                             </View>
-                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deletions</Text>
+                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('adminDeletions', 'Deletions')}</Text>
                             <Text className={`text-2xl font-black mt-0.5 ${textMainClass}`}>{stats.deletionRequestsPending}</Text>
                             <View className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-                                <Text className="text-[9px] font-bold text-slate-400 uppercase">Awaiting Action</Text>
+                                <Text className="text-[9px] font-bold text-slate-400 uppercase">{t('adminAwaitingAction', 'Awaiting Action')}</Text>
                             </View>
                         </View>
 
@@ -258,25 +260,25 @@ export default function AdminDashboard() {
                                 <View className="w-8 h-8 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)' }}>
                                     <Feather name="grid" size={16} color="#A855F7" />
                                 </View>
-                                <Text className="text-[10px] font-black text-purple-500 uppercase tracking-widest">Taxonomy</Text>
+                                <Text className="text-[10px] font-black text-purple-500 uppercase tracking-widest">{t('adminTaxonomy', 'Taxonomy')}</Text>
                             </View>
-                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Categories / Tags</Text>
+                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('adminCategoriesTags', 'Categories / Tags')}</Text>
                             <Text className={`text-2xl font-black mt-0.5 ${textMainClass}`}>{stats.categoriesCount} / {stats.tagsCount}</Text>
                             <View className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-                                <Text className="text-[9px] font-bold text-slate-400 uppercase">Skill definitions</Text>
+                                <Text className="text-[9px] font-bold text-slate-400 uppercase">{t('adminSkillDefinitions', 'Skill definitions')}</Text>
                             </View>
                         </View>
                     </View>
 
                     {/* Operational Compliance Ratios */}
                     <View className={`p-5 rounded-[24px] mb-5 border ${cardBgClass}`} style={shadowSm}>
-                        <Text className={`text-sm font-black mb-4 uppercase tracking-wider ${textMainClass}`}>Worker Verification Compliance</Text>
+                        <Text className={`text-sm font-black mb-4 uppercase tracking-wider ${textMainClass}`}>{t('adminVerificationCompliance', 'Worker Verification Compliance')}</Text>
 
                         <View className="gap-3.5">
                             {/* Platform Verification Badge Ratio */}
                             <View>
                                 <View className="flex-row justify-between items-center mb-1">
-                                    <Text className="text-[11px] font-semibold text-slate-400">Verified Badge Ratio</Text>
+                                    <Text className="text-[11px] font-semibold text-slate-400">{t('adminVerifiedBadgeRatio', 'Verified Badge Ratio')}</Text>
                                     <Text className="text-xs font-bold text-indigo-500">{stats.verifiedWorkers} / {stats.workersCount} ({verifiedWorkersPercent}%)</Text>
                                 </View>
                                 <View className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -287,7 +289,7 @@ export default function AdminDashboard() {
                             {/* KYC Approval Ratio */}
                             <View>
                                 <View className="flex-row justify-between items-center mb-1">
-                                    <Text className="text-[11px] font-semibold text-slate-400">KYC Compliant Ratio</Text>
+                                    <Text className="text-[11px] font-semibold text-slate-400">{t('adminKycCompliantRatio', 'KYC Compliant Ratio')}</Text>
                                     <Text className="text-xs font-bold text-sky-500">{stats.kycWorkers} / {stats.workersCount} ({kycWorkersPercent}%)</Text>
                                 </View>
                                 <View className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -298,7 +300,7 @@ export default function AdminDashboard() {
                     </View>
 
                     {/* Quick Navigation Panel */}
-                    <Text className={`text-xs font-black uppercase tracking-widest text-slate-400 mb-3 ml-1`}>Console Quick Links</Text>
+                    <Text className={`text-xs font-black uppercase tracking-widest text-slate-400 mb-3 ml-1`}>{t('adminConsoleQuickLinks', 'Console Quick Links')}</Text>
                     <View className="gap-2.5 mb-10">
                         {/* Users Accounts Navigation */}
                         <TouchableOpacity
@@ -310,9 +312,9 @@ export default function AdminDashboard() {
                                 <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-indigo-500/10">
                                     <Feather name="users" size={18} color="#6366F1" />
                                 </View>
-                                <View>
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>User Accounts Console</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400">Manage, verify, suspension, and search consumers/workers</Text>
+                                <View className="flex-1 mr-2">
+                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminUserAccountsTitle', 'User Accounts Console')}</Text>
+                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminUserAccountsDesc', 'Manage, verify, suspension, and search consumers/workers')}</Text>
                                 </View>
                             </View>
                             <Feather name="chevron-right" size={18} color="#94A3B8" />
@@ -328,9 +330,27 @@ export default function AdminDashboard() {
                                 <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-purple-500/10">
                                     <Feather name="grid" size={18} color="#A855F7" />
                                 </View>
-                                <View>
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>Service Categories & Tags</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400">Configure visual category items and sub specialty taxonomies</Text>
+                                <View className="flex-1 mr-2">
+                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminCategoriesTagsTitle', 'Service Categories & Tags')}</Text>
+                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminCategoriesTagsDesc', 'Configure visual category items and sub specialty taxonomies')}</Text>
+                                </View>
+                            </View>
+                            <Feather name="chevron-right" size={18} color="#94A3B8" />
+                        </TouchableOpacity>
+
+                        {/* Languages Translations Console */}
+                        <TouchableOpacity
+                            onPress={() => router.push('/admin/translations')}
+                            className={`p-4 rounded-2xl flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
+                            style={shadowSm}
+                        >
+                            <View className="flex-row items-center">
+                                <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-sky-500/10">
+                                    <Feather name="globe" size={18} color="#0EA5E9" />
+                                </View>
+                                <View className="flex-1 mr-2">
+                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminLanguageConsoleTitle', 'Languages Console')}</Text>
+                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminLanguageConsoleDesc', 'Manage dynamic and static language dictionaries and translations')}</Text>
                                 </View>
                             </View>
                             <Feather name="chevron-right" size={18} color="#94A3B8" />
@@ -346,9 +366,9 @@ export default function AdminDashboard() {
                                 <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-green-500/10">
                                     <Feather name="shield" size={18} color="#22C55E" />
                                 </View>
-                                <View>
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>Administrative Audit Trails</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400">Review log logs and compliance records ({stats.auditLogsCount} events)</Text>
+                                <View className="flex-1 mr-2">
+                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminAuditTrailsTitle', 'Administrative Audit Trails')}</Text>
+                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminAuditTrailsDesc', 'Review audit logs and compliance records')}</Text>
                                 </View>
                             </View>
                             <Feather name="chevron-right" size={18} color="#94A3B8" />

@@ -6,8 +6,10 @@ import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
 import { useAppStore } from '@/lib/store';
 import { getOnboardingRoute } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminLayout() {
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const router = useRouter();
   const user = useAppStore(state => state.user);
@@ -71,7 +73,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: t('adminDashboardTab', 'Dashboard'),
           tabBarIcon: ({ color, focused }) => (
             <Feather name="pie-chart" size={22} color={color} />
           ),
@@ -80,7 +82,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="accounts"
         options={{
-          title: 'Accounts',
+          title: t('adminAccountsTab', 'Accounts'),
           tabBarIcon: ({ color, focused }) => (
             <Feather name="users" size={22} color={color} />
           ),
@@ -89,7 +91,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="audit"
         options={{
-          title: 'Audit Logs',
+          title: t('adminAuditTab', 'Audit Logs'),
           tabBarIcon: ({ color, focused }) => (
             <Feather name="shield" size={22} color={color} />
           ),
@@ -98,7 +100,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="requests"
         options={{
-          title: 'Requests',
+          title: t('adminRequestsTab', 'Requests'),
           tabBarIcon: ({ color, focused }) => (
             <Feather name="alert-triangle" size={22} color={color} />
           ),
@@ -107,9 +109,18 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="categories"
         options={{
-          title: 'Categories',
+          title: t('adminCategoriesTab', 'Categories'),
           tabBarIcon: ({ color, focused }) => (
             <Feather name="grid" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="translations"
+        options={{
+          title: t('adminLanguagesTab', 'Languages'),
+          tabBarIcon: ({ color, focused }) => (
+            <Feather name="globe" size={22} color={color} />
           ),
         }}
       />

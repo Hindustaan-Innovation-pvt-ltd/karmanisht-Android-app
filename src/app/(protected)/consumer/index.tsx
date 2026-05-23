@@ -16,9 +16,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScalePressable from '@/components/scale-pressable';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
+import { adjustHindiFont } from '@/lib/utils';
 
 
 export default function ConsumerHome() {
+    const { t } = useTranslation();
     const user = useAppStore(state => state.user);
     const unlockedProviders = useAppStore(state => state.unlockedProviders);
     const { data: categories = [] } = useCategories();
@@ -86,16 +89,16 @@ export default function ConsumerHome() {
 
         return new Promise((resolve) => {
             Alert.alert(
-                "Voice Search Access Required",
-                "HINDUSTAAN INNOVATIONS needs speech recognition and microphone permissions to search for services by voice.",
+                t('voiceSearchAccessRequired'),
+                t('voiceSearchPermissionMsg'),
                 [
                     {
-                        text: "Cancel",
+                        text: t('cancel'),
                         style: "cancel",
                         onPress: () => resolve(false)
                     },
                     {
-                        text: "Allow",
+                        text: t('allow'),
                         onPress: async () => {
                             const requestResult = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
                             resolve(requestResult.granted);
@@ -118,7 +121,7 @@ export default function ConsumerHome() {
 
         const permissionGranted = await checkAndRequestVoicePermission();
         if (!permissionGranted) {
-            Alert.alert("Permission Denied", "Microphone access is required to use Voice Search.");
+            Alert.alert(t('permissionDenied'), t('micPermissionRequired'));
             return;
         }
 
@@ -129,7 +132,7 @@ export default function ConsumerHome() {
             });
         } catch (err: any) {
             console.error("Failed to start speech recognition:", err);
-            Alert.alert("Error", "Could not start voice recognition. Please try again.");
+            Alert.alert(t('error'), t('voiceRecognitionError'));
         }
     };
 
@@ -177,7 +180,7 @@ export default function ConsumerHome() {
                     if (name && city && name !== city) {
                         setReadableAddress(`${name}, ${city}`);
                     } else {
-                        setReadableAddress(name || city || "Current Location");
+                        setReadableAddress(name || city || t('currentLocation'));
                     }
                 }
             }).catch(err => {
@@ -187,7 +190,7 @@ export default function ConsumerHome() {
     }, [userLocation]);
 
     // Priority: saved DB address > profile location > GPS address > fallback
-    const locationName = savedAddressName || user.location || readableAddress || (userLocation ? "Locating..." : "Shankar Nagar, Raipur");
+    const locationName = savedAddressName || user.location || readableAddress || (userLocation ? t('locating') : "Shankar Nagar, Raipur");
 
     const renderHeader = () => (
         <View className="w-full">
@@ -261,7 +264,7 @@ export default function ConsumerHome() {
 
             {/* Your Contacts Section */}
             <View className="py-5 px-5">
-                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">Your Contacts</Text>
+                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">{t('yourContacts')}</Text>
                 <FlatList
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -277,7 +280,7 @@ export default function ConsumerHome() {
                             className="w-44 h-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[15px] items-center justify-center ml-2 shadow-sm"
                         >
                             <Ionicons name="add" size={40} color="#D1D5DB" />
-                            <Text className="text-sm text-gray-400 dark:text-slate-500 font-medium mt-2">Find more</Text>
+                            <Text className="text-sm text-gray-400 dark:text-slate-550 font-medium mt-2">{t('findMore')}</Text>
                         </TouchableOpacity>
                     }
                 />
@@ -287,7 +290,7 @@ export default function ConsumerHome() {
 
             {/* Explore Services Header */}
             <View className="mt-8 px-5 mb-6 flex-row items-center justify-between h-12" onTouchStart={(e) => e.stopPropagation()}>
-                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">Explore Services</Text>
+                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">{t('exploreServices')}</Text>
                 <Modal
                     visible={isSearchToggle}
                     transparent={false}
@@ -316,7 +319,7 @@ export default function ConsumerHome() {
                                 <Ionicons name="search" size={16} color="#94A3B8" />
                                 <TextInput
                                     className="ml-2 flex-1 text-slate-900 dark:text-white font-semibold text-sm p-0 m-0"
-                                    placeholder={isListening ? "Listening..." : "Search services..."}
+                                    placeholder={isListening ? t('listening') : t('searchServices')}
                                     placeholderTextColor="#94A3B8"
                                     value={searchQuery}
                                     onChangeText={setSearchQuery}
@@ -369,8 +372,13 @@ export default function ConsumerHome() {
                                                 <SafeIcon name={icon} size={20} color="white" />
                                             </View>
                                             <View className="ml-4 flex-1">
-                                                <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{item.name}</Text>
-                                                <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5">Explore active service providers</Text>
+                                                <Text 
+                                                    style={{ fontSize: adjustHindiFont(t(item.name), 16, 1.15) }}
+                                                    className="font-bold text-slate-900 dark:text-slate-100"
+                                                >
+                                                    {t(item.name)}
+                                                </Text>
+                                                <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5">{t('exploreActiveProviders')}</Text>
                                             </View>
                                             <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#CBD5E1'} />
                                         </TouchableOpacity>
@@ -382,20 +390,20 @@ export default function ConsumerHome() {
                                     <View className="items-center justify-center py-16 px-5">
                                         <Ionicons name="search-outline" size={48} color="#EF4444" className="mb-4" />
                                         <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-lg">
-                                            No services found
+                                            {t('noServicesFound')}
                                         </Text>
-                                        <Text className="text-slate-400 dark:text-slate-500 text-sm mt-1.5 text-center px-4">
-                                            Try searching for a different keyword or category.
+                                        <Text className="text-slate-400 dark:text-slate-550 text-sm mt-1.5 text-center px-4">
+                                            {t('trySearchingDifferent')}
                                         </Text>
                                     </View>
                                 ) : (
                                     <View className="items-center justify-center py-16 px-5">
                                         <Ionicons name="sparkles-outline" size={44} color="#3B82F6" className="mb-4" />
                                         <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-base">
-                                            Search Hindustan Services
+                                            {t('searchHindustanServices')}
                                         </Text>
-                                        <Text className="text-slate-400 dark:text-slate-500 text-xs mt-1.5 text-center">
-                                            Instantly discover highly rated local pros
+                                        <Text className="text-slate-400 dark:text-slate-550 text-xs mt-1.5 text-center">
+                                            {t('discoverPros')}
                                         </Text>
                                     </View>
                                 )
@@ -411,7 +419,7 @@ export default function ConsumerHome() {
                     className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
                 >
                     <Ionicons name="search" size={18} color="#9CA3AF" />
-                    <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+                    <Text className="ml-2 text-gray-400 font-medium text-sm">{t('search')}</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -460,10 +468,10 @@ export default function ConsumerHome() {
                         <View className="items-center justify-center py-10 px-5">
                             <Ionicons name="search-outline" size={48} color="#9CA3AF" />
                             <Text className="text-gray-900 dark:text-slate-100 font-bold mt-4 text-center text-lg">
-                                No services found
+                                {t('noServicesFound')}
                             </Text>
                             <Text className="text-gray-500 dark:text-slate-400 text-sm mt-1 text-center">
-                                Try searching for another keyword or category.
+                                {t('trySearchingDifferent')}
                             </Text>
                         </View>
                     ) : null
@@ -483,6 +491,7 @@ export default function ConsumerHome() {
 }
 
 const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
+    const { t } = useTranslation();
     const router = useRouter();
     const avatar =
         provider.profile_image ||
@@ -585,7 +594,7 @@ const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
                                 </Text>
                                 {provider.total_jobs_completed > 0 && (
                                     <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, marginLeft: 4 }}>
-                                        · {provider.total_jobs_completed} jobs
+                                        · {t('jobsCount', { count: provider.total_jobs_completed })}
                                     </Text>
                                 )}
                             </View>
@@ -666,6 +675,7 @@ const getVibrantColor = (service: any) => {
 };
 
 const ServiceCard = ({ service, index }: { service: any; index: number }) => {
+    const { t } = useTranslation();
     const router = useRouter();
     // Default icons/colors if missing from DB
     const icon = (service.icon as any) || 'lightning-bolt';
@@ -687,8 +697,11 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
                 style={{ backgroundColor: color }}
             >
                 <SafeIcon name={icon} size={36} color="white" />
-                <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
-                    {service.name}
+                <Text 
+                    style={{ fontSize: adjustHindiFont(t(service.name), 10, 1.15) }}
+                    className="text-white font-black mt-2 text-center px-1 uppercase tracking-tighter"
+                >
+                    {t(service.name)}
                 </Text>
             </ScalePressable>
         </Animated.View>

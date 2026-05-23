@@ -10,6 +10,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 
 const VIBRANT_COLORS = [
     '#EF4444', // Red
@@ -41,6 +42,7 @@ const getVibrantColor = (service: any) => {
 };
 
 export default function ServicesScreen() {
+    const { t } = useTranslation();
     const categories = useAppStore(state => state.categories);
     const isCategoriesLoading = useAppStore(state => state.isCategoriesLoading);
     const fetchCategories = useAppStore(state => state.fetchCategories);
@@ -88,16 +90,16 @@ export default function ServicesScreen() {
 
         return new Promise((resolve) => {
             Alert.alert(
-                "Voice Search Access Required",
-                "HINDUSTAAN INNOVATIONS needs speech recognition and microphone permissions to search for services by voice.",
+                t('voiceSearchAccessRequired'),
+                t('voiceSearchPermissionMsg'),
                 [
                     {
-                        text: "Cancel",
+                        text: t('cancel'),
                         style: "cancel",
                         onPress: () => resolve(false)
                     },
                     {
-                        text: "Allow",
+                        text: t('allow'),
                         onPress: async () => {
                             const requestResult = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
                             resolve(requestResult.granted);
@@ -120,7 +122,7 @@ export default function ServicesScreen() {
 
         const permissionGranted = await checkAndRequestVoicePermission();
         if (!permissionGranted) {
-            Alert.alert("Permission Denied", "Microphone access is required to use Voice Search.");
+            Alert.alert(t('permissionDenied'), t('micPermissionRequired'));
             return;
         }
 
@@ -131,7 +133,7 @@ export default function ServicesScreen() {
             });
         } catch (err: any) {
             console.error("Failed to start speech recognition:", err);
-            Alert.alert("Error", "Could not start voice recognition. Please try again.");
+            Alert.alert(t('error'), t('voiceRecognitionError'));
         }
     };
 
@@ -148,7 +150,7 @@ export default function ServicesScreen() {
 
     const renderHeader = () => (
         <View className="px-5 flex-row items-center justify-between mb-8 min-h-12" onTouchStart={(e) => e.stopPropagation()}>
-            <Text className="text-3xl font-bold text-gray-900 dark:text-slate-100 flex-1 mr-2">Explore Services</Text>
+            <Text className="text-3xl font-bold text-gray-900 dark:text-slate-100 flex-1 mr-2">{t('exploreServices')}</Text>
             <Modal
                 visible={isSearchToggle}
                 transparent={false}
@@ -177,7 +179,7 @@ export default function ServicesScreen() {
                             <Ionicons name="search" size={16} color="#94A3B8" />
                             <TextInput
                                 className="ml-2 flex-1 text-slate-900 dark:text-white font-semibold text-sm p-0 m-0"
-                                placeholder={isListening ? "Listening..." : "Search services..."}
+                                placeholder={isListening ? t('listening') : t('searchServices')}
                                 placeholderTextColor="#94A3B8"
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
@@ -230,8 +232,8 @@ export default function ServicesScreen() {
                                             <SafeIcon name={icon} size={20} color="white" />
                                         </View>
                                         <View className="ml-4 flex-1">
-                                            <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{item.name}</Text>
-                                            <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5">Explore active service providers</Text>
+                                            <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{t(item.name)}</Text>
+                                            <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5">{t('exploreActiveProviders')}</Text>
                                         </View>
                                         <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#CBD5E1'} />
                                     </TouchableOpacity>
@@ -243,20 +245,20 @@ export default function ServicesScreen() {
                                 <View className="items-center justify-center py-16 px-5">
                                     <Ionicons name="search-outline" size={48} color="#EF4444" className="mb-4" />
                                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-lg">
-                                        No services found
+                                        {t('noServicesFound')}
                                     </Text>
-                                    <Text className="text-slate-400 dark:text-slate-500 text-sm mt-1.5 text-center px-4">
-                                        Try searching for a different keyword or category.
+                                    <Text className="text-slate-400 dark:text-slate-550 text-sm mt-1.5 text-center px-4">
+                                        {t('trySearchingDifferent')}
                                     </Text>
                                 </View>
                             ) : (
                                 <View className="items-center justify-center py-16 px-5">
                                     <Ionicons name="sparkles-outline" size={44} color="#3B82F6" className="mb-4" />
                                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-base">
-                                        Search Hindustan Services
+                                        {t('searchHindustanServices')}
                                     </Text>
-                                    <Text className="text-slate-400 dark:text-slate-500 text-xs mt-1.5 text-center">
-                                        Instantly discover highly rated local pros
+                                    <Text className="text-slate-400 dark:text-slate-550 text-xs mt-1.5 text-center">
+                                        {t('discoverPros')}
                                     </Text>
                                 </View>
                             )
@@ -272,7 +274,7 @@ export default function ServicesScreen() {
                 className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
             >
                 <Ionicons name="search" size={18} color="#9CA3AF" />
-                <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+                <Text className="ml-2 text-gray-400 font-medium text-sm">{t('search')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -318,18 +320,18 @@ export default function ServicesScreen() {
                     isCategoriesLoading ? (
                         <View className="items-center justify-center py-16 px-5">
                             <ActivityIndicator size="large" color="#6366F1" />
-                            <Text className="text-slate-400 dark:text-slate-500 text-sm mt-4 text-center font-medium">
-                                Loading services...
+                            <Text className="text-slate-400 dark:text-slate-550 text-sm mt-4 text-center font-medium">
+                                {t('loadingServices')}
                             </Text>
                         </View>
                     ) : searchQuery.length > 0 ? (
                         <View className="items-center justify-center py-10 px-5">
                             <Ionicons name="search-outline" size={48} color="#9CA3AF" />
                             <Text className="text-gray-900 dark:text-slate-100 font-bold mt-4 text-center text-lg">
-                                No services found
+                                {t('noServicesFound')}
                             </Text>
                             <Text className="text-gray-500 dark:text-slate-400 text-sm mt-1 text-center">
-                                Try searching for another keyword or category.
+                                {t('trySearchingDifferent')}
                             </Text>
                         </View>
                     ) : null
@@ -368,7 +370,7 @@ export default function ServicesScreen() {
                             >
                                 <SafeIcon name={(service.icon as any) || 'lightning-bolt'} size={40} color="white" />
                                 <Text className="text-[10px] text-white font-black mt-2 text-center px-1 uppercase tracking-tighter">
-                                    {service.name}
+                                    {t(service.name)}
                                 </Text>
                             </TouchableOpacity>
                         </Animated.View>

@@ -3,21 +3,23 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-
-const CONTACT_OPTIONS = [
-    { id: 'call', title: 'Call Support', subtitle: '9 AM - 6 PM', icon: 'phone', library: Feather, color: '#3B82F6' },
-    { id: 'whatsapp', title: 'WhatsApp Us', subtitle: 'Instant Reply', icon: 'whatsapp', library: MaterialCommunityIcons, color: '#22C55E' },
-    { id: 'email', title: 'Email Us', subtitle: 'Response in 24h', icon: 'mail', library: Feather, color: '#EF4444' },
-];
-
-const FAQS = [
-    { question: 'How do I book a service?', answer: 'Go to the services tab, select your category, and choose a provider.' },
-    { question: 'What are the payment methods?', answer: 'We support UPI, Credit/Debit cards, and Cash after service.' },
-    { question: 'Can I cancel my booking?', answer: 'Yes, you can cancel up to 2 hours before the scheduled time.' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function HelpSupportScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
+
+    const CONTACT_OPTIONS = [
+        { id: 'call', titleKey: 'callSupport', subtitleKey: 'callSupportHours', icon: 'phone', library: Feather, color: '#3B82F6' },
+        { id: 'whatsapp', titleKey: 'whatsappUs', subtitleKey: 'instantReply', icon: 'whatsapp', library: MaterialCommunityIcons, color: '#22C55E' },
+        { id: 'email', titleKey: 'emailUs', subtitleKey: 'responseIn24h', icon: 'mail', library: Feather, color: '#EF4444' },
+    ];
+
+    const FAQS = [
+        { questionKey: 'faqQ1', answerKey: 'faqA1' },
+        { questionKey: 'faqQ2', answerKey: 'faqA2' },
+        { questionKey: 'faqQ3', answerKey: 'faqA3' },
+    ];
 
     return (
         <View className="flex-1 bg-white">
@@ -28,7 +30,7 @@ export default function HelpSupportScreen() {
                 >
                     <Ionicons name="chevron-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="ml-4 text-2xl font-bold text-gray-900">Help & Support</Text>
+                <Text className="ml-4 text-2xl font-bold text-gray-900">{t('helpAndSupport')}</Text>
             </View>
 
             <ScrollView className="flex-1 px-6 pt-8" showsVerticalScrollIndicator={false}>
@@ -37,8 +39,8 @@ export default function HelpSupportScreen() {
                     <View className="w-16 h-16 bg-white/10 rounded-2xl items-center justify-center mb-4">
                         <Feather name="headphones" size={32} color="white" />
                     </View>
-                    <Text className="text-white text-2xl font-bold text-center">How can we help you today?</Text>
-                    <Text className="text-gray-400 text-center mt-2 font-medium">Our team is here to assist you with any issues.</Text>
+                    <Text className="text-white text-2xl font-bold text-center">{t('howCanWeHelp')}</Text>
+                    <Text className="text-gray-400 text-center mt-2 font-medium">{t('teamHereToAssist')}</Text>
                 </View>
 
                 {/* Contact Cards */}
@@ -51,25 +53,25 @@ export default function HelpSupportScreen() {
                                 className="w-[30%] bg-gray-50 rounded-3xl p-4 items-center border border-gray-100"
                                 onPress={() => {
                                     if (item.id === 'call') Linking.openURL('tel:+911234567890');
-                                    // Handle others if needed
                                 }}
                             >
                                 <View className="w-12 h-12 rounded-2xl items-center justify-center mb-3" style={{ backgroundColor: `${item.color}20` }}>
                                     <IconLib name={item.icon as any} size={24} color={item.color} />
                                 </View>
-                                <Text className="text-[10px] font-bold text-gray-900 text-center uppercase tracking-tighter">{item.title}</Text>
+                                <Text className="text-[10px] font-bold text-gray-900 text-center uppercase tracking-tighter">{t(item.titleKey)}</Text>
+                                <Text className="text-[9px] text-gray-400 text-center mt-0.5">{t(item.subtitleKey)}</Text>
                             </TouchableOpacity>
                         );
                     })}
                 </View>
 
                 {/* FAQ Section */}
-                <Text className="text-xl font-bold text-gray-900 mb-6">Frequently Asked Questions</Text>
+                <Text className="text-xl font-bold text-gray-900 mb-6">{t('frequentlyAskedQuestions')}</Text>
                 
                 {FAQS.map((faq, index) => (
                     <View key={index} className="bg-gray-50 rounded-2xl p-6 mb-4 border border-gray-100">
-                        <Text className="text-lg font-bold text-gray-900">{faq.question}</Text>
-                        <Text className="text-gray-500 font-medium mt-2 leading-6">{faq.answer}</Text>
+                        <Text className="text-lg font-bold text-gray-900">{t(faq.questionKey)}</Text>
+                        <Text className="text-gray-500 font-medium mt-2 leading-6">{t(faq.answerKey)}</Text>
                     </View>
                 ))}
 

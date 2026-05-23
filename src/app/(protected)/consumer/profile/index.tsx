@@ -5,29 +5,29 @@ import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather, Octicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
-
-const MENU_ITEMS = [
-    { id: 'profile', title: 'Profile Info', description: 'Name, photo, and account details', icon: 'person', library: Octicons },
-    { id: 'payments', title: 'Payment History', description: 'View transaction and unlock records', icon: 'currency-rupee', library: MaterialCommunityIcons },
-    { id: 'help', title: 'Help and Support', description: 'Contact our support team', icon: 'headphones', library: Feather },
-    { id: 'settings', title: 'Settings', description: 'Manage language and visual options', icon: 'settings', library: Ionicons },
-    { id: 'logout', title: 'Logout', description: 'Sign out of your session', icon: 'logout', library: MaterialCommunityIcons, isDestructive: true },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function ProfileScreen() {
     const { isDark } = useTheme();
+    const { t } = useTranslation();
     const user = useAppStore(state => state.user);
     const signOut = useAppStore(state => state.signOut);
     const unlockedProviders = useAppStore(state => state.unlockedProviders);
     const router = useRouter();
 
     const menuItems = React.useMemo(() => {
-        const items = [...MENU_ITEMS];
+        const items = [
+            { id: 'profile', titleKey: 'profileInfo', descriptionKey: 'profileInfoDesc', icon: 'person', library: Octicons },
+            { id: 'payments', titleKey: 'paymentHistory', descriptionKey: 'paymentHistoryDesc', icon: 'currency-rupee', library: MaterialCommunityIcons },
+            { id: 'help', titleKey: 'helpAndSupport', descriptionKey: 'helpAndSupportDesc', icon: 'headphones', library: Feather },
+            { id: 'settings', titleKey: 'settings', descriptionKey: 'settingsDesc', icon: 'settings', library: Ionicons },
+            { id: 'logout', titleKey: 'logout', descriptionKey: 'logoutDesc', icon: 'logout', library: MaterialCommunityIcons, isDestructive: true },
+        ];
         if (user?.role === 'admin') {
             items.unshift({
                 id: 'admin',
-                title: 'Admin Console',
-                description: 'Manage users, categories, tags and audit logs',
+                titleKey: 'adminConsole',
+                descriptionKey: 'adminConsoleDesc',
                 icon: 'shield-checkmark',
                 library: Ionicons
             });
@@ -60,7 +60,7 @@ export default function ProfileScreen() {
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
                 {/* Profile Header Section */}
                 <View className="pt-16 px-6 pb-6">
-                    <Text className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Profile</Text>
+                    <Text className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t('profile')}</Text>
                 </View>
 
                 {/* Consumer Account Info (Clean Flat Row) */}
@@ -78,12 +78,12 @@ export default function ProfileScreen() {
                                 {user?.name || 'User'}
                             </Text>
                             <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-0.5">
-                                {user?.phone || 'No mobile linked'}
+                                {user?.phone || t('noMobileLinked')}
                             </Text>
                         </View>
                         <View className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-3 py-1 rounded-full">
                             <Text className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                {user?.role || 'Consumer'}
+                                {user?.role || t('consumerRole')}
                             </Text>
                         </View>
                     </View>
@@ -97,7 +97,7 @@ export default function ProfileScreen() {
                                 {unlockedProviders?.length || 0}
                             </Text>
                             <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
-                                Connected Pros
+                                {t('connectedPros')}
                             </Text>
                         </View>
                         <View className="w-[1px] bg-slate-200 dark:bg-slate-800" />
@@ -106,7 +106,7 @@ export default function ProfileScreen() {
                                 {user?.searchRadiusKm || 5} KM
                             </Text>
                             <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
-                                Search Scope
+                                {t('searchScope')}
                             </Text>
                         </View>
                         <View className="w-[1px] bg-slate-200 dark:bg-slate-800" />
@@ -114,11 +114,11 @@ export default function ProfileScreen() {
                             <View className="flex-row items-center gap-1">
                                 <Ionicons name="shield-checkmark" size={14} color="#10B981" />
                                 <Text className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                                    Verified
+                                    {t('verified')}
                                 </Text>
                             </View>
                             <Text className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-1">
-                                Trust Badge
+                                {t('trustBadge')}
                             </Text>
                         </View>
                     </View>
@@ -127,7 +127,7 @@ export default function ProfileScreen() {
                 {/* Account Options List */}
                 <View className="px-6 mt-2">
                     <Text className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">
-                        Account Options
+                        {t('accountOptions')}
                     </Text>
 
                     <View className="border-t border-slate-100 dark:border-slate-900">
@@ -150,10 +150,10 @@ export default function ProfileScreen() {
                                         </View>
                                         <View className="ml-3 flex-1">
                                             <Text className={`text-base font-semibold ${isDestructive ? 'text-red-500' : 'text-slate-800 dark:text-slate-100'}`}>
-                                                {item.title}
+                                                {t(item.titleKey)}
                                             </Text>
                                             <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5">
-                                                {item.description}
+                                                {t(item.descriptionKey)}
                                             </Text>
                                         </View>
                                     </View>
@@ -171,7 +171,7 @@ export default function ProfileScreen() {
                 {/* Trust & Security Section */}
                 <View className="px-6 mt-8">
                     <Text className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">
-                        Trust & Platform Safety
+                        {t('trustPlatformSafety')}
                     </Text>
                     <View className="bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 p-4 rounded-[24px] gap-3">
                         <View className="flex-row items-start">
@@ -179,9 +179,9 @@ export default function ProfileScreen() {
                                 <Ionicons name="shield-checkmark" size={16} color="#10B981" />
                             </View>
                             <View className="ml-3 flex-1">
-                                <Text className="text-sm font-bold text-slate-800 dark:text-slate-100">Verified Consumer Status</Text>
+                                <Text className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('verifiedConsumerStatus')}</Text>
                                 <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5 leading-relaxed">
-                                    Your phone and device identity are securely verified to prevent fake bookings and spam listings.
+                                    {t('verifiedConsumerStatusDesc')}
                                 </Text>
                             </View>
                         </View>
@@ -191,9 +191,9 @@ export default function ProfileScreen() {
                                 <Ionicons name="lock-closed" size={16} color="#3B82F6" />
                             </View>
                             <View className="ml-3 flex-1">
-                                <Text className="text-sm font-bold text-slate-800 dark:text-slate-100">Privacy Shield Enabled</Text>
+                                <Text className="text-sm font-bold text-slate-800 dark:text-slate-100">{t('privacyShieldEnabled')}</Text>
                                 <Text className="text-xs text-slate-400 dark:text-slate-550 mt-0.5 leading-relaxed">
-                                    Your contact number is masked. It is only shared with service providers you explicitly unlock.
+                                    {t('privacyShieldDesc')}
                                 </Text>
                             </View>
                         </View>

@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import "./global.css"
 import * as WebBrowser from 'expo-web-browser';
+import '@/lib/i18n';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppStore } from '@/lib/store';
 import { useEffect } from 'react';
@@ -56,9 +57,11 @@ WebBrowser.maybeCompleteAuthSession();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const refreshProfile = useAppStore(state => state.refreshProfile);
+  const initTranslations = useAppStore(state => state.initTranslations);
   useEffect(() => {
     refreshProfile();
-  }, [refreshProfile]);
+    initTranslations();
+  }, [refreshProfile, initTranslations]);
 
   return (
     <PersistQueryClientProvider

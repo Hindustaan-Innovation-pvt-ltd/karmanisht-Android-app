@@ -12,10 +12,12 @@ import { useAppStore } from '@/lib/store'
 import { getOnboardingRoute } from '@/lib/utils'
 import ScalePressable from '@/components/scale-pressable'
 import auth from '@react-native-firebase/auth';
+import { useTranslation } from 'react-i18next';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function Login() {
+    const { t } = useTranslation();
     const router = useRouter()
     const processUserSession = useAppStore(state => state.processUserSession)
     const setUser = useAppStore(state => state.setUser)
@@ -43,12 +45,12 @@ export default function Login() {
     // ── Mobile OTP: verify account exists then send OTP ──────────────────────
     const handleGetOtp = async () => {
         if (!/^[7-9]\d{9}$/.test(mobile)) {
-            Alert.alert('Invalid Mobile', 'Please enter a valid 10-digit Indian mobile number starting with 7, 8, or 9.');
+            Alert.alert(t('invalidMobile'), t('invalidMobileMsg'));
             return;
         }
 
         if (cooldown > 0) {
-            Alert.alert('Please Wait', `You can request another OTP in ${cooldown} seconds.`);
+            Alert.alert(t('Please Wait'), t('cooldownMsg', { time: cooldown }));
             return;
         }
 
@@ -65,7 +67,7 @@ export default function Login() {
             }
 
             if (!checkRes || !checkRes.exists) {
-                Alert.alert('Account Not Found', 'No account exists with this mobile number. Please sign up first.');
+                Alert.alert(t('Account Not Found'), t('Account Not FoundMsg'));
                 return;
             }
 
@@ -78,17 +80,17 @@ export default function Login() {
                 verificationId = confirmation.verificationId;
             }
 
-            Alert.alert('OTP Sent', 'OTP sent successfully!');
+            Alert.alert(t('otpSent'), t('Otp Sent Msg'));
             setCooldown(30); // 30 seconds cooldown
-            
+
             // Pass the confirmation object's verificationId to the next screen
-            router.push({ 
-                pathname: '/(onboarding)/auth/otp', 
-                params: { mobile, initialCooldown: '30', verificationId: verificationId } 
+            router.push({
+                pathname: '/(onboarding)/auth/otp',
+                params: { mobile, initialCooldown: '30', verificationId: verificationId }
             });
         } catch (err: any) {
             console.error('[Firebase OTP Error]', err);
-            Alert.alert('Error', err.message || 'Failed to send OTP');
+            Alert.alert(t('error'), err.message || 'Failed to send OTP');
         } finally {
             setLoading(false);
         }
@@ -190,8 +192,6 @@ export default function Login() {
 
     return (
         <SafeAreaView className='flex-col flex-1 relative bg-white dark:bg-slate-950'>
-
-
             <View className='flex-1'>
                 <Image source={require('@assets/images/background.png')} className='w-full h-full' />
             </View>
@@ -211,16 +211,16 @@ export default function Login() {
                         >
                             <Google className='absolute left-4' />
                             <Text className='w-full text-lg font-semibold text-center text-slate-900 dark:text-slate-100 -ms-4'>
-                                Sign in with Google
+                                {t('Sign In With Google')}
                             </Text>
                         </ScalePressable>
-                        <Text className='text-center font-semibold text-slate-900 dark:text-slate-100'>OR</Text>
+                        <Text className='text-center font-semibold text-slate-900 dark:text-slate-100'>{t('or')}</Text>
                     </View>
 
                     <View className='flex-col gap-4'>
                         <TextInput
                             className='rounded-lg outline p-4 border border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100'
-                            placeholder='Enter Mobile No.'
+                            placeholder={t('Enter Mobile No')}
                             placeholderTextColor={colorScheme === 'dark' ? '#64748b' : '#94a3b8'}
                             keyboardType='phone-pad'
                             value={mobile}
@@ -237,21 +237,21 @@ export default function Login() {
                             {loading ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <Text className={`font-bold text-lg ${cooldown > 0 ? 'text-slate-400 dark:text-slate-500' : 'text-white'}`}>
-                                    {cooldown > 0 ? `Resend in ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}` : 'Get OTP'}
+                                <Text className={`font-bold text-lg ${cooldown > 0 ? 'text-slate-400 dark:text-slate-550' : 'text-white'}`}>
+                                    {cooldown > 0 ? t('resendIn', { time: `${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}` }) : t('getOtp')}
                                 </Text>
                             )}
                         </ScalePressable>
                     </View>
 
                     <View className='flex-col gap-2'>
-                        <Text className='text-center text-lg font-medium text-slate-500'>Don&apos;t have an account?</Text>
+                        <Text className='text-center text-lg font-medium text-slate-500'>{t("Don't Have Account")}</Text>
                         <ScalePressable
                             onPress={() => router.push('/(onboarding)/auth/register')}
                             hapticType="light"
                             scaleTo={0.98}
                         >
-                            <Text className='text-center text-black dark:text-white font-bold'>Create new account</Text>
+                            <Text className='text-center text-black dark:text-white font-bold'>{t('create New Account')}</Text>
                         </ScalePressable>
                     </View>
                 </View>

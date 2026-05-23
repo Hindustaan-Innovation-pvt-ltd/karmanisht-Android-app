@@ -12,10 +12,12 @@ import { useTheme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadToInsForge } from '@/lib/insforge';
 import MediaLibraryPicker from '@/components/media-library-picker';
+import { useTranslation } from 'react-i18next';
 
 export default function ProfileInfoScreen() {
     const router = useRouter();
     const { isDark } = useTheme();
+    const { t } = useTranslation();
     const { user, updateDatabaseProfile, refreshProfile } = useAppStore();
 
     const [name, setName] = useState(user.name || '');
@@ -45,7 +47,7 @@ export default function ProfileInfoScreen() {
         try {
             const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
             if (!permissionResult.granted) {
-                Alert.alert("Permission Required", "Camera permission is required to take a photo.");
+                Alert.alert(t('permissionRequired'), t('cameraPermissionRequired'));
                 return;
             }
 
@@ -69,24 +71,24 @@ export default function ProfileInfoScreen() {
 
     const handleSelectPhoto = () => {
         Alert.alert(
-            "Profile Photo",
-            "Select an option to add your photo",
+            t('profilePhoto'),
+            t('profilePhoto'),
             [
-                { text: "Take Photo", onPress: takePhoto },
-                { text: "Choose from Library", onPress: () => setShowMediaPicker(true) },
-                { text: "Cancel", style: "cancel" }
+                { text: t('takePhoto'), onPress: takePhoto },
+                { text: t('chooseFromLibrary'), onPress: () => setShowMediaPicker(true) },
+                { text: t('cancel'), style: "cancel" }
             ]
         );
     };
 
     const handleSave = async () => {
         if (!name.trim()) {
-            Alert.alert('Required Field', 'Please enter your name.');
+            Alert.alert(t('requiredField'), t('pleaseEnterName'));
             return;
         }
         const isGoogleUser = user.isGoogleUser === true || (user.email && !user.email.endsWith('@mock-mobile.local'));
         if (!isGoogleUser && !phone.trim()) {
-            Alert.alert('Required Field', 'Please enter your phone number.');
+            Alert.alert(t('requiredField'), t('pleaseEnterPhone'));
             return;
         }
 
@@ -144,15 +146,15 @@ export default function ProfileInfoScreen() {
                             <Ionicons name="checkmark" size={38} color={isDark ? '#34d399' : '#16a34a'} />
                         </View>
 
-                        <Text style={{ fontSize: 22, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>Profile Updated!</Text>
-                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>Your personal details have been updated successfully.</Text>
+                        <Text style={{ fontSize: 22, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>{t('profileUpdated')}</Text>
+                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>{t('profileUpdatedDesc')}</Text>
 
                         <TouchableOpacity
                             onPress={handleSuccessOk}
                             activeOpacity={0.85}
                             style={{ backgroundColor: isDark ? '#3b82f6' : '#000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>OK</Text>
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{t('ok')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -169,7 +171,7 @@ export default function ProfileInfoScreen() {
                     >
                         <Ionicons name="chevron-back" size={22} color={isDark ? '#94A3B8' : '#334155'} />
                     </TouchableOpacity>
-                    <Text className="text-lg font-bold text-slate-800 dark:text-slate-100">Edit Profile</Text>
+                    <Text className="text-lg font-bold text-slate-800 dark:text-slate-100">{t('editProfile')}</Text>
                     <View className="w-11" />
                 </View>
 
@@ -199,14 +201,14 @@ export default function ProfileInfoScreen() {
                                     <Feather name="camera" size={15} color="white" />
                                 </TouchableOpacity>
                             </View>
-                            <Text className="text-xs text-slate-400 dark:text-slate-550 mt-3 font-semibold">Tap camera to change photo</Text>
+                            <Text className="text-xs text-slate-400 dark:text-slate-550 mt-3 font-semibold">{t('tapCameraToChange')}</Text>
                         </View>
 
                         {/* Form Fields */}
                         <View className="space-y-5">
                             {/* Full Name */}
                             <View className="mb-4">
-                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Full Name</Text>
+                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('fullName')}</Text>
                                 <View className={`bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 py-3.5 border flex-row items-center transition-all ${
                                     focusedField === 'name' 
                                         ? 'border-blue-500 bg-white dark:bg-slate-900/60' 
@@ -222,7 +224,7 @@ export default function ProfileInfoScreen() {
                                         className="flex-1 text-base font-semibold text-slate-850 dark:text-slate-100"
                                         value={name}
                                         onChangeText={setName}
-                                        placeholder="Enter your name"
+                                        placeholder={t('enterYourName')}
                                         placeholderTextColor="#94A3B8"
                                         onFocus={() => setFocusedField('name')}
                                         onBlur={() => setFocusedField(null)}
@@ -232,7 +234,7 @@ export default function ProfileInfoScreen() {
 
                             {/* Phone Number */}
                             <View className="mb-4">
-                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Phone Number</Text>
+                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('phoneNumber2')}</Text>
                                 <View className={`bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 py-3.5 border flex-row items-center ${
                                     focusedField === 'phone' 
                                         ? 'border-blue-500 bg-white dark:bg-slate-900/60' 
@@ -248,7 +250,7 @@ export default function ProfileInfoScreen() {
                                         className="flex-1 text-base font-semibold text-slate-850 dark:text-slate-100"
                                         value={phone}
                                         onChangeText={setPhone}
-                                        placeholder="Enter phone number"
+                                        placeholder={t('enterPhoneNumber')}
                                         placeholderTextColor="#94A3B8"
                                         keyboardType="phone-pad"
                                         onFocus={() => setFocusedField('phone')}
@@ -259,7 +261,7 @@ export default function ProfileInfoScreen() {
 
                             {/* Email Address */}
                             <View className="mb-4">
-                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Email Address</Text>
+                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('emailAddress')}</Text>
                                 <View className={`bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 py-3.5 border flex-row items-center ${
                                     focusedField === 'email' 
                                         ? 'border-blue-500 bg-white dark:bg-slate-900/60' 
@@ -275,7 +277,7 @@ export default function ProfileInfoScreen() {
                                         className="flex-1 text-base font-semibold text-slate-850 dark:text-slate-100"
                                         value={email}
                                         onChangeText={setEmail}
-                                        placeholder="Enter email"
+                                        placeholder={t('enterEmail')}
                                         placeholderTextColor="#94A3B8"
                                         keyboardType="email-address"
                                         autoCapitalize="none"
@@ -287,7 +289,7 @@ export default function ProfileInfoScreen() {
 
                             {/* Location */}
                             <View className="mb-4">
-                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">Location</Text>
+                                <Text className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 ml-1">{t('location')}</Text>
                                 <View className={`bg-slate-50 dark:bg-slate-900 rounded-2xl px-4 py-3.5 border flex-row items-center ${
                                     focusedField === 'location' 
                                         ? 'border-blue-500 bg-white dark:bg-slate-900/60' 
@@ -303,7 +305,7 @@ export default function ProfileInfoScreen() {
                                         className="flex-1 text-base font-semibold text-slate-850 dark:text-slate-100"
                                         value={location}
                                         onChangeText={setLocation}
-                                        placeholder="Enter location / city"
+                                        placeholder={t('enterLocation')}
                                         placeholderTextColor="#94A3B8"
                                         onFocus={() => setFocusedField('location')}
                                         onBlur={() => setFocusedField(null)}
@@ -323,8 +325,8 @@ export default function ProfileInfoScreen() {
                         >
                             {saving ? (
                                 <ActivityIndicator color="white" />
-                            ) : (
-                                <Text className="text-white text-base font-bold">Save Changes</Text>
+                             ) : (
+                                <Text className="text-white text-base font-bold">{t('saveChanges')}</Text>
                             )}
                         </TouchableOpacity>
                     </ScrollView>

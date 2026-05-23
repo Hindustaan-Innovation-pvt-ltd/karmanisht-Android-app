@@ -6,9 +6,11 @@ import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import SafeIcon from '@/components/safe-icon';
+import { useTranslation } from 'react-i18next';
 
 export default function PaymentHistoryScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
     const { user, categories } = useAppStore();
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -38,17 +40,17 @@ export default function PaymentHistoryScreen() {
                             .select('provider_id, category_id')
                             .in('provider_id', providerIds);
 
-                        const mapped = data.map(t => {
-                            const p = providers?.find(provider => provider.id === t.provider_id);
-                            const pSvc = pServices?.find(ps => ps.provider_id === t.provider_id);
+                        const mapped = data.map(tx => {
+                            const p = providers?.find(provider => provider.id === tx.provider_id);
+                            const pSvc = pServices?.find(ps => ps.provider_id === tx.provider_id);
                             const category = categories.find(c => c.id === pSvc?.category_id);
                             
                             return {
-                                id: t.id,
-                                title: p ? `Unlocked ${p.full_name}` : 'Contact Unlock',
-                                amount: `₹${t.amount}`,
-                                date: new Date(t.unlocked_at || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-                                status: t.payment_status || 'Completed',
+                                id: tx.id,
+                                title: p ? t('unlockedContact', { name: p.full_name }) : t('contactUnlock'),
+                                amount: `₹${tx.amount}`,
+                                date: new Date(tx.unlocked_at || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+                                status: tx.payment_status || 'Completed',
                                 icon: category ? category.icon : 'key'
                             };
                         });
@@ -64,10 +66,10 @@ export default function PaymentHistoryScreen() {
             }
         };
         fetchTxs();
-    }, [user?.id, categories]);
+    }, [user?.id, categories, t]);
 
-    const totalSpent = transactions.reduce((acc, t) => {
-        const num = parseInt(t.amount.replace('₹', ''), 10) || 0;
+    const totalSpent = transactions.reduce((acc, tx) => {
+        const num = parseInt(tx.amount.replace('₹', ''), 10) || 0;
         return acc + num;
     }, 0);
 
@@ -81,13 +83,13 @@ export default function PaymentHistoryScreen() {
                 >
                     <Ionicons name="chevron-back" size={24} color="black" />
                 </TouchableOpacity>
-                <Text className="ml-4 text-2xl font-bold text-gray-900 dark:text-slate-100">Payment History</Text>
+                <Text className="ml-4 text-2xl font-bold text-gray-900 dark:text-slate-100">{t('paymentHistory')}</Text>
             </View>
 
             <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
                 {/* Balance Card */}
                 <View className="bg-black dark:bg-slate-900 rounded-[32px] p-8 mb-8 shadow-xl shadow-black/20">
-                    <Text className="text-gray-400 font-medium mb-2 uppercase tracking-widest text-xs">Total Spent</Text>
+                    <Text className="text-gray-400 font-medium mb-2 uppercase tracking-widest text-xs">{t('totalSpent')}</Text>
                     <Text className="text-white text-4xl font-bold">₹{totalSpent}</Text>
                     <View className="flex-row mt-6 justify-between items-center">
                         <View className="flex-row -space-x-2">
@@ -98,20 +100,20 @@ export default function PaymentHistoryScreen() {
                             ))}
                         </View>
                         <TouchableOpacity className="bg-white/10 px-4 py-2 rounded-xl">
-                            <Text className="text-white text-xs font-bold">View Reports</Text>
+                            <Text className="text-white text-xs font-bold">{t('viewReports')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* Transactions List */}
-                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-6">Recent Transactions</Text>
+                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-6">{t('recentTransactions')}</Text>
                 
                 {loading ? (
                     <ActivityIndicator size="large" color="#3B82F6" className="mt-8" />
                 ) : transactions.length === 0 ? (
                     <View className="py-12 items-center justify-center">
                         <Ionicons name="receipt-outline" size={48} color="#D1D5DB" />
-                        <Text className="text-slate-400 text-center font-medium mt-3">No recent transactions found.</Text>
+                        <Text className="text-slate-400 text-center font-medium mt-3">{t('noTransactions')}</Text>
                     </View>
                 ) : (
                     transactions.map((item) => (
@@ -132,7 +134,7 @@ export default function PaymentHistoryScreen() {
                                 <Text className="text-lg font-bold text-gray-900 dark:text-slate-100">{item.amount}</Text>
                                 <View className={`mt-1 px-2 py-0.5 rounded-lg ${item.status?.toLowerCase() === 'completed' ? 'bg-green-100' : 'bg-orange-100'}`}>
                                     <Text className={`text-[10px] font-bold ${item.status?.toLowerCase() === 'completed' ? 'text-green-700' : 'text-orange-700'}`}>
-                                        {item.status.toUpperCase()}
+                                        {item.status?.toLowerCase() === 'completed' ? t('completed').toUpperCase() : item.status.toUpperCase()}
                                     </Text>
                                 </View>
                             </View>

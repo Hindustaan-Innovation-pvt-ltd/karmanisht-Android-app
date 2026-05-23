@@ -79,7 +79,27 @@ export interface WorkerSlice {
     updateWorkerSpecialties: (categoryIds: string[], tagIds: string[]) => Promise<boolean>;
 }
 
-export type AppStoreType = AuthSlice & CommonSlice & ConsumerSlice & WorkerSlice;
+export interface TranslationRecord {
+    key: string;
+    en: string;
+    hi: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface TranslationSlice {
+    currentLanguage: string;
+    dbTranslations: TranslationRecord[];
+    isTranslationLoading: boolean;
+    hasSyncedTranslations: boolean;
+
+    initTranslations: (force?: boolean) => Promise<void>;
+    changeLanguage: (lang: string) => Promise<void>;
+    upsertTranslation: (key: string, en: string, hi: string) => Promise<boolean>;
+    registerMissingKey: (key: string, defaultVal?: string) => Promise<void>;
+}
+
+export type AppStoreType = AuthSlice & CommonSlice & ConsumerSlice & WorkerSlice & TranslationSlice;
 
 export const defaultUser: UserProfile = {
     name: '',
