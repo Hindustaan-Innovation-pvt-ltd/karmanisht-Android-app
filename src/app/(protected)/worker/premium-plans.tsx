@@ -6,8 +6,10 @@ import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function PremiumPlans() {
+    const { t } = useTranslation();
     const router = useRouter();
     const colorScheme = useColorScheme();
     const { user } = useAppStore();
@@ -74,7 +76,7 @@ export default function PremiumPlans() {
         return (
             <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
                 {/* Header */}
-                <View className="flex-row items-center px-6 py-4 justify-between">
+                <View className="flex-row items-center px-5 py-4 justify-between">
                     <TouchableOpacity
                         onPress={() => router.back()}
                         className="size-10 rounded-full bg-white dark:bg-slate-800 items-center justify-center border border-slate-200 dark:border-slate-700"
@@ -82,7 +84,7 @@ export default function PremiumPlans() {
                     >
                         <Ionicons name="arrow-back" size={20} color={isDark ? '#fff' : '#000'} />
                     </TouchableOpacity>
-                    <Text className="text-lg font-bold text-slate-800 dark:text-slate-200">My Subscription</Text>
+                    <Text className="text-lg font-bold text-slate-800 dark:text-slate-200">{t('mySubscription', 'My Subscription')}</Text>
                     <View className="w-10" />
                 </View>
 
@@ -96,25 +98,25 @@ export default function PremiumPlans() {
                             <View className="flex-row items-center gap-2">
                                 <Ionicons name="ribbon" size={20} color="#F59E0B" />
                                 <Text className="text-sm font-black text-amber-400 uppercase tracking-widest">
-                                    PREMIUM MEMBER
+                                    {t('premiumMember', 'PREMIUM MEMBER')}
                                 </Text>
                             </View>
                             <View className="bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/40 flex-row items-center gap-1">
                                 <View className="size-1.5 rounded-full bg-emerald-400" />
-                                <Text className="text-[10px] font-black text-emerald-400 uppercase">ACTIVE</Text>
+                                <Text className="text-[10px] font-black text-emerald-400 uppercase">{t('active', 'ACTIVE')}</Text>
                             </View>
                         </View>
 
                         {/* Expiry */}
                         {subscription ? (
                             <View className="mb-5">
-                                <Text className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">VALID UNTIL</Text>
+                                <Text className="text-slate-400 text-xs font-semibold uppercase tracking-widest mb-1">{t('validUntil', 'VALID UNTIL')}</Text>
                                 <Text className="text-white text-2xl font-black">{formatDate(subscription.expires_at)}</Text>
-                                <Text className="text-slate-400 text-xs font-medium mt-1">{daysLeft} days remaining</Text>
+                                <Text className="text-slate-400 text-xs font-medium mt-1">{t('daysRemaining', { count: daysLeft }, `${daysLeft} days remaining`)}</Text>
                             </View>
                         ) : (
                             <View className="mb-5">
-                                <Text className="text-slate-400 text-xs font-semibold">Subscription active</Text>
+                                <Text className="text-slate-400 text-xs font-semibold">{t('subscriptionActive', 'Subscription active')}</Text>
                             </View>
                         )}
 
@@ -124,16 +126,16 @@ export default function PremiumPlans() {
                         {/* Benefits */}
                         <View className="gap-3">
                             {[
-                                { icon: 'trending-up', label: 'Top ranking in search results' },
-                                { icon: 'ribbon', label: 'Verified Premium badge on profile' },
-                                { icon: 'flash', label: 'Profile boost — 3× more visibility' },
-                                { icon: 'infinite', label: 'Unlimited customer leads' },
+                                { icon: 'trending-up', label: t('benefitSearchRanking', 'Top ranking in search results') },
+                                { icon: 'ribbon', label: t('benefitVerifiedBadge', 'Verified Premium badge on profile') },
+                                { icon: 'flash', label: t('benefitProfileBoost', 'Profile boost — 3× more visibility') },
+                                { icon: 'infinite', label: t('benefitUnlimitedLeads', 'Unlimited customer leads') },
                             ].map((b, i) => (
-                                <View key={i} className="flex-row items-center gap-3">
-                                    <View className="size-5 rounded-full bg-amber-500/20 items-center justify-center">
+                                <View key={i} className="flex-row items-start gap-3">
+                                    <View className="size-5 rounded-full bg-amber-500/20 items-center justify-center mt-0.5">
                                         <Ionicons name={b.icon as any} size={11} color="#F59E0B" />
                                     </View>
-                                    <Text className="text-slate-200 text-sm font-semibold">{b.label}</Text>
+                                    <Text className="text-slate-200 text-sm font-semibold flex-1">{b.label}</Text>
                                 </View>
                             ))}
                         </View>
@@ -141,7 +143,7 @@ export default function PremiumPlans() {
 
                     {/* Info note */}
                     <Text className="text-center text-xs text-slate-400 px-4">
-                        Thank you for choosing Karmanisht Premium! Your subscription auto-renews annually.
+                        {t('premiumThankYou', 'Thank you for choosing Karmanisht Premium! Your subscription auto-renews annually.')}
                     </Text>
                 </ScrollView>
             </SafeAreaView>
@@ -152,7 +154,7 @@ export default function PremiumPlans() {
     return (
         <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
             {/* Top Bar */}
-            <View className="flex-row items-center px-6 py-4 justify-between">
+            <View className="flex-row items-center px-5 py-4 justify-between">
                 <TouchableOpacity
                     onPress={() => router.back()}
                     className="size-10 rounded-full bg-white dark:bg-slate-800 items-center justify-center border border-slate-200 dark:border-slate-700"
@@ -160,54 +162,55 @@ export default function PremiumPlans() {
                 >
                     <Ionicons name="arrow-back" size={20} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
-                <Text className="text-lg font-bold text-slate-800 dark:text-slate-200">Subscription Plans</Text>
+                <Text className="text-lg font-bold text-slate-800 dark:text-slate-200">{t('subscriptionPlans', 'Subscription Plans')}</Text>
                 <View className="w-10" />
             </View>
 
             <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
                 <Text className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight mt-2 mb-6">
-                    Choose a plan
+                    {t('choosePlan', 'Choose a plan')}
                 </Text>
 
                 {/* PREMIUM CARD */}
                 <TouchableOpacity
                     onPress={() => setSelectedPlan('premium')}
                     activeOpacity={0.9}
-                    className={`p-6 rounded-3xl mb-4 bg-[#18181B] dark:bg-slate-900 border-2 ${
-                        selectedPlan === 'premium' ? 'border-amber-400' : 'border-transparent'
-                    }`}
+                    className={`p-6 rounded-3xl mb-5 bg-[#18181B] dark:bg-slate-900 border-2 ${selectedPlan === 'premium' ? 'border-amber-400' : 'border-transparent'
+                        }`}
                     style={selectedPlan === 'premium' ? styles.premiumShadow : null}
                 >
                     <View className="flex-row items-center justify-between mb-4">
                         <View className="flex-row items-center gap-2">
                             <Ionicons name="ribbon-outline" size={20} color="#F59E0B" />
-                            <Text className="text-sm font-black text-amber-500 uppercase tracking-widest">PREMIUM</Text>
+                            <Text className="text-sm font-black text-amber-500 uppercase tracking-widest">{t('premium', 'PREMIUM')}</Text>
                         </View>
-                        <View className="bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30">
-                            <Text className="text-[10px] font-black text-amber-400 uppercase tracking-wider">Most Popular</Text>
-                        </View>
-                        {selectedPlan === 'premium' && (
-                            <View className="size-5 rounded-full bg-amber-400 items-center justify-center">
-                                <Feather name="check" size={12} color="#000" />
+                        <View className="flex-row items-center gap-2">
+                            <View className="bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30">
+                                <Text className="text-[10px] font-black text-amber-400 uppercase tracking-wider">{t('mostPopular', 'Most Popular')}</Text>
                             </View>
-                        )}
+                            {selectedPlan === 'premium' && (
+                                <View className="size-5 rounded-full bg-amber-400 items-center justify-center">
+                                    <Feather name="check" size={12} color="#000" />
+                                </View>
+                            )}
+                        </View>
                     </View>
                     <View className="flex-row items-baseline mb-6">
                         <Text className="text-4xl font-black text-white">₹999</Text>
-                        <Text className="text-slate-400 font-bold ml-1">/year</Text>
+                        <Text className="text-slate-400 font-bold ml-1">{t('perYear', '/year')}</Text>
                     </View>
                     <View className="flex-col gap-3">
                         {[
-                            'Top ranking in search results',
-                            'Verified premium badge on profile',
-                            'Unlimited leads',
-                            'Profile boost (3× visibility)',
+                            t('benefitSearchRanking', 'Top ranking in search results'),
+                            t('benefitVerifiedBadge', 'Verified Premium badge on profile'),
+                            t('benefitUnlimitedLeads', 'Unlimited customer leads'),
+                            t('benefitProfileBoost', 'Profile boost — 3× more visibility'),
                         ].map((f, i) => (
-                            <View key={i} className="flex-row items-center gap-3">
-                                <View className="size-5 rounded-full bg-amber-500/10 items-center justify-center">
+                            <View key={i} className="flex-row items-start gap-3">
+                                <View className="size-5 rounded-full bg-amber-500/10 items-center justify-center mt-0.5">
                                     <Feather name="check" size={12} color="#F59E0B" />
                                 </View>
-                                <Text className="text-slate-200 text-sm font-semibold">{f}</Text>
+                                <Text className="text-slate-200 text-sm font-semibold flex-1">{f}</Text>
                             </View>
                         ))}
                     </View>
@@ -217,14 +220,16 @@ export default function PremiumPlans() {
                 <TouchableOpacity
                     onPress={() => setSelectedPlan('basic')}
                     activeOpacity={0.9}
-                    className={`p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 ${
-                        selectedPlan === 'basic'
-                            ? 'border-slate-900 dark:border-white'
-                            : 'border-slate-200 dark:border-slate-800'
-                    }`}
+                    className={`p-6 rounded-3xl mb-5 bg-white dark:bg-slate-900 border-2 ${selectedPlan === 'basic'
+                        ? 'border-slate-900 dark:border-white'
+                        : 'border-slate-200 dark:border-slate-800'
+                        }`}
                 >
                     <View className="flex-row items-center justify-between mb-4">
-                        <Text className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">BASIC</Text>
+                        <View className="flex-row items-center gap-2">
+                            <Ionicons name="star-outline" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+                            <Text className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('basic', 'BASIC')}</Text>
+                        </View>
                         {selectedPlan === 'basic' && (
                             <View className="size-5 rounded-full bg-slate-900 dark:bg-white items-center justify-center">
                                 <Feather name="check" size={12} color={isDark ? '#000' : '#fff'} />
@@ -233,19 +238,19 @@ export default function PremiumPlans() {
                     </View>
                     <View className="flex-row items-baseline mb-6">
                         <Text className="text-4xl font-black text-slate-900 dark:text-white">₹499</Text>
-                        <Text className="text-slate-500 dark:text-slate-400 font-bold ml-1">/year</Text>
+                        <Text className="text-slate-500 dark:text-slate-400 font-bold ml-1">{t('perYear', '/year')}</Text>
                     </View>
                     <View className="flex-col gap-3">
                         {[
-                            'Standard listing in search',
-                            '50 customer leads/month',
-                            'Profile visible in your city',
+                            t('benefitBasicSearch', 'Standard listing in search'),
+                            t('benefitBasicLeads', '50 customer leads/month'),
+                            t('benefitBasicVisibility', 'Profile visible in your city'),
                         ].map((f, i) => (
-                            <View key={i} className="flex-row items-center gap-3">
-                                <View className="size-5 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center">
+                            <View key={i} className="flex-row items-start gap-3">
+                                <View className="size-5 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center mt-0.5">
                                     <Feather name="check" size={12} color={isDark ? '#fff' : '#000'} />
                                 </View>
-                                <Text className="text-slate-600 dark:text-slate-300 text-sm font-semibold">{f}</Text>
+                                <Text className="text-slate-600 dark:text-slate-300 text-sm font-semibold flex-1">{f}</Text>
                             </View>
                         ))}
                     </View>
@@ -260,7 +265,7 @@ export default function PremiumPlans() {
                     className="bg-[#18181B] dark:bg-slate-100 py-4 rounded-2xl items-center justify-center flex-row gap-2"
                 >
                     <Text className="text-white dark:text-slate-950 font-black text-lg">
-                        Get {selectedPlan === 'premium' ? 'Premium — ₹999/yr' : 'Basic — ₹499/yr'}
+                        {selectedPlan === 'premium' ? t('getPremiumPrice', 'Get Premium — ₹999/yr') : t('getBasicPrice', 'Get Basic — ₹499/yr')}
                     </Text>
                     <Feather name="arrow-right" size={18} color={isDark ? '#000' : '#fff'} />
                 </TouchableOpacity>

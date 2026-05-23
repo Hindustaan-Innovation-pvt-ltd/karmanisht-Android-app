@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal, Platform, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, Modal, Platform, Linking, Pressable } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,6 +19,7 @@ import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
 import CustomPolicyModel from '@/components/models/policy-modal';
 import * as Application from "expo-application"
+import { useTranslation } from 'react-i18next';
 
 export default function WorkerSettings() {
     const router = useRouter();
@@ -34,6 +35,20 @@ export default function WorkerSettings() {
         categories,
         fetchCategories
     } = useAppStore();
+
+    const { t, i18n } = useTranslation();
+    const [languageModalVisible, setLanguageModalVisible] = useState(false);
+    const changeLanguage = useAppStore(state => state.changeLanguage);
+    const currentLanguage = useAppStore(state => state.currentLanguage);
+
+    const handleLanguageChange = async (lang: 'en' | 'hi') => {
+        try {
+            await changeLanguage(lang);
+            setLanguageModalVisible(false);
+        } catch (err) {
+            console.error("Error setting language:", err);
+        }
+    };
 
     // Policy Modal States
     const [policyVisible, setPolicyVisible] = useState(false);
@@ -95,14 +110,14 @@ export default function WorkerSettings() {
 
     const getRadiusDescription = (radius: number) => {
         switch (radius) {
-            case 2: return "Perfect for quick, ultra-local jobs right down the street.";
-            case 5: return "Ideal coverage for your neighborhood and surrounding blocks.";
-            case 10: return "Standard range covering your town or immediate district.";
-            case 15: return "Broad coverage including adjacent towns and key corridors.";
-            case 20: return "City-wide reach, capturing leads across major metropolitan zones.";
-            case 30: return "Extended region coverage for high-value outer-ring requests.";
-            case 50: return "Maximum reach. Capture any lead in the regional zone.";
-            default: return `${radius} KM distance coverage.`;
+            case 2: return t('radiusDesc_2');
+            case 5: return t('radiusDesc_5');
+            case 10: return t('radiusDesc_10');
+            case 15: return t('radiusDesc_15');
+            case 20: return t('radiusDesc_20');
+            case 30: return t('radiusDesc_30');
+            case 50: return t('radiusDesc_50');
+            default: return t('radiusDesc_default', { radius });
         }
     };
 
@@ -127,7 +142,7 @@ export default function WorkerSettings() {
             setRadiusModalVisible(false);
         } catch (error) {
             console.error("Error updating radius:", error);
-            Alert.alert("Update Failed", "Could not sync your distance settings.");
+            Alert.alert(t('updateFailed'), t('couldNotSyncRadius'));
         } finally {
             setUpdatingRadius(false);
         }
@@ -140,12 +155,12 @@ export default function WorkerSettings() {
 
     const handleDeleteAccount = () => {
         Alert.alert(
-            "Delete Account",
-            "Are you sure you want to permanently delete your worker profile? This action cannot be undone and all your ratings, reviews, specialities, and active leads will be permanently deleted.",
+            t('deleteAccountTitle'),
+            t('deleteAccountWorkerMsg'),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t('cancel'), style: "cancel" },
                 {
-                    text: "Delete Permanent",
+                    text: t('deletePermanent'),
                     style: "destructive",
                     onPress: async () => {
                         try {
@@ -175,16 +190,16 @@ export default function WorkerSettings() {
                                 // 5. Delete from service_providers table
                                 const { error } = await insforge.database.from('service_providers').delete().eq('id', user.id);
                                 if (error) {
-                                    Alert.alert("Error", "Failed to delete account: " + error.message);
+                                    Alert.alert(t('error'), t('failedDeleteAccount') + ": " + error.message);
                                     return;
                                 }
                             }
                             await signOut();
-                            Alert.alert("Success", "Your worker account has been permanently deleted.");
+                            Alert.alert(t('success'), t('workerAccountDeletedMsg'));
                             router.replace('/');
                         } catch (err) {
                             console.error(err);
-                            Alert.alert("Error", "Failed to complete account deletion.");
+                            Alert.alert(t('error'), t('failedDeleteAccount'));
                         }
                     }
                 }
@@ -220,20 +235,20 @@ export default function WorkerSettings() {
             <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
                 {/* Header */}
                 <View className="pt-4 pb-4 px-6 border-b border-slate-50 dark:border-slate-800">
-                    <Text className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Settings</Text>
+                    <Text className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{t('settings')}</Text>
                 </View>
 
                 <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
 
                     {/* AVAILABILITY SECTION */}
-                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Availability</Text>
+                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-3 ml-1">{t('availability')}</Text>
                     <View className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm mb-6 flex-row items-center justify-between">
                         <View className="flex-1 pr-4">
                             <Text className="text-base font-bold text-slate-900 dark:text-slate-100">
-                                {isOnline ? 'You are online' : 'You are offline'}
+                                {isOnline ? t('youAreOnline') : t('youAreOffline')}
                             </Text>
-                            <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
-                                {isOnline ? 'Customers can find your profile' : 'Switch on to receive new leads'}
+                            <Text className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1">
+                                {isOnline ? t('onlineDescActive') : t('onlineDescInactive')}
                             </Text>
                         </View>
                         <Switch
@@ -245,28 +260,22 @@ export default function WorkerSettings() {
                     </View>
 
                     {/* Profile Section */}
-                    <Text className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Profile</Text>
+                    <Text className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">{t('profile')}</Text>
                     <SettingItem
                         icon="user"
-                        label="Personal Details"
+                        label={t('personalDetails')}
                         value={user?.name || "Provider"}
                         onPress={() => router.push('/(protected)/worker/edit-profile?from=settings')}
                     />
                     <SettingItem
-                        icon="map-pin"
-                        label="Service Area"
-                        value={user.location}
-                        onPress={() => router.push('/(location)/locationinfo?from=settings')}
-                    />
-                    <SettingItem
                         icon="shield"
-                        label="Identity Verification"
-                        value="Pending"
+                        label={t('identityVerification')}
+                        value={t('pending')}
                         iconColor="#D97706"
                         onPress={() => router.push('/(protected)/worker/verify-identity?from=settings')}
                     />
                     {/* SERVICE CONFIGURATION SECTION */}
-                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Service Configuration</Text>
+                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-3 ml-1">{t('serviceConfiguration')}</Text>
                     <View className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm mb-6 overflow-hidden">
 
                         {/* Edit Profession & Services */}
@@ -280,9 +289,9 @@ export default function WorkerSettings() {
                                     <Feather name="tool" size={20} color={colors.tint} />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Edit profession & services</Text>
-                                    <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5" numberOfLines={1}>
-                                        Currently: {professionName}
+                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{t('editProfessionAndServices')}</Text>
+                                    <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5" numberOfLines={1}>
+                                        {t('currently')}: {professionName}
                                     </Text>
                                 </View>
                             </View>
@@ -300,9 +309,9 @@ export default function WorkerSettings() {
                                     <Feather name="map-pin" size={20} color={colors.tint} />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Edit service radius</Text>
-                                    <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                                        Currently: {user?.searchRadiusKm || 5} km
+                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{t('editServiceRadius')}</Text>
+                                    <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5">
+                                        {t('currently')}: {user?.searchRadiusKm || 5} km
                                     </Text>
                                 </View>
                             </View>
@@ -311,28 +320,8 @@ export default function WorkerSettings() {
                     </View>
 
                     {/* ACCOUNT SECTION */}
-                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 ml-1">Account</Text>
+                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-3 ml-1">{t('accountSection')}</Text>
                     <View className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm mb-12 overflow-hidden">
-
-                        {/* Verification Documents (KYC) */}
-                        <TouchableOpacity
-                            onPress={() => router.push('/(protected)/worker/verify-identity?from=settings')}
-                            activeOpacity={0.7}
-                            className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
-                        >
-                            <View className="flex-row items-center flex-1 pr-4">
-                                <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
-                                    <Feather name="file-text" size={20} color={colors.tint} />
-                                </View>
-                                <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Verification documents</Text>
-                                    <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                                        Manage KYC uploads
-                                    </Text>
-                                </View>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
-                        </TouchableOpacity>
 
                         {/* Privacy Policy */}
                         <TouchableOpacity
@@ -348,9 +337,9 @@ export default function WorkerSettings() {
                                     <Feather name="lock" size={20} color={colors.tint} />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Privacy policy</Text>
-                                    <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                                        How we use your data
+                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{t('privacyPolicy')}</Text>
+                                    <Text className="text-xs text-slate-400 dark:text-slate-550 font-semibold mt-0.5">
+                                        {t('howWeHandleTelemetry')}
                                     </Text>
                                 </View>
                             </View>
@@ -370,9 +359,29 @@ export default function WorkerSettings() {
                                     <Feather name="help-circle" size={20} color={colors.tint} />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">Help and support</Text>
-                                    <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                                        Contact the team
+                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{t('helpSupport')}</Text>
+                                    <Text className="text-xs text-slate-400 dark:text-slate-550 font-semibold mt-0.5">
+                                        {t('reachDedicatedSupport')}
+                                    </Text>
+                                </View>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                        </TouchableOpacity>
+
+                        {/* Language Selector */}
+                        <TouchableOpacity
+                            onPress={() => setLanguageModalVisible(true)}
+                            activeOpacity={0.7}
+                            className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-800/80"
+                        >
+                            <View className="flex-row items-center flex-1 pr-4">
+                                <View className="w-11 h-11 rounded-2xl bg-slate-50 dark:bg-slate-900 items-center justify-center">
+                                    <Feather name="globe" size={20} color={colors.tint} />
+                                </View>
+                                <View className="ml-4 flex-1">
+                                    <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{t('language')}</Text>
+                                    <Text className="text-xs text-slate-400 dark:text-slate-555 font-medium mt-0.5">
+                                        {currentLanguage === 'en' ? 'English' : 'हिंदी'}
                                     </Text>
                                 </View>
                             </View>
@@ -390,9 +399,9 @@ export default function WorkerSettings() {
                                     <Feather name="log-out" size={20} color="#64748B" />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-slate-700 dark:text-slate-300">Logout</Text>
-                                    <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                                        Sign out of your session
+                                    <Text className="text-base font-bold text-slate-700 dark:text-slate-300">{t('logout')}</Text>
+                                    <Text className="text-xs text-slate-400 dark:text-slate-550 font-semibold mt-0.5">
+                                        {t('signOutSession')}
                                     </Text>
                                 </View>
                             </View>
@@ -410,9 +419,9 @@ export default function WorkerSettings() {
                                     <Feather name="trash-2" size={20} color="#EF4444" />
                                 </View>
                                 <View className="ml-4 flex-1">
-                                    <Text className="text-base font-bold text-red-500">Delete Account</Text>
-                                    <Text className="text-xs text-red-400 dark:text-red-600/70 font-medium mt-0.5">
-                                        Permanently delete account
+                                    <Text className="text-base font-bold text-red-500">{t('deleteAccount')}</Text>
+                                    <Text className="text-xs text-red-400 dark:text-red-650 font-semibold mt-0.5">
+                                        {t('permanentlyDeleteAccount')}
                                     </Text>
                                 </View>
                             </View>
@@ -435,7 +444,7 @@ export default function WorkerSettings() {
                         <View className="bg-white dark:bg-slate-900 rounded-t-[32px] p-6 pb-10 border-t border-slate-100 dark:border-slate-800 shadow-xl">
                             <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full self-center mb-5" />
                             <View className="flex-row justify-between items-center mb-4">
-                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">Service Radius</Text>
+                                <Text className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('searchRadius')}</Text>
                                 <TouchableOpacity
                                     onPress={() => setRadiusModalVisible(false)}
                                     className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center"
@@ -444,7 +453,7 @@ export default function WorkerSettings() {
                                 </TouchableOpacity>
                             </View>
                             <Text className="text-slate-400 dark:text-slate-500 text-xs font-semibold mb-5">
-                                Choose the maximum distance you are willing to travel to receive customer leads.
+                                {t('selectRadiusDesc')}
                             </Text>
 
                             {/* Radar Visualization Area */}
@@ -520,8 +529,8 @@ export default function WorkerSettings() {
                                             }}
                                             hapticType="selection"
                                             className={`mr-3 px-5 py-3.5 rounded-2xl items-center justify-center border-2 flex-row gap-1 ${isSelected
-                                                    ? 'bg-black border-black dark:bg-blue-600 dark:border-blue-600'
-                                                    : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
+                                                ? 'bg-black border-black dark:bg-blue-600 dark:border-blue-600'
+                                                : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
                                                 }`}
                                         >
                                             <Text className={`font-black text-sm ${isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-350'}`}>
@@ -548,11 +557,11 @@ export default function WorkerSettings() {
                                 {updatingRadius ? (
                                     <View className="flex-row items-center justify-center gap-2">
                                         <ActivityIndicator size="small" color="#fff" />
-                                        <Text className="text-white font-bold text-sm">Saving changes...</Text>
+                                        <Text className="text-white font-bold text-sm">{t('savingChanges')}</Text>
                                     </View>
                                 ) : (
                                     <Text className="text-white font-bold text-base">
-                                        Apply & Save Radius
+                                        {t('applySaveRadius')}
                                     </Text>
                                 )}
                             </ScalePressable>
@@ -576,99 +585,163 @@ export default function WorkerSettings() {
                     onRequestClose={() => setSupportVisible(false)}
                 >
                     <TouchableOpacity
-                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+                        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifycontent: 'flex-end' }}
                         activeOpacity={1}
                         onPress={() => setSupportVisible(false)}
                     >
                         <View style={{
-                            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                            borderTopLeftRadius: 28,
-                            borderTopRightRadius: 28,
-                            padding: 24,
-                            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-                            borderWidth: isDark ? 1 : 0,
-                            borderColor: isDark ? '#1e293b' : 'transparent'
+                            flex: 1,
+                            justifyContent: 'flex-end',
+                            backgroundColor: 'transparent'
                         }}>
-                            {/* Drag Handle */}
-                            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? '#334155' : '#cbd5e1', alignSelf: 'center', marginBottom: 20 }} />
+                            <View style={{
+                                backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                                borderTopLeftRadius: 28,
+                                borderTopRightRadius: 28,
+                                padding: 24,
+                                paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+                                borderWidth: isDark ? 1 : 0,
+                                borderColor: isDark ? '#1e293b' : 'transparent'
+                            }}>
+                                {/* Drag Handle */}
+                                <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? '#334155' : '#cbd5e1', alignSelf: 'center', marginBottom: 20 }} />
 
-                            <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 4 }}>
-                                Support Team
-                            </Text>
-                            <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', marginBottom: 24 }}>
-                                Reach out to us via any of these channels for quick assistance.
-                            </Text>
+                                <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 4 }}>
+                                    {t('helpSupport')}
+                                </Text>
+                                <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', marginBottom: 24 }}>
+                                    {t('helpSupportDesc')}
+                                </Text>
 
-                            {/* Email Support */}
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setSupportVisible(false);
-                                    Linking.openURL('mailto:support@hindustaan.in').catch(() => {
-                                        Alert.alert("Error", "Could not open mail app.");
-                                    });
-                                }}
-                                activeOpacity={0.7}
-                                style={{
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                                    padding: 16,
-                                    borderRadius: 16,
-                                    marginBottom: 12,
-                                    borderWidth: 1,
-                                    borderColor: isDark ? '#334155' : '#f1f5f9'
-                                }}
-                            >
-                                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#1e1b4b' : '#e0e7ff', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                                    <Ionicons name="mail" size={22} color={isDark ? '#818cf8' : '#4f46e5'} />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Email Us</Text>
-                                    <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>support@hindustaan.in</Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
-                            </TouchableOpacity>
+                                {/* Email Support */}
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setSupportVisible(false);
+                                        Linking.openURL('mailto:support@hindustaan.in').catch(() => {
+                                            Alert.alert(t('error'), t('unableOpenEmail'));
+                                        });
+                                    }}
+                                    activeOpacity={0.7}
+                                    style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                                        padding: 16,
+                                        borderRadius: 16,
+                                        marginBottom: 12,
+                                        borderWidth: 1,
+                                        borderColor: isDark ? '#334155' : '#f1f5f9'
+                                    }}
+                                >
+                                    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#1e1b4b' : '#e0e7ff', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                        <Ionicons name="mail" size={22} color={isDark ? '#818cf8' : '#4f46e5'} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>{t('emailSupport')}</Text>
+                                        <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>support@hindustaan.in</Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
+                                </TouchableOpacity>
 
-                            {/* Phone Support */}
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setSupportVisible(false);
-                                    Linking.openURL('tel:07712994005').catch(() => {
-                                        Alert.alert("Error", "Could not place phone call.");
-                                    });
-                                }}
-                                activeOpacity={0.7}
-                                style={{
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                                    padding: 16,
-                                    borderRadius: 16,
-                                    marginBottom: 24,
-                                    borderWidth: 1,
-                                    borderColor: isDark ? '#334155' : '#f1f5f9'
-                                }}
-                            >
-                                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                                    <Ionicons name="call" size={22} color={isDark ? '#34d399' : '#16a34a'} />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Phone</Text>
-                                    <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>0771-2994005</Text>
-                                </View>
-                                <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
-                            </TouchableOpacity>
+                                {/* Phone Support */}
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setSupportVisible(false);
+                                        Linking.openURL('tel:07712994005').catch(() => {
+                                            Alert.alert(t('error'), t('unableOpenDialer'));
+                                        });
+                                    }}
+                                    activeOpacity={0.7}
+                                    style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                                        padding: 16,
+                                        borderRadius: 16,
+                                        marginBottom: 24,
+                                        borderWidth: 1,
+                                        borderColor: isDark ? '#334155' : '#f1f5f9'
+                                    }}
+                                >
+                                    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                        <Ionicons name="call" size={22} color={isDark ? '#34d399' : '#16a34a'} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>{t('callHelpline')}</Text>
+                                        <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>0771-2994005</Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
+                                </TouchableOpacity>
 
-                            {/* Cancel Button */}
-                            <TouchableOpacity
-                                onPress={() => setSupportVisible(false)}
-                                activeOpacity={0.8}
-                                style={{ backgroundColor: isDark ? '#334155' : '#f1f5f9', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
-                            >
-                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>Cancel</Text>
-                            </TouchableOpacity>
+                                {/* Cancel Button */}
+                                <TouchableOpacity
+                                    onPress={() => setSupportVisible(false)}
+                                    activeOpacity={0.8}
+                                    style={{ backgroundColor: isDark ? '#334155' : '#f1f5f9', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
+                                >
+                                    <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>{t('cancel')}</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </TouchableOpacity>
+                </Modal>
+
+                {/* Language Selection Modal */}
+                <Modal
+                    visible={languageModalVisible}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setLanguageModalVisible(false)}
+                >
+                    <View className="flex-1 justify-end bg-black/40">
+                        <Pressable style={{ flex: 1 }} onPress={() => setLanguageModalVisible(false)} />
+                        <View className="bg-white dark:bg-slate-900 rounded-t-[28px] p-6 pb-8 border-t border-slate-100 dark:border-slate-800 shadow-xl">
+                            <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full self-center mb-6" />
+
+                            <View className="flex-row justify-between items-center mb-2">
+                                <Text className="text-xl font-bold text-slate-950 dark:text-slate-100">{t('selectLanguage')}</Text>
+                                <ScalePressable
+                                    onPress={() => setLanguageModalVisible(false)}
+                                    hapticType="light"
+                                    className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 items-center justify-center border border-slate-100 dark:border-slate-700"
+                                >
+                                    <Ionicons name="close" size={18} color={colors.text} />
+                                </ScalePressable>
+                            </View>
+                            <Text className="text-slate-400 dark:text-slate-550 text-xs font-semibold mb-6">
+                                {t('changeAppLanguage')}
+                            </Text>
+
+                            {/* Language options */}
+                            <ScalePressable
+                                onPress={() => handleLanguageChange('en')}
+                                hapticType="medium"
+                                className={`flex-row items-center border p-4 rounded-xl mb-4 ${currentLanguage === 'en'
+                                    ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+                                    : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
+                                    }`}
+                            >
+                                <View className="ml-2 flex-1">
+                                    <Text className={`text-base font-bold ${currentLanguage === 'en' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'}`}>English</Text>
+                                </View>
+                                {currentLanguage === 'en' && <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />}
+                            </ScalePressable>
+
+                            <ScalePressable
+                                onPress={() => handleLanguageChange('hi')}
+                                hapticType="medium"
+                                className={`flex-row items-center border p-4 rounded-xl mb-6 ${currentLanguage === 'hi'
+                                    ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+                                    : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
+                                    }`}
+                            >
+                                <View className="ml-2 flex-1">
+                                    <Text className={`text-base font-bold ${currentLanguage === 'hi' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'}`}>हिंदी (Hindi)</Text>
+                                </View>
+                                {currentLanguage === 'hi' && <Ionicons name="checkmark-circle" size={20} color="#3B82F6" />}
+                            </ScalePressable>
+                        </View>
+                    </View>
                 </Modal>
             </SafeAreaView>
         </SafeAreaProvider>

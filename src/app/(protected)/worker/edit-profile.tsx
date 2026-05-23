@@ -12,18 +12,20 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import MediaLibraryPicker from '@/components/media-library-picker';
-
+import { useTranslation } from 'react-i18next';
+ 
 export default function EditProfile() {
+    const { t } = useTranslation();
     const user = useAppStore(state => state.user);
     const updateProfile = useAppStore(state => state.updateProfile);
     const refreshProfile = useAppStore(state => state.refreshProfile);
-
+ 
     const router = useRouter();
     const params = useLocalSearchParams();
     const fromSettings = params?.from === 'settings';
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-
+ 
     const [fullName, setFullName] = useState(user?.name || '');
     const [bio, setBio] = useState(user?.bio || '');
     const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null);
@@ -32,20 +34,20 @@ export default function EditProfile() {
     const [showMediaPicker, setShowMediaPicker] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showSourceModal, setShowSourceModal] = useState(false);
-
+ 
     // Fetch saved details from user store
     useEffect(() => {
         setFullName(user?.name || '');
         setBio(user?.bio || '');
         setFetching(false);
     }, [user?.id, user?.name, user?.bio]);
-
+ 
     // Photo handlers
     const takePhoto = async () => {
         try {
             const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
             if (!permissionResult.granted) {
-                Alert.alert("Permission Required", "Camera permission is required to take a photo.");
+                Alert.alert(t('permissionRequired'), t('cameraPermissionMsg'));
                 return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -58,24 +60,24 @@ export default function EditProfile() {
                 setSelectedImage({ uri: asset.uri, size: asset.fileSize });
             }
         } catch (err: any) {
-            Alert.alert("Error capturing photo", err.message);
+            Alert.alert(t('errorCapturingPhoto'), err.message);
         }
     };
-
+ 
     const handleSelectPhoto = () => {
         setShowSourceModal(true);
     };
-
+ 
     const handleSave = async () => {
         if (!fullName.trim()) {
-            Alert.alert('Error', 'Full name is required.');
+            Alert.alert(t('error'), t('fullNameRequired'));
             return;
         }
-
+ 
         setLoading(true);
         try {
             let uploadedImageUrl = undefined;
-
+ 
             if (selectedImage && user?.id) {
                 try {
                     const filename = `avatar_${user.id}_${Date.now()}.jpg`;
@@ -87,25 +89,25 @@ export default function EditProfile() {
                     console.error('[handleSave] Failed converting/uploading photo:', uploadErr);
                 }
             }
-
+ 
             const profileSuccess = await updateProfile({
                 name: fullName,
                 bio: bio,
                 profile_image: uploadedImageUrl !== undefined ? uploadedImageUrl : user?.profile_image,
             });
-
+ 
             if (profileSuccess) {
                 setShowSuccessModal(true);
             } else {
-                Alert.alert('Error', 'Failed to update profile details.');
+                Alert.alert(t('error'), t('failedUpdateProfileDetails'));
             }
         } catch {
-            Alert.alert('Error', 'An unexpected error occurred.');
+            Alert.alert(t('error'), t('unexpectedError'));
         } finally {
             setLoading(false);
         }
     };
-
+ 
     const handleSuccessOk = async () => {
         setShowSuccessModal(false);
         await refreshProfile();
@@ -141,14 +143,14 @@ export default function EditProfile() {
                     }}>
                         {/* Drag Handle */}
                         <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? '#334155' : '#cbd5e1', alignSelf: 'center', marginBottom: 20 }} />
-
+ 
                         <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 4 }}>
-                            Profile Photo
+                            {t('profilePhoto')}
                         </Text>
                         <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', marginBottom: 24 }}>
-                            Select how you want to update your profile photo.
+                            {t('selectUpdatePhotoDesc')}
                         </Text>
-
+ 
                         {/* Camera Option */}
                         <TouchableOpacity
                             onPress={() => {
@@ -171,12 +173,12 @@ export default function EditProfile() {
                                 <Ionicons name="camera" size={22} color={isDark ? '#3b82f6' : '#2563eb'} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Take Photo</Text>
-                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>Capture using camera</Text>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>{t('takePhoto')}</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>{t('captureUsingCamera')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
                         </TouchableOpacity>
-
+ 
                         {/* Gallery Option */}
                         <TouchableOpacity
                             onPress={() => {
@@ -199,24 +201,24 @@ export default function EditProfile() {
                                 <Ionicons name="image" size={22} color={isDark ? '#10b981' : '#16a34a'} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Choose from Library</Text>
-                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>Select from your photos</Text>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>{t('chooseFromLibrary')}</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>{t('selectFromPhotos')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
                         </TouchableOpacity>
-
+ 
                         {/* Cancel Button */}
                         <TouchableOpacity
                             onPress={() => setShowSourceModal(false)}
                             activeOpacity={0.8}
                             style={{ backgroundColor: isDark ? '#334155' : '#f1f5f9', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
                         >
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>Cancel</Text>
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>{t('cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
             </Modal>
-
+ 
             {/* ── Custom Success Modal ── */}
             <Modal
                 visible={showSuccessModal}
@@ -242,21 +244,21 @@ export default function EditProfile() {
                         <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: isDark ? '#064e3b' : '#f0fdf4', borderWidth: 2, borderColor: isDark ? '#059669' : '#bbf7d0', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                             <Ionicons name="checkmark" size={38} color={isDark ? '#34d399' : '#16a34a'} />
                         </View>
-
-                        <Text style={{ fontSize: 22, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>Profile Updated!</Text>
-                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>Your profile has been saved successfully.</Text>
-
+ 
+                        <Text style={{ fontSize: 22, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>{t('profileUpdated')}</Text>
+                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>{t('profileUpdatedMsg')}</Text>
+ 
                         <TouchableOpacity
                             onPress={handleSuccessOk}
                             activeOpacity={0.85}
                             style={{ backgroundColor: isDark ? '#2563eb' : '#000000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>OK</Text>
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{t('ok')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
-
+ 
             <SafeAreaView className="flex-1 bg-white">
                 <View className="flex-row items-center px-5 py-4 border-b border-slate-100">
                     <TouchableOpacity onPress={() => {
@@ -268,9 +270,9 @@ export default function EditProfile() {
                     }} className="p-2">
                         <Ionicons name="arrow-back" size={24} color="black" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold ml-4">Edit Profile</Text>
+                    <Text className="text-xl font-bold ml-4">{t('editProfile')}</Text>
                 </View>
-
+ 
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     className="flex-1"
@@ -278,7 +280,7 @@ export default function EditProfile() {
                     {fetching ? (
                         <View className="flex-1 items-center justify-center">
                             <ActivityIndicator size="large" color="black" />
-                            <Text className="mt-4 text-slate-500 font-medium">Loading details...</Text>
+                            <Text className="mt-4 text-slate-500 font-medium">{t('loadingDetails')}</Text>
                         </View>
                     ) : (
                         <ScrollView contentContainerStyle={{ padding: 20 }}>
@@ -298,31 +300,31 @@ export default function EditProfile() {
                                     </TouchableOpacity>
                                 </View>
                             </View>
-
+ 
                             {/* Name */}
                             <View className="mb-6">
-                                <Text className="text-sm font-bold text-slate-500 uppercase mb-2">Full Name</Text>
+                                <Text className="text-sm font-bold text-slate-500 uppercase mb-2">{t('fullName')}</Text>
                                 <TextInput
                                     className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base"
                                     value={fullName}
                                     onChangeText={setFullName}
-                                    placeholder="Enter your full name"
+                                    placeholder={t('enterFullName')}
                                 />
                             </View>
-
+ 
                             {/* Bio */}
                             <View className="mb-6">
-                                <Text className="text-sm font-bold text-slate-500 uppercase mb-2">Bio / Description</Text>
+                                <Text className="text-sm font-bold text-slate-500 uppercase mb-2">{t('bioDescription')}</Text>
                                 <TextInput
                                     className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base h-32"
                                     value={bio}
                                     onChangeText={setBio}
-                                    placeholder="Describe your skills and experience"
+                                    placeholder={t('describeSkillsExperience')}
                                     multiline
                                     textAlignVertical="top"
                                 />
                             </View>
-
+ 
                             {/* Save Button */}
                             <TouchableOpacity
                                 onPress={handleSave}
@@ -332,13 +334,13 @@ export default function EditProfile() {
                                 {loading ? (
                                     <ActivityIndicator color="white" />
                                 ) : (
-                                    <Text className="text-white font-bold text-lg">Save Changes</Text>
+                                    <Text className="text-white font-bold text-lg">{t('saveChanges')}</Text>
                                 )}
                             </TouchableOpacity>
                         </ScrollView>
                     )}
                 </KeyboardAvoidingView>
-
+ 
                 <MediaLibraryPicker
                     visible={showMediaPicker}
                     onClose={() => setShowMediaPicker(false)}

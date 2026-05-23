@@ -226,7 +226,7 @@ export default function CustomPolicyModel({ visible, onClose, role, type }: Cust
           {/* Footer branding details */}
           <View className="items-center mt-6 pt-6 border-t border-slate-100 dark:border-slate-850">
             <Text className="text-[10px] font-black text-slate-350 dark:text-slate-700 tracking-widest uppercase mb-1">
-              Hindustan Innovations
+              Hindustaan Innovations PVT. LTD.
             </Text>
             <Text className="text-[9px] font-semibold text-slate-450 dark:text-slate-600">
               Last Updated: May 2026

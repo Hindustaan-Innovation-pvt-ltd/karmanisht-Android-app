@@ -113,11 +113,11 @@ export default function Register() {
     const handleContinue = async () => {
         if (!canContinue) return
         if (!/^[6-9]\d{9}$/.test(phone)) {
-            showAlert('Invalid Mobile', 'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.', 'error');
+            showAlert(t('invalidMobile', 'Invalid Mobile'), t('invalidMobileMsg', 'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.'), 'error');
             return;
         }
         if (cooldown > 0) {
-            showAlert('Please Wait', `You can request another OTP in ${cooldown} seconds.`, 'warning');
+            showAlert(t('pleaseWait', 'Please Wait'), t('cooldownMsg', 'You can request another OTP in {{time}} seconds.', { time: cooldown }), 'warning');
             return;
         }
         setLoading(true);
@@ -132,12 +132,12 @@ export default function Register() {
 
             setVerificationId(vId);
             setCooldown(30); // 30 seconds cooldown
-            showAlert('OTP Sent', 'OTP sent successfully!', 'success', () => {
+            showAlert(t('otpSent', 'OTP Sent'), t('otpSentMsg', 'OTP sent successfully!'), 'success', () => {
                 setShowOtpModal(true);
             });
         } catch (err: any) {
             console.error('[Firebase OTP Error]', err);
-            showAlert('Error', err.message || 'Failed to send OTP', 'error');
+            showAlert(t('error', 'Error'), err.message || t('failedSendOtp', 'Failed to send OTP'), 'error');
         } finally {
             setLoading(false);
         }
@@ -157,10 +157,10 @@ export default function Register() {
 
             setVerificationId(vId);
             setCooldown(30);
-            showAlert('OTP Sent', 'OTP resent successfully!', 'success');
+            showAlert(t('otpSent', 'OTP Sent'), t('otpResentSuccess', 'OTP resent successfully!'), 'success');
         } catch (err: any) {
             console.error('[Firebase OTP Resend Error]', err);
-            showAlert('Error', err.message || 'Failed to resend OTP', 'error');
+            showAlert(t('error', 'Error'), err.message || t('failedResendOtp', 'Failed to resend OTP'), 'error');
         } finally {
             setResendingOtp(false);
         }
@@ -216,7 +216,7 @@ export default function Register() {
             setShowOtpModal(false);
             await finalizeRegistration(finalUserId || '');
         } catch (err: any) {
-            showAlert('Verification Failed', err.message, 'error');
+            showAlert(t('verificationFailed', 'Verification Failed'), err.message, 'error');
             hasProcessedRef.current = false; // allow retry
         } finally {
             setVerifyingOtp(false);
@@ -245,7 +245,7 @@ export default function Register() {
                 console.log('User is already authenticated in register, bypassing session-expired error...');
                 await handleSuccessfulRegistration();
             } else {
-                showAlert('Verification Failed', err.message, 'error');
+                showAlert(t('verificationFailed', 'Verification Failed'), err.message, 'error');
                 setVerifyingOtp(false);
             }
         }
@@ -255,7 +255,7 @@ export default function Register() {
         try {
             const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
             if (!permissionResult.granted) {
-                showAlert("Permission Required", "Camera permission is required to take a photo.", "warning");
+                showAlert(t('permissionRequired', 'Permission Required'), t('cameraPermissionRequired', 'Camera permission is required to take a photo.'), 'warning');
                 return;
             }
 
@@ -273,7 +273,7 @@ export default function Register() {
                 });
             }
         } catch (err: any) {
-            showAlert("Error capturing photo", err.message, "error");
+            showAlert(t('errorCapturingPhoto', 'Error capturing photo'), err.message, 'error');
         }
     };
 
@@ -322,7 +322,7 @@ export default function Register() {
             // Both roles go to location screen first
             router.replace('/(location)/locationinfo');
         } catch (err: any) {
-            showAlert('Registration Error', err.message, 'error');
+            showAlert(t('registrationError', 'Registration Error'), err.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -375,7 +375,7 @@ export default function Register() {
                         <TextInput
                             value={fullName}
                             onChangeText={setFullName}
-                            placeholder='Ramesh Kumar Sahu'
+                            placeholder={t('namePlaceholder', 'Ramesh Kumar Sahu')}
                             placeholderTextColor="#94A3B8"
                             autoCapitalize='words'
                             className='border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3.5 text-base text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900'
@@ -390,7 +390,7 @@ export default function Register() {
                             <TextInput
                                 value={phone}
                                 onChangeText={setPhone}
-                                placeholder='9876543210'
+                                placeholder={t('phonePlaceholder', '9876543210')}
                                 placeholderTextColor="#94A3B8"
                                 keyboardType='phone-pad'
                                 maxLength={10}
@@ -440,7 +440,7 @@ export default function Register() {
                                 <TextInput
                                     value={experience}
                                     onChangeText={setExperience}
-                                    placeholder='e.g. 5'
+                                    placeholder={t('experiencePlaceholder', 'e.g. 5')}
                                     placeholderTextColor="#94A3B8"
                                     keyboardType='number-pad'
                                     className='flex-1 py-3.5 ml-2 text-base text-slate-900 dark:text-slate-100'

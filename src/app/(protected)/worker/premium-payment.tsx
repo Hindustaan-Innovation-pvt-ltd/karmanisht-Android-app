@@ -11,11 +11,13 @@ import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Confetti } from '@/components/Confetti';
+import { useTranslation } from 'react-i18next';
 
 
 const RAZORPAY_KEY = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SpC8XTKEi3eJGe';
 
 export default function PremiumPayment() {
+    const { t } = useTranslation();
     const router = useRouter();
     const colorScheme = useColorScheme();
     const params = useLocalSearchParams();
@@ -207,11 +209,11 @@ export default function PremiumPayment() {
     const runMockFlow = async () => {
         const confirmed = await new Promise<boolean>((resolve) => {
             Alert.alert(
-                'Confirm Payment',
-                `Simulate payment of \u20b9${totalPrice} for ${plan === 'premium' ? 'Premium' : 'Basic'} plan?`,
+                t('confirmPayment', 'Confirm Payment'),
+                t('simulatePaymentMsg', { price: totalPrice, plan: plan === 'premium' ? t('premium', 'PREMIUM') : t('basic', 'BASIC') }, `Simulate payment of \u20b9${totalPrice} for ${plan === 'premium' ? 'Premium' : 'Basic'} plan?`),
                 [
-                    { text: 'Cancel', onPress: () => resolve(false), style: 'cancel' },
-                    { text: `Confirm \u20b9${totalPrice}`, onPress: () => resolve(true) },
+                    { text: t('cancel', 'Cancel'), onPress: () => resolve(false), style: 'cancel' },
+                    { text: t('confirmPrice', { price: totalPrice }, `Confirm \u20b9${totalPrice}`), onPress: () => resolve(true) },
                 ]
             );
         });
@@ -220,7 +222,7 @@ export default function PremiumPayment() {
         const ok = await activatePremium(`mock_pay_${Date.now()}`);
         setLoading(false);
         if (ok) setShowSuccess(true);
-        else Alert.alert('Error', 'Activation failed. Please contact support.');
+        else Alert.alert(t('error', 'Error'), t('activationFailed', 'Activation failed. Please contact support.'));
     };
 
     // ── Main Pay Handler ──────────────────────────────────────────────────────
@@ -246,7 +248,7 @@ export default function PremiumPayment() {
 
             if (result === 'cancelled') {
                 setLoading(false);
-                Alert.alert('Payment Cancelled', 'You cancelled the payment. Try again when ready.');
+                Alert.alert(t('paymentCancelled', 'Payment Cancelled'), t('paymentCancelledMsg', 'You cancelled the payment. Try again when ready.'));
                 return;
             }
 
@@ -254,11 +256,11 @@ export default function PremiumPayment() {
             const ok = await activatePremium();
             setLoading(false);
             if (ok) setShowSuccess(true);
-            else Alert.alert('Error', 'Payment successful but activation failed. Contact support.');
+            else Alert.alert(t('error', 'Error'), t('paymentSuccessActivationFailed', 'Payment successful but activation failed. Contact support.'));
         } catch (err: any) {
             console.error('[handlePay]', err);
             setLoading(false);
-            Alert.alert('Error', err?.message || 'An unexpected error occurred.');
+            Alert.alert(t('error', 'Error'), err?.message || t('unexpectedError', 'An unexpected error occurred.'));
         }
     };
 
@@ -286,21 +288,21 @@ export default function PremiumPayment() {
                         {/* Premium badge pill */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 99, marginBottom: 16, gap: 5 }}>
                             <Ionicons name="star" size={11} color="#fff" />
-                            <Text style={{ color: '#fff', fontWeight: '900', fontSize: 11, letterSpacing: 1.5 }}>PREMIUM MEMBER</Text>
+                            <Text style={{ color: '#fff', fontWeight: '900', fontSize: 11, letterSpacing: 1.5 }}>{t('premiumMember', 'PREMIUM MEMBER')}</Text>
                         </View>
 
-                        <Text style={{ fontSize: 24, fontWeight: '900', color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>{"You're Premium!"}</Text>
+                        <Text style={{ fontSize: 24, fontWeight: '900', color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>{t('youArePremium', "You're Premium!")}</Text>
                         <Text style={{ fontSize: 13, color: '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 8 }}>
-                            Your <Text style={{ fontWeight: '800', color: '#0f172a' }}>{plan === 'premium' ? 'Premium' : 'Basic'}</Text> subscription is now active.
+                            {t('subscriptionActiveDesc', { plan: plan === 'premium' ? t('premium', 'PREMIUM') : t('basic', 'BASIC') }, `Your ${plan === 'premium' ? 'Premium' : 'Basic'} subscription is now active.`)}
                         </Text>
 
                         {/* Benefits list */}
                         <View style={{ alignSelf: 'stretch', backgroundColor: '#f8fafc', borderRadius: 16, padding: 16, marginBottom: 24, gap: 10 }}>
                             {[
-                                { icon: 'trending-up', label: 'Top ranking in search results' },
-                                { icon: 'shield-checkmark', label: 'Verified Premium badge on profile' },
-                                { icon: 'flash', label: 'Boosted profile visibility' },
-                                { icon: 'infinite', label: plan === 'premium' ? 'Unlimited leads' : 'Up to 50 leads/month' },
+                                { icon: 'trending-up', label: t('benefitSearchRanking', 'Top ranking in search results') },
+                                { icon: 'shield-checkmark', label: t('benefitVerifiedBadge', 'Verified Premium badge on profile') },
+                                { icon: 'flash', label: t('benefitProfileBoost', 'Profile boost — 3× more visibility') },
+                                { icon: 'infinite', label: plan === 'premium' ? t('benefitUnlimitedLeads', 'Unlimited customer leads') : t('benefitBasicLeads', '50 customer leads/month') },
                             ].map((b, i) => (
                                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                                     <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' }}>
@@ -316,7 +318,7 @@ export default function PremiumPayment() {
                             activeOpacity={0.85}
                             style={{ backgroundColor: '#18181b', borderRadius: 16, paddingVertical: 15, width: '100%', alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>Go to Dashboard</Text>
+                            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>{t('goToDashboard', 'Go to Dashboard')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -332,7 +334,7 @@ export default function PremiumPayment() {
                 >
                     <Ionicons name="arrow-back" size={20} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
-                <Text className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">Complete Payment</Text>
+                <Text className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">{t('completePayment', 'Complete Payment')}</Text>
                 <View className="w-10" />
             </View>
 
@@ -343,37 +345,37 @@ export default function PremiumPayment() {
                     <View className="flex-row items-center gap-2 mb-4">
                         <Ionicons name="ribbon" size={18} color="#F59E0B" />
                         <Text className="text-xs font-black text-amber-400 uppercase tracking-widest">
-                            {plan === 'premium' ? 'PREMIUM PLAN' : 'BASIC PLAN'}
+                            {plan === 'premium' ? t('premiumPlan', 'PREMIUM PLAN') : t('basicPlan', 'BASIC PLAN')}
                         </Text>
                     </View>
                     <View className="flex-row items-baseline mb-5">
                         <Text className="text-4xl font-black text-white">₹{basePrice}</Text>
-                        <Text className="text-slate-400 font-bold ml-1">/year</Text>
+                        <Text className="text-slate-400 font-bold ml-1">{t('perYear', '/year')}</Text>
                     </View>
                     <View className="h-px bg-slate-800 mb-4" />
                     <View className="flex-row justify-between mb-2">
-                        <Text className="text-slate-400 text-sm">Plan price</Text>
+                        <Text className="text-slate-400 text-sm">{t('planPrice', 'Plan price')}</Text>
                         <Text className="text-slate-200 text-sm font-semibold">₹{basePrice}</Text>
                     </View>
                     <View className="flex-row justify-between mb-2">
-                        <Text className="text-slate-400 text-sm">GST (18%)</Text>
+                        <Text className="text-slate-400 text-sm">{t('gstTax', 'GST (18%)')}</Text>
                         <Text className="text-slate-200 text-sm font-semibold">₹{gstPrice}</Text>
                     </View>
                     <View className="h-px bg-slate-800 my-3" />
                     <View className="flex-row justify-between">
-                        <Text className="text-white text-base font-black">Total</Text>
+                        <Text className="text-white text-base font-black">{t('total', 'Total')}</Text>
                         <Text className="text-white text-base font-black">₹{totalPrice}</Text>
                     </View>
                 </View>
 
                 {/* What you get */}
-                <Text className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">What you get</Text>
+                <Text className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">{t('whatYouGet', 'What you get')}</Text>
                 <View className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-5 mb-6 gap-4">
                     {[
-                        { icon: 'trending-up', color: '#6366F1', bg: '#EEF2FF', label: 'Top ranking in search', sub: 'Appear first when customers search' },
-                        { icon: 'shield-checkmark', color: '#10B981', bg: '#F0FDF4', label: 'Verified Premium badge', sub: 'Golden badge on your profile' },
-                        { icon: 'flash', color: '#F59E0B', bg: '#FFFBEB', label: 'Profile boost', sub: '3× more visibility across the app' },
-                        { icon: 'infinite', color: '#EC4899', bg: '#FDF2F8', label: plan === 'premium' ? 'Unlimited leads' : '50 leads/month', sub: plan === 'premium' ? 'No limit on customer contacts' : 'Up to 50 new customer leads' },
+                        { icon: 'trending-up', color: '#6366F1', bg: '#EEF2FF', label: t('benefitSearchRanking', 'Top ranking in search results'), sub: t('searchRankingSub', 'Appear first when customers search') },
+                        { icon: 'shield-checkmark', color: '#10B981', bg: '#F0FDF4', label: t('benefitVerifiedBadge', 'Verified Premium badge on profile'), sub: t('verifiedBadgeSub', 'Golden badge on your profile') },
+                        { icon: 'flash', color: '#F59E0B', bg: '#FFFBEB', label: t('benefitProfileBoost', 'Profile boost — 3× more visibility'), sub: t('profileBoostSub', '3× more visibility across the app') },
+                        { icon: 'infinite', color: '#EC4899', bg: '#FDF2F8', label: plan === 'premium' ? t('benefitUnlimitedLeads', 'Unlimited customer leads') : t('benefitBasicLeads', '50 customer leads/month'), sub: plan === 'premium' ? t('unlimitedLeadsSub', 'No limit on customer contacts') : t('limitedLeadsSub', 'Up to 50 new customer leads') },
                     ].map((b, i) => (
                         <View key={i} className="flex-row items-center gap-3">
                             <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: b.bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -391,10 +393,10 @@ export default function PremiumPayment() {
                 {/* Secure payment note */}
                 <View className="flex-row items-center justify-center gap-2 mb-2">
                     <Feather name="lock" size={13} color="#94a3b8" />
-                    <Text className="text-xs text-slate-400 font-semibold">Secured by Razorpay · 256-bit SSL</Text>
+                    <Text className="text-xs text-slate-400 font-semibold">{t('securedByRazorpay', 'Secured by Razorpay · 256-bit SSL')}</Text>
                 </View>
                 <Text className="text-center text-[11px] text-slate-400 px-4">
-                    You will be charged ₹{totalPrice} (incl. GST). Subscription is valid for 1 year from activation.
+                    {t('paymentChargeNote', { price: totalPrice }, `You will be charged ₹${totalPrice} (incl. GST). Subscription is valid for 1 year from activation.`)}
                 </Text>
             </ScrollView>
 
@@ -412,14 +414,14 @@ export default function PremiumPayment() {
                         <>
                             <Ionicons name="ribbon" size={18} color="#fff" />
                             <Text className="text-white font-black text-lg">
-                                Pay ₹{totalPrice} · Get Premium
+                                {t('payGetPremium', { price: totalPrice }, `Pay ₹${totalPrice} · Get Premium`)}
                             </Text>
                         </>
                     )}
                 </TouchableOpacity>
                 <View className="flex-row items-center justify-center gap-1 mt-2">
                     <Feather name="lock" size={11} color="#94a3b8" />
-                    <Text className="text-slate-400 text-xs font-bold">Secure · Razorpay encrypted</Text>
+                    <Text className="text-slate-400 text-xs font-bold">{t('secureRazorpayEncrypted', 'Secure · Razorpay encrypted')}</Text>
                 </View>
             </View>
         </SafeAreaView>

@@ -113,7 +113,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         email: userData.email || '',
                         isGoogleUser: !!isGoogleUser,
                     };
-                    set({ user: profile });
+                    set({ user: profile, isOnline: profile.isOnline ?? true });
                     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
                     await get().refreshProfile();
                     return profile;
@@ -166,6 +166,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
 
                         set({
                             user: profile,
+                            isOnline: profile.isOnline ?? true,
                             workerStats: {
                                 rating: workerData.average_rating ? Number(workerData.average_rating) : 0.0,
                                 jobsDone: workerData.total_jobs_completed || 0,
@@ -189,7 +190,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         email: userData.email || '',
                         isGoogleUser: !!isGoogleUser,
                     };
-                    set({ user: profile });
+                    set({ user: profile, isOnline: profile.isOnline ?? true });
                     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
                     await get().refreshProfile();
                     return profile;
@@ -204,7 +205,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         email: userData.email || '',
                         isGoogleUser: !!isGoogleUser,
                     };
-                    set({ user: profile });
+                    set({ user: profile, isOnline: profile.isOnline ?? true });
                     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
                     await get().refreshProfile();
                     return profile;
@@ -219,7 +220,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         email: userData.email || '',
                         isGoogleUser: !!isGoogleUser,
                     };
-                    set({ user: profile });
+                    set({ user: profile, isOnline: profile.isOnline ?? true });
                     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(profile));
                     await get().refreshProfile();
                     return profile;
@@ -274,6 +275,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
 
                 set({
                     user: profile,
+                    isOnline: profile.isOnline ?? true,
                     workerStats: {
                         rating: workerData.average_rating ? Number(workerData.average_rating) : 0.0,
                         jobsDone: workerData.total_jobs_completed || 0,
@@ -321,7 +323,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 cachedUser = JSON.parse(cachedUserStr);
                 if (cachedUser && cachedUser.id) {
                     // Immediately set user to enable instant routing and render cached profile UI
-                    set({ user: cachedUser });
+                    set({ user: cachedUser, isOnline: cachedUser.isOnline ?? true });
                 }
             }
 
@@ -433,7 +435,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                             });
                         }
 
-                        set({ user: updatedUser });
+                        set({ user: updatedUser, isOnline: updatedUser.isOnline ?? true });
                         await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
                     }
                 } else if (identityErr || !identityData) {
@@ -712,11 +714,23 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     // ─────────────────────────────────────────────────────────────────────────
     setOnline: async (v: boolean) => {
         set({ isOnline: v });
+        const nextUser = { ...get().user, isOnline: v };
+        set({ user: nextUser });
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(nextUser)).catch(() => { });
         AsyncStorage.setItem(STORAGE_KEYS.ONLINE, String(v)).catch(() => { });
         const userId = get().user.id;
-        if (userId) {
-            const tableName = get().user.role === 'worker' ? 'service_providers' : 'users';
-            insforge.database.from(tableName).update({ is_active: v }).eq('id', userId).then();
+        if (userId && !userId.startsWith('local_')) {
+            try {
+                const tableName = get().user.role === 'worker' ? 'service_providers' : 'users';
+                await insforge.database.from(tableName).update({ is_active: v }).eq('id', userId);
+                
+                // For workers, keep the users table in sync too
+                if (get().user.role === 'worker') {
+                    await insforge.database.from('users').update({ is_active: v }).eq('id', userId);
+                }
+            } catch (err) {
+                console.error('[setOnline] Failed to sync status with database:', err);
+            }
         }
     },
 

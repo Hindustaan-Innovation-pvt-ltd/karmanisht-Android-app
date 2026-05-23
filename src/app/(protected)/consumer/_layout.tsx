@@ -4,8 +4,10 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
+import { useTranslation } from 'react-i18next';
 
 export default function ConsumerLayout() {
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const pathname = usePathname();
 
@@ -50,7 +52,7 @@ export default function ConsumerLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('tabHome', 'Home'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
           ),
@@ -59,7 +61,7 @@ export default function ConsumerLayout() {
       <Tabs.Screen
         name="services"
         options={{
-          title: 'Explore',
+          title: t('tabExplore', 'Explore'),
           tabBarIcon: ({ color, focused }) => (
             <Feather name="briefcase" size={24} color={color} />
           ),
@@ -74,7 +76,7 @@ export default function ConsumerLayout() {
       <Tabs.Screen
         name="contact/index"
         options={{
-          title: 'Contacts',
+          title: t('tabContacts', 'Contacts'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
           ),
@@ -83,7 +85,7 @@ export default function ConsumerLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabProfile', 'Profile'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),

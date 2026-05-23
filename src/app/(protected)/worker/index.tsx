@@ -7,9 +7,11 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StarIcon, MapPinIcon, EditIcon, UploadIcon, ShieldIcon, ClockIcon } from '@/svg/icons';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 
 export default function WorkerDashboard() {
+    const { t } = useTranslation();
     const { user, isOnline, toggleOnlineStatus, workerStats, refreshProfile } = useAppStore();
     const router = useRouter();
     const [reviews, setReviews] = React.useState<any[]>([]);
@@ -99,12 +101,12 @@ export default function WorkerDashboard() {
                 style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
             >
                 <View className="flex-row items-center justify-between mb-6">
-                    <Text className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Dashboard</Text>
+                    <Text className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{t('dashboard')}</Text>
                     <View className="flex-row items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-100 dark:border-slate-700">
                         <Text className={`text-xs font-bold ${isOnline ? 'text-green-600' : 'text-slate-400'}`}>
-                            {isOnline ? 'ONLINE' : 'OFFLINE'}
+                            {isOnline ? t('onlineCaps') : t('offlineCaps')}
                         </Text>
-
+ 
                         <Switch
                             value={isOnline}
                             onValueChange={toggleOnlineStatus}
@@ -115,7 +117,7 @@ export default function WorkerDashboard() {
                         />
                     </View>
                 </View>
-
+ 
                 <View className="flex-row items-start gap-4">
                     {/* Avatar */}
                     <View className="relative">
@@ -132,7 +134,7 @@ export default function WorkerDashboard() {
                         )}
                         <View className={`absolute -bottom-1 -right-1 size-5 rounded-full border-2 border-white ${isOnline ? 'bg-green-500' : 'bg-slate-300'}`} />
                     </View>
-
+ 
                     {/* Info */}
                     <View className="flex-1">
                         <View className="flex-row items-center gap-2 flex-wrap">
@@ -147,18 +149,18 @@ export default function WorkerDashboard() {
                                 }}>
                                     <Ionicons name="ribbon" size={10} color="#fff" />
                                     <Text style={{ color: '#fff', fontWeight: '900', fontSize: 9, letterSpacing: 0.5 }}>
-                                        PREMIUM
+                                        {t('premiumCaps')}
                                     </Text>
                                 </View>
                             )}
                         </View>
-                        <Text className="text-sm text-slate-500 font-medium">{user?.profession || 'Service Provider'}</Text>
+                        <Text className="text-sm text-slate-500 font-medium">{user?.profession || t('serviceProvider')}</Text>
                         <View className="flex-row items-center gap-1 mt-1">
                             <MapPinIcon size={12} color="#94A3B8" />
-                            <Text className="text-xs text-slate-400 font-medium">{user?.location || 'Location not set'}</Text>
+                            <Text className="text-xs text-slate-400 font-medium">{user?.location || t('locationNotSet')}</Text>
                         </View>
                     </View>
-
+ 
                     {/* Edit */}
                     <TouchableOpacity
                         onPress={() => router.push('/(protected)/worker/edit-profile')}
@@ -167,7 +169,7 @@ export default function WorkerDashboard() {
                         <EditIcon size={18} color="#64748B" />
                     </TouchableOpacity>
                 </View>
-
+ 
                 {/* Stats Card */}
                 <View
                     className="flex-row mt-6 bg-slate-900 dark:bg-slate-800 rounded-[24px] p-1 overflow-hidden"
@@ -178,18 +180,18 @@ export default function WorkerDashboard() {
                             <StarIcon size={14} color="#F59E0B" filled />
                             <Text className="text-lg font-bold text-white">{workerStats.rating?.toFixed(1) || '0.0'}</Text>
                         </View>
-                        <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Rating</Text>
+                        <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{t('rating')}</Text>
                     </View>
                     <View className="flex-1 items-center py-4 border-r border-slate-800">
                         <Text className="text-lg font-bold text-white">{workerStats.jobsDone || 0}</Text>
-                        <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Jobs Done</Text>
+                        <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{t('jobsDone')}</Text>
                     </View>
                     <View className="flex-1 items-center py-4">
                         <Text className="text-lg font-bold text-white">{user?.experience || '0 yrs'}</Text>
-                        <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Experience</Text>
+                        <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{t('experience')}</Text>
                     </View>
                 </View>
-
+ 
                 {/* Verification Nudge */}
                 <TouchableOpacity
                     onPress={() => router.push('/(protected)/worker/verify-identity?from=dashboard')}
@@ -199,12 +201,12 @@ export default function WorkerDashboard() {
                         <ShieldIcon size={16} color="#D97706" />
                     </View>
                     <View className="flex-1">
-                        <Text className="text-xs font-bold text-amber-900">Get Verified</Text>
-                        <Text className="text-[10px] text-amber-700 font-medium">Verify your identity to get 2x more leads</Text>
+                        <Text className="text-xs font-bold text-amber-900">{t('getVerified')}</Text>
+                        <Text className="text-[10px] text-amber-700 font-medium">{t('verifyIdentityNudge')}</Text>
                     </View>
-                    <Text className="text-xs font-black text-amber-900">START</Text>
+                    <Text className="text-xs font-black text-amber-900">{t('start')}</Text>
                 </TouchableOpacity>
-
+ 
                 {/* Premium Subscription Nudge */}
                 <TouchableOpacity
                     onPress={() => router.push('/(protected)/worker/premium-plans')}
@@ -221,33 +223,33 @@ export default function WorkerDashboard() {
                                 <View className="flex-row items-center gap-2">
                                     <Ionicons name="ribbon" size={16} color="#F59E0B" />
                                     <Text className="text-xs font-black text-amber-400 uppercase tracking-widest">
-                                        PREMIUM PLAN
+                                        {t('premiumPlan')}
                                     </Text>
                                 </View>
                                 {/* Active dot */}
                                 <View className="flex-row items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                                     <View className="size-1.5 rounded-full bg-emerald-400" />
-                                    <Text className="text-[9px] font-black text-emerald-400">ACTIVE</Text>
+                                    <Text className="text-[9px] font-black text-emerald-400">{t('active')}</Text>
                                 </View>
                             </View>
-
+ 
                             {/* Expiry row */}
                             {subExpiry && (
                                 <View className="flex-row items-center gap-2 mb-3">
                                     <Ionicons name="calendar-outline" size={13} color="#94a3b8" />
                                     <Text className="text-xs font-semibold text-slate-400">
-                                        Valid till {formatExpiry(subExpiry)} · {daysLeft} days left
+                                        {t('validTill')} {formatExpiry(subExpiry)} · {daysLeft} {t('daysLeft')}
                                     </Text>
                                 </View>
                             )}
-
+ 
                             {/* Benefits summary */}
                             <View className="flex-row items-center justify-between">
                                 <Text className="text-xs font-medium text-slate-400">
-                                    Top ranking · Unlimited leads · Verified badge
+                                    {t('premiumPlanBenefits')}
                                 </Text>
                                 <View className="bg-slate-700 px-3 py-1 rounded-xl">
-                                    <Text className="text-white text-[10px] font-black">MANAGE</Text>
+                                    <Text className="text-white text-[10px] font-black">{t('manage')}</Text>
                                 </View>
                             </View>
                         </View>
@@ -257,18 +259,18 @@ export default function WorkerDashboard() {
                                 <Ionicons name="ribbon" size={16} color="#6366F1" />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-xs font-bold text-indigo-950 dark:text-indigo-300">Upgrade to Premium</Text>
-                                <Text className="text-[10px] text-indigo-700 dark:text-indigo-400">Boost ranking, get verified badge & unlimited leads</Text>
+                                <Text className="text-xs font-bold text-indigo-950 dark:text-indigo-300">{t('upgradeToPremium')}</Text>
+                                <Text className="text-[10px] text-indigo-700 dark:text-indigo-400">{t('upgradeToPremiumDesc')}</Text>
                             </View>
-                            <Text className="text-xs font-black text-indigo-950 dark:text-indigo-200">VIEW</Text>
+                            <Text className="text-xs font-black text-indigo-950 dark:text-indigo-200">{t('view')}</Text>
                         </View>
                     )}
                 </TouchableOpacity>
             </View>
-
+ 
             {/* Quick Actions Grid */}
             <View className="px-5 mt-6">
-                <Text className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Settings & Tools</Text>
+                <Text className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">{t('settingsAndTools')}</Text>
                 <View className="flex-col gap-3">
                     <View className="flex-row gap-3">
                         <TouchableOpacity
@@ -278,7 +280,7 @@ export default function WorkerDashboard() {
                             <View className="size-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 items-center justify-center">
                                 <MapPinIcon size={20} color="#3B82F6" />
                             </View>
-                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Area</Text>
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">{t('area')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => router.push('/(protected)/worker/verify-identity?from=dashboard')}
@@ -287,7 +289,7 @@ export default function WorkerDashboard() {
                             <View className="size-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 items-center justify-center">
                                 <UploadIcon size={20} color="#A855F7" />
                             </View>
-                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Documents</Text>
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">{t('documents')}</Text>
                         </TouchableOpacity>
                     </View>
                     <View className="flex-row gap-3">
@@ -297,7 +299,7 @@ export default function WorkerDashboard() {
                             <View className="size-10 rounded-xl bg-pink-50 dark:bg-pink-900/20 items-center justify-center">
                                 <StarIcon size={20} color="#EC4899" filled />
                             </View>
-                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Reviews</Text>
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">{t('reviews')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => router.push('/(protected)/worker/premium-plans')}
@@ -306,28 +308,28 @@ export default function WorkerDashboard() {
                             <View className="size-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 items-center justify-center">
                                 <Ionicons name="ribbon" size={20} color="#F59E0B" />
                             </View>
-                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">Premium Plans</Text>
+                            <Text className="text-xs font-bold text-slate-700 dark:text-slate-300">{t('premiumPlans')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </View>
-
+ 
             {/* Recent Reviews Section Title */}
             <View className="px-5 mt-8 mb-4 flex-row items-center justify-between">
-                <Text className="text-sm font-bold text-slate-400 uppercase tracking-widest">Recent Reviews</Text>
+                <Text className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t('recentReviews')}</Text>
                 <TouchableOpacity>
-                    <Text className="text-xs text-slate-500 font-bold">See All</Text>
+                    <Text className="text-xs text-slate-500 font-bold">{t('seeAll')}</Text>
                 </TouchableOpacity>
             </View>
         </View>
     );
-
+ 
     const renderEmpty = () => {
         if (loadingReviews) {
             return (
                 <View className="py-8 items-center justify-center">
                     <ActivityIndicator color="black" />
-                    <Text className="mt-2 text-xs text-slate-400 font-bold uppercase tracking-widest">Loading Reviews...</Text>
+                    <Text className="mt-2 text-xs text-slate-400 font-bold uppercase tracking-widest">{t('loadingReviews')}</Text>
                 </View>
             );
         }
@@ -336,11 +338,11 @@ export default function WorkerDashboard() {
                 <View className="size-12 rounded-full bg-slate-50 items-center justify-center mb-4">
                     <ShieldIcon size={20} color="#CBD5E1" />
                 </View>
-                <Text className="text-slate-400 text-center font-medium">No reviews yet. Complete jobs to get rated!</Text>
+                <Text className="text-slate-400 text-center font-medium">{t('noReviewsWorker')}</Text>
             </View>
         );
     };
-
+ 
     return (
         <SafeAreaProvider>
             <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
@@ -359,7 +361,7 @@ export default function WorkerDashboard() {
                                     <View className="size-8 rounded-full bg-slate-50 items-center justify-center">
                                         <Text className="text-xs font-bold text-slate-600">{(r.reviewer?.full_name || 'U')[0]}</Text>
                                     </View>
-                                    <Text className="text-sm font-bold text-slate-800 dark:text-slate-100">{r.reviewer?.full_name || 'Anonymous User'}</Text>
+                                    <Text className="text-sm font-bold text-slate-800 dark:text-slate-100">{r.reviewer?.full_name || t('anonymousUser')}</Text>
                                 </View>
                                 <View className="flex-row items-center gap-0.5">
                                     {Array.from({ length: 5 }).map((_, i) => (

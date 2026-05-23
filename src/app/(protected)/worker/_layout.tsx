@@ -3,8 +3,10 @@ import { Tabs, usePathname } from 'expo-router';
 import React from 'react';
 import { HomeIcon, BriefcaseIcon, SettingsIcon } from '@/svg/icons';
 import { useTheme } from '@/lib/theme';
+import { useTranslation } from 'react-i18next';
 
 export default function WorkerProtectedLayout() {
+    const { t } = useTranslation();
     const { colors } = useTheme();
     const pathname = usePathname();
 
@@ -42,21 +44,21 @@ export default function WorkerProtectedLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Home',
+                    title: t('tabHome', 'Home'),
                     tabBarIcon: ({ color }) => <HomeIcon size={22} color={color} />,
                 }}
             />
             <Tabs.Screen
                 name="leads"
                 options={{
-                    title: 'Leads',
+                    title: t('tabLeads', 'Leads'),
                     tabBarIcon: ({ color }) => <BriefcaseIcon size={22} color={color} />,
                 }}
             />
             <Tabs.Screen
                 name="settings"
                 options={{
-                    title: 'Settings',
+                    title: t('tabSettings', 'Settings'),
                     tabBarIcon: ({ color }) => <SettingsIcon size={22} color={color} />,
                 }}
             />

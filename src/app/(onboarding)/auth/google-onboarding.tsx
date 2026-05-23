@@ -155,7 +155,7 @@ export default function GoogleOnboarding() {
                                 <TextInput
                                     value={experience}
                                     onChangeText={setExperience}
-                                    placeholder='e.g. 5'
+                                    placeholder={t('experiencePlaceholder', 'e.g. 5')}
                                     placeholderTextColor="#94A3B8"
                                     keyboardType='number-pad'
                                     className='flex-1 py-4 ml-3 text-base font-semibold text-slate-900 dark:text-slate-100'
@@ -166,13 +166,13 @@ export default function GoogleOnboarding() {
                 </ScrollView>
 
                 {/* Complete Button */}
-                <View className='p-6 pb-10 border-t border-slate-100 dark:border-slate-900'>
+                <View className='p-2 border-t border-slate-100 dark:border-slate-900'>
                     <ScalePressable
                         onPress={handleCompleteOnboarding}
                         disabled={!canSubmit || loading}
                         hapticType="medium"
                         scaleTo={0.97}
-                        className={`py-4.5 rounded-2xl items-center justify-center ${canSubmit ? 'bg-black dark:bg-blue-600' : 'bg-slate-100 dark:bg-slate-900'}`}
+                        className={`py-6 rounded-2xl items-center justify-center ${canSubmit ? 'bg-black dark:bg-blue-600' : 'bg-slate-100 dark:bg-slate-900'}`}
                     >
                         {loading ? (
                             <ActivityIndicator color={isDark ? "white" : "black"} />

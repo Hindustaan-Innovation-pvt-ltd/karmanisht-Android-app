@@ -10,11 +10,13 @@ import * as ImagePicker from 'expo-image-picker'
 import MediaLibraryPicker from '@/components/media-library-picker'
 import { insforge, uploadToInsForge } from '@/lib/insforge'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 
 type DocStatus = 'pending' | 'uploaded' | 'verified'
 type UploadType = 'aadhaar_front' | 'aadhaar_back' | 'pan_front'
 
 export default function VerifyIdentity() {
+    const { t } = useTranslation();
     const user = useAppStore(state => state.user);
     const setUser = useAppStore(state => state.setUser);
     const refreshProfile = useAppStore(state => state.refreshProfile);
@@ -54,7 +56,7 @@ export default function VerifyIdentity() {
         try {
             const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
             if (!permissionResult.granted) {
-                Alert.alert("Permission Required", "Camera permission is required.");
+                Alert.alert(t('permissionRequired', 'Permission Required'), t('cameraPermissionRequired', 'Camera permission is required.'));
                 return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -67,7 +69,7 @@ export default function VerifyIdentity() {
                 if (activeUploadType) setDocForType(activeUploadType, { uri: asset.uri, size: asset.fileSize });
             }
         } catch (err: any) {
-            Alert.alert("Error capturing photo", err.message);
+            Alert.alert(t('errorCapturingPhoto', 'Error capturing photo'), err.message);
         }
     };
 
@@ -84,7 +86,7 @@ export default function VerifyIdentity() {
                     if (activeUploadType) setDocForType(activeUploadType, { uri: asset.uri, size: asset.fileSize });
                 }
             } catch (err: any) {
-                Alert.alert("Error picking image", err.message);
+                Alert.alert(t('errorPickingImage', 'Error picking image'), err.message);
             }
         } else {
             setShowMediaPicker(true);
@@ -97,14 +99,15 @@ export default function VerifyIdentity() {
     };
 
     const handleSubmit = async () => {
-        if (!aadhaarFront) { Alert.alert('Missing', 'Please upload the front side of your Aadhaar card.'); return; }
-        if (!aadhaarBack) { Alert.alert('Missing', 'Please upload the back side of your Aadhaar card.'); return; }
-        if (!panFront) { Alert.alert('Missing', 'Please upload the front side of your PAN card.'); return; }
+        if (!aadhaarFront) { Alert.alert(t('missing', 'Missing'), t('pleaseUploadAadhaarFront', 'Please upload the front side of your Aadhaar card.')); return; }
+        if (!aadhaarBack) { Alert.alert(t('missing', 'Missing'), t('pleaseUploadAadhaarBack', 'Please upload the back side of your Aadhaar card.')); return; }
+        if (!panFront) { Alert.alert(t('missing', 'Missing'), t('pleaseUploadPanFront', 'Please upload the front side of your PAN card.')); return; }
 
         setUploading(true);
         try {
-            if (!user?.id) throw new Error('User not found.');
+            if (!user?.id) throw new Error(t('userNotFound', 'User not found.'));
 
+            const ts = Date.now();
             const safeUserName = (user?.name || 'user')
                 .toLowerCase()
                 .replace(/[^a-z0-9]/g, '_')
@@ -123,7 +126,7 @@ export default function VerifyIdentity() {
             const panFrontUrl = panFrontRes?.url || '';
 
             if (!aadhaarFrontUrl || !aadhaarBackUrl || !panFrontUrl) {
-                throw new Error('One or more uploads failed. Please try again.');
+                throw new Error(t('uploadFailedTryAgain', 'One or more uploads failed. Please try again.'));
             }
 
             // Save all URLs to service_providers
@@ -141,7 +144,7 @@ export default function VerifyIdentity() {
 
             if (providerError) {
                 console.error('[VerifyIdentity] DB update error:', providerError);
-                throw new Error(providerError.message || 'Failed to save documents.');
+                throw new Error(providerError.message || t('failedSaveDocuments', 'Failed to save documents.'));
             }
 
             setUser({ hasSpecialties: true });
@@ -149,7 +152,7 @@ export default function VerifyIdentity() {
             setShowSuccessModal(true);
         } catch (err: any) {
             console.error('[VerifyIdentity] Submission error:', err);
-            Alert.alert('Submission Failed', err.message || 'An unexpected error occurred.');
+            Alert.alert(t('submissionFailed', 'Submission Failed'), err.message || t('unexpectedError', 'An unexpected error occurred.'));
         } finally {
             setUploading(false);
         }
@@ -190,8 +193,8 @@ export default function VerifyIdentity() {
                         />
                         <View className="flex-row items-center gap-2 px-3 py-2.5 bg-green-50 dark:bg-green-950/30">
                             <CheckCircleIcon size={14} color="#16A34A" />
-                            <Text className="text-xs font-semibold text-green-700 dark:text-green-400 flex-1">{label} uploaded</Text>
-                            <Text className="text-[10px] text-green-600 font-medium">Tap to change</Text>
+                            <Text className="text-xs font-semibold text-green-700 dark:text-green-400 flex-1">{t('documentUploaded', { label: label }, `${label} uploaded`)}</Text>
+                            <Text className="text-[10px] text-green-600 font-medium">{t('tapToChange', 'Tap to change')}</Text>
                         </View>
                     </View>
                 ) : (
@@ -232,12 +235,12 @@ export default function VerifyIdentity() {
                         <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? '#334155' : '#cbd5e1', alignSelf: 'center', marginBottom: 20 }} />
 
                         <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 4 }}>
-                            {activeUploadType === 'aadhaar_front' && 'Aadhaar Card (Front)'}
-                            {activeUploadType === 'aadhaar_back' && 'Aadhaar Card (Back)'}
-                            {activeUploadType === 'pan_front' && 'PAN Card (Front)'}
+                            {activeUploadType === 'aadhaar_front' && t('aadhaarFrontTitle', 'Aadhaar Card (Front)')}
+                            {activeUploadType === 'aadhaar_back' && t('aadhaarBackTitle', 'Aadhaar Card (Back)')}
+                            {activeUploadType === 'pan_front' && t('panFrontTitle', 'PAN Card (Front)')}
                         </Text>
                         <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', marginBottom: 24 }}>
-                            Please choose how you want to upload this document.
+                            {t('pleaseChooseUpload', 'Please choose how you want to upload this document.')}
                         </Text>
 
                         {/* Camera Option */}
@@ -262,8 +265,8 @@ export default function VerifyIdentity() {
                                 <Ionicons name="camera" size={22} color={isDark ? '#3b82f6' : '#2563eb'} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Take Photo</Text>
-                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>Use your device camera</Text>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>{t('takePhoto', 'Take Photo')}</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>{t('useDeviceCamera', 'Use your device camera')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
                         </TouchableOpacity>
@@ -290,8 +293,8 @@ export default function VerifyIdentity() {
                                 <Ionicons name="image" size={22} color={isDark ? '#10b981' : '#16a34a'} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>Choose from Gallery</Text>
-                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>Select an existing document photo</Text>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#f1f5f9' : '#1e293b' }}>{t('chooseFromGallery', 'Choose from Gallery')}</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#94a3b8' : '#64748b', marginTop: 1 }}>{t('selectExistingPhoto', 'Select an existing document photo')}</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#94a3b8'} />
                         </TouchableOpacity>
@@ -302,7 +305,7 @@ export default function VerifyIdentity() {
                             activeOpacity={0.8}
                             style={{ backgroundColor: isDark ? '#334155' : '#f1f5f9', paddingVertical: 14, borderRadius: 16, alignItems: 'center' }}
                         >
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>Cancel</Text>
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: isDark ? '#cbd5e1' : '#475569' }}>{t('cancel', 'Cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
@@ -334,8 +337,8 @@ export default function VerifyIdentity() {
                             <Ionicons name="checkmark" size={38} color={isDark ? '#34d399' : '#16a34a'} />
                         </View>
 
-                        <Text style={{ fontSize: 22, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>Documents Submitted!</Text>
-                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>Your documents have been submitted successfully. We will review them within 24 hours.</Text>
+                        <Text style={{ fontSize: 22, fontWeight: '800', color: isDark ? '#f8fafc' : '#0f172a', marginBottom: 8, textAlign: 'center' }}>{t('documentsSubmitted', 'Documents Submitted!')}</Text>
+                        <Text style={{ fontSize: 14, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>{t('documentsSubmittedDesc', 'Your documents have been submitted successfully. We will review them within 24 hours.')}</Text>
 
                         <TouchableOpacity
                             onPress={() => {
@@ -347,7 +350,7 @@ export default function VerifyIdentity() {
                             activeOpacity={0.85}
                             style={{ backgroundColor: isDark ? '#2563eb' : '#000000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>OK</Text>
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{t('ok', 'OK')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -357,14 +360,14 @@ export default function VerifyIdentity() {
                 <ScrollView className='flex-1' contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
                     <View className='mb-6 mt-12 flex-col gap-4'>
                         <View className='flex-row items-center gap-6 justify-start'>
-                            <Ionicons name='arrow-back' size={22} color="#000" onPress={() => {
+                            <Ionicons name='arrow-back' size={22} color={isDark ? '#fff' : '#000'} onPress={() => {
                                 if (fromSettings) router.replace('/(protected)/worker/settings');
                                 else router.back();
                             }} />
-                            <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Verify your identity</Text>
+                            <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>{t('verifyIdentityTitle', 'Verify your identity')}</Text>
                         </View>
                         <Text className='text-sm text-slate-500 mt-1'>
-                            Required to list your profile. Documents are reviewed within 24 hours.
+                            {t('verifyIdentityDesc', 'Required to list your profile. Documents are reviewed within 24 hours.')}
                         </Text>
                     </View>
 
@@ -379,16 +382,16 @@ export default function VerifyIdentity() {
                                 )}
                             </View>
                             <View className='flex-1'>
-                                <Text className='text-base font-bold text-slate-900 dark:text-slate-100'>{user.name || 'Anonymous'}</Text>
-                                <Text className='text-sm text-slate-500'>{user.profession || 'Provider'}</Text>
+                                <Text className='text-base font-bold text-slate-900 dark:text-slate-100'>{user.name || t('anonymous', 'Anonymous')}</Text>
+                                <Text className='text-sm text-slate-500'>{user.profession || t('provider', 'Provider')}</Text>
                                 <View className='flex-row items-center gap-1 mt-1'>
                                     <Ionicons name="location-outline" size={11} color="#9CA3AF" />
-                                    <Text className='text-xs text-slate-400'>{user.location || 'Location not set'}</Text>
+                                    <Text className='text-xs text-slate-400'>{user.location || t('locationNotSet', 'Location not set')}</Text>
                                 </View>
                             </View>
                             <View className='items-end'>
                                 <View className='bg-amber-100 dark:bg-amber-900/35 px-2 py-0.5 rounded-full'>
-                                    <Text className='text-amber-700 dark:text-amber-400 text-xs font-semibold'>Pending</Text>
+                                    <Text className='text-amber-700 dark:text-amber-400 text-xs font-semibold'>{t('pending', 'Pending')}</Text>
                                 </View>
                             </View>
                         </View>
@@ -400,18 +403,18 @@ export default function VerifyIdentity() {
                             <View className='w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 items-center justify-center'>
                                 <Text className='text-xs font-black text-blue-600 dark:text-blue-400'>1</Text>
                             </View>
-                            <Text className='text-base font-bold text-slate-800 dark:text-slate-100'>Aadhaar Card</Text>
-                            <Text className='text-xs text-slate-400 font-medium'>(Both sides required)</Text>
+                            <Text className='text-base font-bold text-slate-800 dark:text-slate-100'>{t('aadhaarCard', 'Aadhaar Card')}</Text>
+                            <Text className='text-xs text-slate-400 font-medium'>{t('bothSidesRequired', '(Both sides required)')}</Text>
                         </View>
 
                         <View className='flex-row gap-3'>
                             {/* Front */}
                             <View className='flex-1'>
-                                <Text className='text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 ml-0.5'>FRONT SIDE</Text>
+                                <Text className='text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 ml-0.5'>{t('frontSide', 'FRONT SIDE')}</Text>
                                 <UploadCard
                                     type="aadhaar_front"
-                                    label="Aadhaar Front"
-                                    hint="Name & photo side"
+                                    label={t('aadhaarFront', 'Aadhaar Front')}
+                                    hint={t('namePhotoSide', 'Name & photo side')}
                                     selectedImg={aadhaarFront}
                                     status={aadhaarFrontStatus}
                                     icon={<UploadIcon size={24} color="#94A3B8" />}
@@ -419,11 +422,11 @@ export default function VerifyIdentity() {
                             </View>
                             {/* Back */}
                             <View className='flex-1'>
-                                <Text className='text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 ml-0.5'>BACK SIDE</Text>
+                                <Text className='text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 ml-0.5'>{t('backSide', 'BACK SIDE')}</Text>
                                 <UploadCard
                                     type="aadhaar_back"
-                                    label="Aadhaar Back"
-                                    hint="Address side"
+                                    label={t('aadhaarBack', 'Aadhaar Back')}
+                                    hint={t('addressSide', 'Address side')}
                                     selectedImg={aadhaarBack}
                                     status={aadhaarBackStatus}
                                     icon={<UploadIcon size={24} color="#94A3B8" />}
@@ -438,13 +441,13 @@ export default function VerifyIdentity() {
                             <View className='w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-900/40 items-center justify-center'>
                                 <Text className='text-xs font-black text-orange-600 dark:text-orange-400'>2</Text>
                             </View>
-                            <Text className='text-base font-bold text-slate-800 dark:text-slate-100'>PAN Card</Text>
-                            <Text className='text-xs text-slate-400 font-medium'>(Front side only)</Text>
+                            <Text className='text-base font-bold text-slate-800 dark:text-slate-100'>{t('panCard', 'PAN Card')}</Text>
+                            <Text className='text-xs text-slate-400 font-medium'>{t('frontSideOnly', '(Front side only)')}</Text>
                         </View>
                         <UploadCard
                             type="pan_front"
-                            label="PAN Card — Front Side"
-                            hint="Name, DOB & PAN number visible • JPG or PNG"
+                            label={t('panCardFront', 'PAN Card — Front Side')}
+                            hint={t('panCardHint', 'Name, DOB & PAN number visible • JPG or PNG')}
                             selectedImg={panFront}
                             status={panFrontStatus}
                             icon={<UploadIcon size={26} color="#94A3B8" />}
@@ -454,9 +457,9 @@ export default function VerifyIdentity() {
                     {/* Progress indicator */}
                     <View className='flex-row gap-2 mb-4'>
                         {[
-                            { done: !!aadhaarFront, label: 'Aadhaar Front' },
-                            { done: !!aadhaarBack, label: 'Aadhaar Back' },
-                            { done: !!panFront, label: 'PAN Front' },
+                            { done: !!aadhaarFront, label: t('aadhaarFront', 'Aadhaar Front') },
+                            { done: !!aadhaarBack, label: t('aadhaarBack', 'Aadhaar Back') },
+                            { done: !!panFront, label: t('panFront', 'PAN Front') },
                         ].map((item, i) => (
                             <View key={i} className='flex-1 items-center gap-1'>
                                 <View className={`w-full h-1.5 rounded-full ${item.done ? 'bg-green-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
@@ -471,7 +474,7 @@ export default function VerifyIdentity() {
                     <View className='flex-row gap-2 bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3'>
                         <ShieldIcon size={16} color="#3B82F6" />
                         <Text className='text-xs text-blue-600 dark:text-blue-400 flex-1 leading-relaxed'>
-                            Your documents are encrypted and stored securely. They are only used for identity verification and never shared with customers.
+                            {t('securityNote', 'Your documents are encrypted and stored securely. They are only used for identity verification and never shared with customers.')}
                         </Text>
                     </View>
                 </ScrollView>
@@ -490,7 +493,7 @@ export default function VerifyIdentity() {
                             <>
                                 <Ionicons name="shield-checkmark" size={18} color="white" />
                                 <Text className='text-white text-base font-bold'>
-                                    {allDocsUploaded ? 'Submit for Review' : `${[!!aadhaarFront, !!aadhaarBack, !!panFront].filter(Boolean).length}/3 documents uploaded`}
+                                    {allDocsUploaded ? t('submitForReview', 'Submit for Review') : t('docsUploadedProgress', { count: [!!aadhaarFront, !!aadhaarBack, !!panFront].filter(Boolean).length }, `${[!!aadhaarFront, !!aadhaarBack, !!panFront].filter(Boolean).length}/3 documents uploaded`)}
                                 </Text>
                             </>
                         )}
@@ -503,7 +506,7 @@ export default function VerifyIdentity() {
                         }}
                         activeOpacity={0.7}
                     >
-                        <Text className='text-center text-sm text-slate-400 font-medium'>Skip, I&apos;ll do this later</Text>
+                        <Text className='text-center text-sm text-slate-400 font-medium'>{t('skipLater', "Skip, I'll do this later")}</Text>
                     </TouchableOpacity>
                 </View>
 

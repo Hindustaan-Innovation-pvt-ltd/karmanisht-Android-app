@@ -21,8 +21,10 @@ import Animated, {
     useSharedValue, 
     withSpring 
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 
 export default function SelectLocation() {
+    const { t } = useTranslation();
     const router = useRouter();
     const user = useAppStore(state => state.user);
     const userLocation = useAppStore(state => state.userLocation);
@@ -249,7 +251,7 @@ export default function SelectLocation() {
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                showAlert('Permission Denied', 'Location permission is required to use this feature.', 'warning');
+                showAlert(t('permissionDenied', 'Permission Denied'), t('locationPermissionRequired', 'Location permission is required to use this feature.'), 'warning');
                 return;
             }
 
@@ -361,12 +363,12 @@ export default function SelectLocation() {
             if (Platform.OS !== 'web') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
             }
-            showAlert('Validation Error', 'Please enter address details.', 'error');
+            showAlert(t('validationError', 'Validation Error'), t('pleaseEnterDetails', 'Please enter address details.'), 'error');
             return;
         }
 
         if (!user?.id) {
-            showAlert('Authentication Error', 'User session not found. Please log in again.', 'error');
+            showAlert(t('authError', 'Authentication Error'), t('sessionNotFound', 'User session not found. Please log in again.'), 'error');
             return;
         }
 
@@ -391,12 +393,12 @@ export default function SelectLocation() {
             if (Platform.OS !== 'web') {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
             }
-            showAlert('Success', 'Address saved successfully!', 'success');
+            showAlert(t('success', 'Success'), t('addressSavedSuccess', 'Address saved successfully!'), 'success');
             setShowAddForm(false);
             fetchSavedAddresses();
         } catch (err: any) {
             console.error('Error saving address:', err);
-            showAlert('Error', err.message || 'Error saving address', 'error');
+            showAlert(t('error', 'Error'), err.message || t('failedSaveAddress', 'Error saving address'), 'error');
         } finally {
             setSavingAddress(false);
         }
@@ -440,12 +442,12 @@ export default function SelectLocation() {
     // Delete address from DB
     const handleDeleteAddress = (id: string) => {
         Alert.alert(
-            'Delete Address',
-            'Are you sure you want to delete this address?',
+            t('deleteAddress', 'Delete Address'),
+            t('deleteConfirmMsg', 'Are you sure you want to delete this address?'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('cancel', 'Cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: t('delete', 'Delete'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -456,11 +458,11 @@ export default function SelectLocation() {
 
                             if (error) throw error;
 
-                            showAlert('Success', 'Address deleted successfully!', 'success');
+                            showAlert(t('success', 'Success'), t('addressDeletedSuccess', 'Address deleted successfully!'), 'success');
                             fetchSavedAddresses();
                         } catch (err) {
                             console.error('Delete error:', err);
-                            showAlert('Error', 'Failed to delete address', 'error');
+                            showAlert(t('error', 'Error'), t('failedToDeleteAddress', 'Failed to delete address'), 'error');
                         }
                     }
                 }
@@ -481,7 +483,7 @@ export default function SelectLocation() {
                 <ScalePressable onPress={() => router.back()} style={styles.backButton} hapticType="light">
                     <Ionicons name="chevron-down" size={28} color="#1E293B" />
                 </ScalePressable>
-                <Text style={styles.headerTitle}>Select a location</Text>
+                <Text style={styles.headerTitle}>{t('selectLocationTitle', 'Select a location')}</Text>
             </View>
 
             {showAddForm ? (
@@ -491,7 +493,7 @@ export default function SelectLocation() {
                     exiting={FadeOutLeft.duration(200)}
                     style={styles.formContainer}
                 >
-                    <Text style={styles.formSectionTitle}>Confirm your location</Text>
+                    <Text style={styles.formSectionTitle}>{t('confirmLocationTitle', 'Confirm your location')}</Text>
                     <View style={styles.mapWrapper}>
                         <LocationMapPicker
                             coords={formCoords}
@@ -509,12 +511,12 @@ export default function SelectLocation() {
                             </View>
                         )}
                         <View style={styles.mapPinOverlay}>
-                            <Text style={styles.mapPinText}>Drag map to adjust pin</Text>
+                            <Text style={styles.mapPinText}>{t('dragMapAdjust', 'Drag map to adjust pin')}</Text>
                         </View>
                     </View>
 
                     <ScrollView style={styles.formFields} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                        <Text style={styles.formLabel}>Save Address As</Text>
+                        <Text style={styles.formLabel}>{t('saveAddressAs', 'Save Address As')}</Text>
                         <View style={styles.typeButtonsRow}>
                             {['Home', 'Office', 'Other'].map((type) => {
                                 const isSelected = addressName === type;
@@ -541,7 +543,7 @@ export default function SelectLocation() {
                                             styles.typeButtonText,
                                             isSelected && styles.typeButtonTextActive
                                         ]}>
-                                            {type}
+                                            {type === 'Home' ? t('home', 'Home') : type === 'Office' ? t('office', 'Office') : t('other', 'Other')}
                                         </Text>
                                     </ScalePressable>
                                 );
@@ -551,17 +553,17 @@ export default function SelectLocation() {
                         {addressName === 'Other' && (
                             <TextInput
                                 style={styles.formInput}
-                                placeholder="Enter custom label (e.g. Gym, Friend's house)"
+                                placeholder={t('enterCustomLabel', "Enter custom label (e.g. Gym, Friend's house)")}
                                 placeholderTextColor="#94A3B8"
                                 value={customName}
                                 onChangeText={setCustomName}
                             />
                         )}
 
-                        <Text style={styles.formLabel}>Address Details</Text>
+                        <Text style={styles.formLabel}>{t('addressDetails', 'Address Details')}</Text>
                         <TextInput
                             style={[styles.formInput, styles.textArea]}
-                            placeholder="Enter complete address details"
+                            placeholder={t('enterCompleteAddress', 'Enter complete address details')}
                             placeholderTextColor="#94A3B8"
                             value={addressLine}
                             onChangeText={setAddressLine}
@@ -578,7 +580,7 @@ export default function SelectLocation() {
                             {savingAddress ? (
                                 <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
-                                <Text style={styles.saveBtnText}>Save Address</Text>
+                                <Text style={styles.saveBtnText}>{t('saveAddress', 'Save Address')}</Text>
                             )}
                         </ScalePressable>
 
@@ -587,7 +589,7 @@ export default function SelectLocation() {
                             onPress={() => setShowAddForm(false)}
                             hapticType="light"
                         >
-                            <Text style={styles.cancelBtnText}>Cancel</Text>
+                            <Text style={styles.cancelBtnText}>{t('cancel', 'Cancel')}</Text>
                         </ScalePressable>
                     </ScrollView>
                 </Animated.View>
@@ -603,7 +605,7 @@ export default function SelectLocation() {
                         <View style={styles.searchContainer}>
                             <Ionicons name="search" size={22} color="#059669" style={styles.searchIcon} />
                             <TextInput
-                                placeholder="Search saved or search places online..."
+                                placeholder={t('searchPlaceholder', 'Search saved or search places online...')}
                                 placeholderTextColor="#94A3B8"
                                 style={styles.searchInput}
                                 value={searchQuery}
@@ -624,7 +626,7 @@ export default function SelectLocation() {
                                         <MaterialCommunityIcons name="crosshairs-gps" size={22} color="#059669" />
                                     </View>
                                     <View style={styles.optionTextContainer}>
-                                        <Text style={styles.optionTitle}>Use current location</Text>
+                                        <Text style={styles.optionTitle}>{t('useCurrentLocation', 'Use current location')}</Text>
                                         <Text style={styles.optionSubtext} numberOfLines={2}>
                                             {currentAddress}
                                         </Text>
@@ -638,21 +640,21 @@ export default function SelectLocation() {
                                         <Ionicons name="add" size={22} color="#059669" />
                                     </View>
                                     <View style={styles.optionTextContainer}>
-                                        <Text style={styles.optionTitle}>Add Address</Text>
-                                        <Text style={styles.optionSubtext}>Select custom location on map</Text>
+                                        <Text style={styles.optionTitle}>{t('addAddress', 'Add Address')}</Text>
+                                        <Text style={styles.optionSubtext}>{t('selectCustomMap', 'Select custom location on map')}</Text>
                                     </View>
                                     <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
                                 </ScalePressable>
 
                                 {/* SAVED ADDRESSES */}
                                 <View style={styles.sectionHeader}>
-                                    <Text style={styles.sectionHeaderText}>SAVED ADDRESSES</Text>
+                                    <Text style={styles.sectionHeaderText}>{t('savedAddresses', 'SAVED ADDRESSES')}</Text>
                                 </View>
 
                                 {loadingAddresses ? (
                                     <ActivityIndicator size="large" color="#059669" style={{ marginVertical: 20 }} />
                                 ) : filteredAddresses.length === 0 ? (
-                                    <Text style={styles.noAddressText}>No saved addresses found.</Text>
+                                    <Text style={styles.noAddressText}>{t('noSavedAddresses', 'No saved addresses found.')}</Text>
                                 ) : (
                                     filteredAddresses.map((address, index) => {
                                         const distance = userLocation?.coords
@@ -688,7 +690,9 @@ export default function SelectLocation() {
                                                         {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
                                                     </View>
                                                     <View style={styles.addressDetails}>
-                                                        <Text style={styles.addressName}>{address.name}</Text>
+                                                        <Text style={styles.addressName}>
+                                                            {address.name === 'Home' ? t('home', 'Home') : address.name === 'Office' ? t('office', 'Office') : address.name === 'Other' ? t('other', 'Other') : address.name}
+                                                        </Text>
                                                         <Text style={styles.addressFull} numberOfLines={2}>
                                                             {address.address_line}
                                                         </Text>
@@ -714,15 +718,15 @@ export default function SelectLocation() {
                                 {searchQuery.trim().length > 2 && (
                                     <View style={styles.onlineSuggestionsWrapper}>
                                         <View style={styles.sectionHeader}>
-                                            <Text style={styles.sectionHeaderText}>PLACES & LOCATIONS (OSM)</Text>
+                                            <Text style={styles.sectionHeaderText}>{t('placesOsm', 'PLACES & LOCATIONS (OSM)')}</Text>
                                         </View>
                                         {loadingSuggestions ? (
                                             <View style={styles.suggestionLoadingRow}>
                                                 <ActivityIndicator size="small" color="#059669" />
-                                                <Text style={styles.suggestionLoadingText}>Searching places online...</Text>
+                                                <Text style={styles.suggestionLoadingText}>{t('searchingOnline', 'Searching places online...')}</Text>
                                             </View>
                                         ) : onlineSuggestions.length === 0 ? (
-                                            <Text style={styles.noAddressText}>No matching online places found.</Text>
+                                            <Text style={styles.noAddressText}>{t('noOnlineMatching', 'No matching online places found.')}</Text>
                                         ) : (
                                             onlineSuggestions.map((suggestion, index) => (
                                                 <Animated.View key={index} entering={FadeInDown.delay(index * 40).springify()}>
@@ -766,10 +770,10 @@ export default function SelectLocation() {
 
                                 {/* Filtered Saved Addresses */}
                                 <View style={styles.sectionHeader}>
-                                    <Text style={styles.sectionHeaderText}>{`SAVED ADDRESSES MATCHING "${searchQuery.toUpperCase()}"`}</Text>
+                                    <Text style={styles.sectionHeaderText}>{t('savedAddressesMatching', { query: searchQuery.toUpperCase() }, `SAVED ADDRESSES MATCHING "${searchQuery.toUpperCase()}"`)}</Text>
                                 </View>
                                 {filteredAddresses.length === 0 ? (
-                                    <Text style={styles.noAddressText}>No matching saved addresses found.</Text>
+                                    <Text style={styles.noAddressText}>{t('noSavedAddresses', 'No saved addresses found.')}</Text>
                                 ) : (
                                     filteredAddresses.map((address, index) => {
                                         const distance = userLocation?.coords
@@ -805,7 +809,9 @@ export default function SelectLocation() {
                                                         {distanceStr ? <Text style={styles.distanceText}>{distanceStr}</Text> : null}
                                                     </View>
                                                     <View style={styles.addressDetails}>
-                                                        <Text style={styles.addressName}>{address.name}</Text>
+                                                        <Text style={styles.addressName}>
+                                                            {address.name === 'Home' ? t('home', 'Home') : address.name === 'Office' ? t('office', 'Office') : address.name === 'Other' ? t('other', 'Other') : address.name}
+                                                        </Text>
                                                         <Text style={styles.addressFull} numberOfLines={2}>
                                                             {address.address_line}
                                                         </Text>
