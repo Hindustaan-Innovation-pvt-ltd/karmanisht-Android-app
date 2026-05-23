@@ -15,8 +15,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
+import { useTranslation } from 'react-i18next';
 
 export default function Otp() {
+    const { t } = useTranslation();
     const router = useRouter()
     const { mobile, initialCooldown, verificationId } = useLocalSearchParams<{ mobile: string, initialCooldown?: string, verificationId?: string }>()
     const processUserSession = useAppStore(state => state.processUserSession)
@@ -59,11 +61,11 @@ export default function Otp() {
                 const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
                 setCurrentVerificationId(confirmation.verificationId);
             }
-            Alert.alert('OTP Sent', 'OTP resent successfully!');
+            Alert.alert(t('otpSent'), t('otpSentMsg'));
             setCooldown(30); // restart cooldown
         } catch (err: any) {
             console.error('[Firebase OTP Error]', err);
-            Alert.alert('Error', err.message || 'Failed to resend OTP');
+            Alert.alert(t('error'), err.message || t('pleaseWait'));
         } finally {
             setLoading(false);
         }
@@ -112,12 +114,12 @@ export default function Otp() {
             } else {
                 // No DB record — shouldn't reach OTP without registering
                 await insforge.auth.signOut();
-                Alert.alert('Account Not Found', 'No account found for this number. Please sign up first.');
+                Alert.alert(t('accountNotFound'), t('accountNotFoundMsg'));
                 router.replace('/(onboarding)/auth/login');
             }
         } catch (err: any) {
             console.error('[OTP Verify Success Handler]', err);
-            Alert.alert('Error', err?.message || 'Verification failed');
+            Alert.alert(t('error'), err?.message || t('verificationFailed'));
             hasProcessedRef.current = false; // allow retry
         } finally {
             setLoading(false);
@@ -126,7 +128,7 @@ export default function Otp() {
 
     const handleVerifyOtp = async () => {
         if (otp.length < 6) {
-            Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP.');
+            Alert.alert(t('invalidOtp'), t('pleaseEnterOtp'));
             return;
         }
         setLoading(true);
@@ -148,7 +150,7 @@ export default function Otp() {
                 console.log('User is already authenticated, bypassing session-expired error...');
                 await handleSuccessfulLogin();
             } else {
-                Alert.alert('Error', err?.message || 'Verification failed');
+                Alert.alert(t('error'), err?.message || t('verificationFailed'));
                 setLoading(false);
             }
         }
@@ -168,10 +170,10 @@ export default function Otp() {
             >
                 <View className='p-4 flex-col gap-6'>
                     <Text className='text-2xl text-center font-semibold text-slate-900 dark:text-slate-100'>
-                        One step and you&apos;re in
+                        {t('oneStepAndYoureIn')}
                     </Text>
                     <Text className='text-center text-slate-500 dark:text-slate-400 text-sm -mt-3'>
-                        Enter the 6-digit code sent to <Text className='font-bold text-slate-900 dark:text-slate-100'>{mobile}</Text>
+                        {t('enterDigitCode')} <Text className='font-bold text-slate-900 dark:text-slate-100'>{mobile}</Text>
                     </Text>
 
                     <InputOTP maxLength={6} onChangeText={setOtp} value={otp} autoFocus>
@@ -190,18 +192,18 @@ export default function Otp() {
 
                     <View className='flex-col gap-2 -mt-2'>
                         <Text className='text-center text-slate-400 dark:text-slate-500 text-xs'>
-                            Hint: Use <Text className='font-bold'>123456</Text> if you didn&apos;t receive an SMS.
+                            {t('otpHint')}
                         </Text>
 
                         <View className='flex-row justify-center items-center h-6'>
                             {cooldown > 0 ? (
                                 <Text className='text-slate-500 dark:text-slate-400 text-sm font-medium'>
-                                    Resend code in {Math.floor(cooldown / 60)}:{(cooldown % 60).toString().padStart(2, '0')}
+                                    {t('resendIn', { time: `${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}` })}
                                 </Text>
                             ) : (
                                 <TouchableOpacity onPress={handleResendOtp} disabled={loading} activeOpacity={0.7}>
                                     <Text className='text-blue-600 dark:text-blue-400 font-bold text-sm'>
-                                        Resend OTP
+                                        {t('resendOtp')}
                                     </Text>
                                 </TouchableOpacity>
                             )}
@@ -217,13 +219,13 @@ export default function Otp() {
                         {loading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text className='text-center text-lg font-semibold text-white'>Verify OTP</Text>
+                            <Text className='text-center text-lg font-semibold text-white'>{t('verifyOtp')}</Text>
                         )}
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={() => router.push('/(onboarding)/auth/register')}>
                         <Text className='text-xl font-semibold text-center mt-3 text-slate-900 dark:text-slate-300'>
-                            Create New Account
+                            {t('createNewAccount')}
                         </Text>
                     </TouchableOpacity>
                 </View>

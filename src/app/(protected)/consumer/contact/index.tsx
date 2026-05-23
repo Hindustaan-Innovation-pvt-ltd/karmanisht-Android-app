@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, TextInput, useColorScheme, Linking, LayoutAnimation, Keyboard } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, FadeInDown } from 'react-native-reanimated';
@@ -9,8 +10,9 @@ import { useAppStore } from '@/lib/store';
 import SafeIcon from '@/components/safe-icon';
 
 const ContactListItem = ({ provider, categories, index, isDark }) => {
+    const { t } = useTranslation();
     const category = categories.find(c => c.id === provider.category_id);
-    const categoryName = category ? category.name : 'Professional';
+    const categoryName = category ? t(category.name) : t('professional');
     const categoryIcon = category ? category.icon : 'briefcase';
     const color = category ? category.color : '#3B82F6';
     const avatar = provider.profile_image || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(provider.full_name));
@@ -102,7 +104,7 @@ const ContactListItem = ({ provider, categories, index, isDark }) => {
                                     <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg ml-2">
                                         <Feather name="clock" size={12} className="text-slate-500 dark:text-slate-400" />
                                         <Text className="text-slate-600 dark:text-slate-300 text-xs ml-1 font-semibold">
-                                            {provider.experience_years || 0} yrs exp
+                                            {t('yrsExp', { count: provider.experience_years || 0 })}
                                         </Text>
                                     </View>
                                 </View>
@@ -138,6 +140,7 @@ const ContactListItem = ({ provider, categories, index, isDark }) => {
 };
 
 export default function ContactScreen() {
+    const { t } = useTranslation();
     const { unlockedProviders, categories } = useAppStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -154,13 +157,13 @@ export default function ContactScreen() {
     const renderHeader = () => (
         <View className="w-full mb-6">
             <View className="px-5 flex-row items-center justify-between min-h-12" onTouchStart={(e) => e.stopPropagation()}>
-                <Text className="text-3xl font-black text-slate-800 dark:text-slate-100 flex-1 mr-2">Your Contacts</Text>
+                <Text className="text-3xl font-black text-slate-800 dark:text-slate-100 flex-1 mr-2">{t('yourContacts')}</Text>
                 {isSearchExpanded ? (
                     <View className="w-[50%] flex-row items-center rounded-xl px-2.5 py-1.5 border-2 border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900">
                         <Ionicons name="search" size={16} color="#9CA3AF" />
                         <TextInput
                             className="ml-1.5 flex-1 text-gray-900 dark:text-slate-100 font-medium text-[13px] p-0 m-0"
-                            placeholder="Search..."
+                            placeholder={t('searchPlaceholder')}
                             placeholderTextColor="#9CA3AF"
                             value={searchQuery}
                             onChangeText={setSearchQuery}
@@ -179,7 +182,7 @@ export default function ContactScreen() {
                             }}
                             className="ml-2 pl-2 border-l border-gray-200 dark:border-slate-700"
                         >
-                            <Text className="text-blue-500 font-semibold text-xs">Cancel</Text>
+                            <Text className="text-blue-500 font-semibold text-xs">{t('cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -191,7 +194,7 @@ export default function ContactScreen() {
                         className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
                     >
                         <Ionicons name="search" size={18} color="#9CA3AF" />
-                        <Text className="ml-2 text-gray-400 font-medium text-sm">Search</Text>
+                        <Text className="ml-2 text-gray-400 font-medium text-sm">{t('search')}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -204,10 +207,10 @@ export default function ContactScreen() {
                 <Ionicons name="people-outline" size={40} color="#94A3B8" />
             </View>
             <Text className="text-slate-500 dark:text-slate-400 text-center font-bold text-base">
-                {searchQuery.length > 0 ? "No matching contacts found." : "No unlocked contacts yet."}
+                {searchQuery.length > 0 ? t('noMatchingContacts') : t('noUnlockedContacts')}
             </Text>
             <Text className="text-slate-400 dark:text-slate-500 text-center font-medium mt-1 text-sm max-w-xs">
-                {searchQuery.length > 0 ? "Try search for another name or professional role." : "Find and contact highly-skilled workers in the Explore section!"}
+                {searchQuery.length > 0 ? t('trySearchAnother') : t('findAndContactWorkers')}
             </Text>
         </View>
     );

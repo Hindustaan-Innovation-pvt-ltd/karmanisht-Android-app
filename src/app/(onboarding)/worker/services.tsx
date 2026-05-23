@@ -8,8 +8,10 @@ import Progress from '@/components/progress'
 import ServiceTag from '@/components/service-tag'
 import { useAppStore } from '@/lib/store'
 import { insforge } from '@/lib/insforge'
+import { useTranslation } from 'react-i18next'
 
 export default function Services() {
+    const { t } = useTranslation()
     const router = useRouter()
     const { professionId: paramProfessionId, professionName: paramProfessionName } = useLocalSearchParams<{ professionId: string, professionName: string }>()
     
@@ -96,10 +98,10 @@ export default function Services() {
             if (success) {
                 router.push('/(protected)/worker/verify-identity')
             } else {
-                Alert.alert('Error', 'Failed to save your selections.')
+                Alert.alert(t('error', 'Error'), t('failedSaveSelections', 'Failed to save your selections.'))
             }
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'An error occurred.')
+            Alert.alert(t('error', 'Error'), err.message || t('errorOccurred', 'An error occurred.'))
         } finally {
             setSaving(false)
         }
@@ -112,17 +114,17 @@ export default function Services() {
                 <Progress currentStep={4} totalSteps={5} />
 
                 <View className='px-5 pt-4 pb-3'>
-                    <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>Your services</Text>
+                    <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>{t('yourServices', 'Your services')}</Text>
                     <View className='mt-1.5 flex-row items-center gap-2'>
                         <View className='bg-slate-100 dark:bg-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800'>
-                            <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300'>{professionName || 'Service Provider'}</Text>
+                            <Text className='text-sm font-semibold text-slate-700 dark:text-slate-300'>{t(professionName || 'Service Provider')}</Text>
                         </View>
                         <TouchableOpacity onPress={() => router.back()}>
-                            <Text className='text-sm text-blue-500 font-medium'>Change</Text>
+                            <Text className='text-sm text-blue-500 font-medium'>{t('change', 'Change')}</Text>
                         </TouchableOpacity>
                     </View>
                     <Text className='text-sm text-slate-500 dark:text-slate-400 mt-3 font-medium'>
-                        What do you specifically offer?
+                        {t('specificallyOffer', 'What do you specifically offer?')}
                     </Text>
                 </View>
 
@@ -137,7 +139,7 @@ export default function Services() {
                             {tags.map(svc => (
                                 <ServiceTag
                                     key={svc.id}
-                                    label={svc.name}
+                                    label={t(svc.name)}
                                     selected={selected.has(svc.id)}
                                     onPress={() => toggle(svc.id)}
                                 />
@@ -149,11 +151,11 @@ export default function Services() {
                 <View className='absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800'>
                     <View className='flex-row items-center justify-between mb-3 px-1'>
                         <Text className='text-xs text-slate-400 dark:text-slate-500'>
-                            {selected.size} service{selected.size !== 1 ? 's' : ''} selected
+                            {t('servicesSelectedCount', '{{count}} services selected', { count: selected.size })}
                         </Text>
                         {selected.size > 0 && (
                             <TouchableOpacity onPress={() => setSelected(new Set())}>
-                                <Text className='text-xs text-red-400 font-medium'>Clear all</Text>
+                                <Text className='text-xs text-red-400 font-medium'>{t('clearAll', 'Clear all')}</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -167,7 +169,7 @@ export default function Services() {
                             <ActivityIndicator color="white" />
                         ) : (
                             <Text className={`text-base font-bold ${selected.size > 0 ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>
-                                Continue
+                                {t('continue', 'Continue')}
                             </Text>
                         )}
                     </TouchableOpacity>

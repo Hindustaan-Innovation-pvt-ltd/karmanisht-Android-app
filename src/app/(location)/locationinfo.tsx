@@ -9,6 +9,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useAppStore } from '@/lib/store';
 import * as Location from 'expo-location'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 
 const POPULAR_AREAS = [
     'Shankar Nagar',
@@ -22,6 +23,7 @@ const POPULAR_AREAS = [
 ]
 
 export default function LocationInfo() {
+    const { t } = useTranslation();
     const { user, updateDatabaseProfile } = useAppStore();
     const isDark = useColorScheme() === 'dark'
     const router = useRouter()
@@ -48,7 +50,7 @@ export default function LocationInfo() {
 
     const handleFinish = async () => {
         if (!locationLabel.trim()) {
-            Alert.alert('Required', 'Please enter or select a location.');
+            Alert.alert(t('required'), t('pleaseSelectLocation'));
             return;
         }
 
@@ -75,7 +77,7 @@ export default function LocationInfo() {
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission Denied', 'Location permission is required to detect your current area.');
+                Alert.alert(t('permissionDenied'), t('locationPermissionMsg'));
                 return;
             }
             const loc = await Location.getCurrentPositionAsync({});
@@ -90,19 +92,15 @@ export default function LocationInfo() {
                 const label = area ? `${area}, ${city}` : city;
                 setLocationLabel(label);
             } else {
-                Alert.alert('Unable to resolve', 'We got your coordinates, but could not determine the area name. Please enter it manually.');
+                Alert.alert(t('unableToResolve'), t('coordinatesResolveError'));
             }
         } catch (err) {
             console.log("Geocoding error:", err);
-            Alert.alert('Error', 'Failed to detect location. Please enter it manually.');
+            Alert.alert(t('error'), t('detectLocationError'));
         } finally {
             setLoadingLocation(false);
         }
     };
-
-    // Calculate dynamic scaling for the coverage area preview circle
-    // 2km -> small, 5km -> medium, 10km -> large, citywide -> full width
-    // Scale logic moved inside animated style
 
     // Radar pulse animation shared value
     const radarPulse = useSharedValue(1);
@@ -119,8 +117,6 @@ export default function LocationInfo() {
     }, [radiusKm, cityWide, radiusSV, cityWideSV, radarPulse]);
 
     const radarStyle = useAnimatedStyle(() => {
-        // Map radius (2 to 30) to a reasonable scale range (e.g. 0.4 to 1.2)
-        // If cityWide, use a max scale like 1.3
         let baseScale;
         if (cityWideSV.value === 1) {
             baseScale = 1.3;
@@ -155,17 +151,17 @@ export default function LocationInfo() {
                     <View className='px-6 pt-2'>
                         {/* Title */}
                         <Text className='text-3xl font-black text-slate-900 dark:text-slate-100 mb-6'>
-                            Service radius
+                            {t('serviceRadius')}
                         </Text>
 
                         {/* Location / Area input */}
                         <View className="mb-6">
-                            <Text className='text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest'>Your Location / Area</Text>
+                            <Text className='text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest'>{t('yourLocationArea')}</Text>
                             <View className='flex-row items-center bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 py-1'>
                                 <Ionicons name="location-sharp" size={20} color={isDark ? "#3B82F6" : "#64748B"} />
                                 <TextInput
                                     className='flex-1 ml-2 text-base py-3 text-slate-900 dark:text-slate-100 font-medium'
-                                    placeholder='Enter your neighborhood/city'
+                                    placeholder={t('enterNeighborhoodCity')}
                                     placeholderTextColor="#94A3B8"
                                     value={locationLabel}
                                     onChangeText={setLocationLabel}
@@ -186,7 +182,7 @@ export default function LocationInfo() {
 
                         {/* Popular Areas Suggestions */}
                         <View className="mb-6">
-                            <Text className='text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest'>Raipur Neighborhoods</Text>
+                            <Text className='text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest'>{t('popularNeighborhoods')}</Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                                 {POPULAR_AREAS.map((area) => (
                                     <TouchableOpacity
@@ -237,7 +233,7 @@ export default function LocationInfo() {
                                 </View>
                             </View>
                             <Text className="absolute top-2 left-2 text-[10px] font-bold text-slate-100 bg-slate-800/30 dark:bg-slate-100 py-2 px-6  rounded-2xl dark:text-slate-500 uppercase tracking-wider self-start">
-                                Coverage area preview
+                                {t('coverageAreaPreview')}
                             </Text>
                         </LinearGradient>
                     </View>
@@ -245,7 +241,7 @@ export default function LocationInfo() {
                     {/* Quick Distance Selector */}
                     <View className="mb-6 px-6">
                         <Text className="text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest">
-                            QUICK DISTANCE
+                            {t('quickDistance')}
                         </Text>
                         <View className="flex-row gap-3">
                             {[2, 5, 10, 20, 30].map((dist) => {
@@ -271,7 +267,7 @@ export default function LocationInfo() {
                     {user?.role === 'worker' && (
                         <View className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex-row justify-between items-center mb-6">
                             <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                Accept city wide requests
+                                {t('acceptCityWide')}
                             </Text>
                             <Switch
                                 value={cityWide}
@@ -288,10 +284,10 @@ export default function LocationInfo() {
                     <ScalePressable
                         onPress={handleFinish}
                         className='w-full bg-[#18181B] dark:bg-blue-600 py-4 rounded-2xl items-center'>
-                        <Text className='text-white text-base font-black'>Save radius</Text>
+                        <Text className='text-white text-base font-black'>{t('saveRadius')}</Text>
                     </ScalePressable>
                     <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                        Service area setup
+                        {t('serviceAreaSetup')}
                     </Text>
                 </View>
             </SafeAreaView>

@@ -517,20 +517,20 @@ export default function ServiceDetailScreen() {
             // Silently kill the session and prepare for a new one
             try {
                 ExpoSpeechRecognitionModule.stop();
-            } catch {}
+            } catch { }
             setIsListening(false);
         } else {
             console.warn('[SpeechToText Error]', event.error, event.message);
             try {
                 ExpoSpeechRecognitionModule.stop();
-            } catch {}
+            } catch { }
             setIsListening(false);
         }
     });
 
     const checkAndRequestVoicePermission = async (): Promise<boolean> => {
         const permissionStatus = await ExpoSpeechRecognitionModule.getPermissionsAsync();
-        
+
         if (permissionStatus.granted) {
             return true;
         }
@@ -565,7 +565,7 @@ export default function ServiceDetailScreen() {
 
         try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } catch {}
+        } catch { }
 
         const permissionGranted = await checkAndRequestVoicePermission();
         if (!permissionGranted) {
@@ -840,10 +840,10 @@ export default function ServiceDetailScreen() {
                         </TouchableOpacity>
                     )}
                     <TouchableOpacity onPress={handleVoiceSearch} className="p-1">
-                        <Ionicons 
-                            name={isListening ? "mic" : "mic-outline"} 
-                            size={20} 
-                            color={isListening ? "#EF4444" : "#9CA3AF"} 
+                        <Ionicons
+                            name={isListening ? "mic" : "mic-outline"}
+                            size={20}
+                            color={isListening ? "#EF4444" : "#9CA3AF"}
                         />
                     </TouchableOpacity>
                 </View>
@@ -903,7 +903,7 @@ export default function ServiceDetailScreen() {
                                                     className={`ml-2 font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-600'
                                                         }`}
                                                 >
-                                                    {item.label}
+                                                    {t(item.label)}
                                                 </Text>
                                             </TouchableOpacity>
                                         );

@@ -1,0 +1,1658 @@
+[
+  {
+    "type": "category",
+    "name": "Electrician"
+  },
+  {
+    "type": "category",
+    "name": "Plumber"
+  },
+  {
+    "type": "category",
+    "name": "AC Technician"
+  },
+  {
+    "type": "category",
+    "name": "Refrigerator Technician"
+  },
+  {
+    "type": "category",
+    "name": "Washing Machine Technician"
+  },
+  {
+    "type": "category",
+    "name": "TV & Electronics Technician"
+  },
+  {
+    "type": "category",
+    "name": "Computer / IT Technician"
+  },
+  {
+    "type": "category",
+    "name": "Kitchen Appliance Technician"
+  },
+  {
+    "type": "category",
+    "name": "Gas / LPG Technician"
+  },
+  {
+    "type": "category",
+    "name": "Carpenter"
+  },
+  {
+    "type": "category",
+    "name": "Mason / Civil Contractor"
+  },
+  {
+    "type": "category",
+    "name": "Painter"
+  },
+  {
+    "type": "category",
+    "name": "Waterproofing Specialist"
+  },
+  {
+    "type": "category",
+    "name": "Aluminium / UPVC Fabricator"
+  },
+  {
+    "type": "category",
+    "name": "MS / Steel Fabricator"
+  },
+  {
+    "type": "category",
+    "name": "Tank & Sump Cleaning Specialist"
+  },
+  {
+    "type": "category",
+    "name": "Water Purifier Technician"
+  },
+  {
+    "type": "category",
+    "name": "Pest Control Specialist"
+  },
+  {
+    "type": "category",
+    "name": "Professional Cleaning Specialist"
+  },
+  {
+    "type": "category",
+    "name": "Chimney Cleaning Technician"
+  },
+  {
+    "type": "category",
+    "name": "Gardener / Mali"
+  },
+  {
+    "type": "category",
+    "name": "Home Salon / Beauty Professional"
+  },
+  {
+    "type": "category",
+    "name": "Fitness & Wellness Professional"
+  },
+  {
+    "type": "category",
+    "name": "Home Healthcare Professional"
+  },
+  {
+    "type": "category",
+    "name": "Cook / Chef"
+  },
+  {
+    "type": "category",
+    "name": "Domestic Help"
+  },
+  {
+    "type": "category",
+    "name": "Driver"
+  },
+  {
+    "type": "category",
+    "name": "Security / Watchman"
+  },
+  {
+    "type": "category",
+    "name": "Dhobi / Laundry Professional"
+  },
+  {
+    "type": "category",
+    "name": "Packers & Movers"
+  },
+  {
+    "type": "category",
+    "name": "Locksmith"
+  },
+  {
+    "type": "category",
+    "name": "Borewell / Water Supply Specialist"
+  },
+  {
+    "type": "category",
+    "name": "DTH / Cable TV Technician"
+  },
+  {
+    "type": "category",
+    "name": "Solar Panel Technician"
+  },
+  {
+    "type": "category",
+    "name": "Inverter / Battery Technician"
+  },
+  {
+    "type": "category",
+    "name": "Vehicle Service (Doorstep)"
+  },
+  {
+    "type": "category",
+    "name": "Interior Designer / Contractor"
+  },
+  {
+    "type": "category",
+    "name": "Event / Occasion Services"
+  },
+  {
+    "type": "category",
+    "name": "Documentation & Admin Agent"
+  },
+  {
+    "type": "category",
+    "name": "Delivery Professionals"
+  },
+  {
+    "type": "category",
+    "name": "Home Tution"
+  },
+  {
+    "type": "city",
+    "name": "Mumbai"
+  },
+  {
+    "type": "city",
+    "name": "Delhi"
+  },
+  {
+    "type": "city",
+    "name": "Bengaluru"
+  },
+  {
+    "type": "city",
+    "name": "Hyderabad"
+  },
+  {
+    "type": "city",
+    "name": "Pune"
+  },
+  {
+    "type": "city",
+    "name": "Raipur"
+  },
+  {
+    "type": "city",
+    "name": "Nagpur"
+  },
+  {
+    "type": "city",
+    "name": "Indore"
+  },
+  {
+    "type": "city",
+    "name": "Bhopal"
+  },
+  {
+    "type": "city",
+    "name": "Bilaspur"
+  },
+  {
+    "type": "city",
+    "name": "Mumbai"
+  },
+  {
+    "type": "city",
+    "name": "Delhi"
+  },
+  {
+    "type": "city",
+    "name": "Bengaluru"
+  },
+  {
+    "type": "city",
+    "name": "Hyderabad"
+  },
+  {
+    "type": "city",
+    "name": "Pune"
+  },
+  {
+    "type": "city",
+    "name": "Raipur"
+  },
+  {
+    "type": "city",
+    "name": "Nagpur"
+  },
+  {
+    "type": "city",
+    "name": "Indore"
+  },
+  {
+    "type": "city",
+    "name": "Bhopal"
+  },
+  {
+    "type": "city",
+    "name": "Bilaspur"
+  },
+  {
+    "type": "tag",
+    "name": "Solar panel wiring & installation"
+  },
+  {
+    "type": "tag",
+    "name": "Inverter / UPS wiring & installation"
+  },
+  {
+    "type": "tag",
+    "name": "Festival lighting installation"
+  },
+  {
+    "type": "tag",
+    "name": "Outdoor / garden lighting installation"
+  },
+  {
+    "type": "tag",
+    "name": "CCTV camera installation & wiring"
+  },
+  {
+    "type": "tag",
+    "name": "Smart switch / home automation installation"
+  },
+  {
+    "type": "tag",
+    "name": "EV charger installation"
+  },
+  {
+    "type": "tag",
+    "name": "Earthing work"
+  },
+  {
+    "type": "tag",
+    "name": "Extension board / wiring work"
+  },
+  {
+    "type": "tag",
+    "name": "Exhaust fan installation"
+  },
+  {
+    "type": "tag",
+    "name": "MCB / fuse box replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Short circuit repair"
+  },
+  {
+    "type": "tag",
+    "name": "Home wiring (new / renovation)"
+  },
+  {
+    "type": "tag",
+    "name": "Doorbell installation / repair"
+  },
+  {
+    "type": "tag",
+    "name": "Ceiling rose / holder replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Light fitting installation"
+  },
+  {
+    "type": "tag",
+    "name": "Fan installation / repair / balancing"
+  },
+  {
+    "type": "tag",
+    "name": "Switchboard repair / replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Load enhancement / reduction"
+  },
+  {
+    "type": "tag",
+    "name": "Meter installation / replacement"
+  },
+  {
+    "type": "tag",
+    "name": "New electricity connection"
+  },
+  {
+    "type": "tag",
+    "name": "Septic tank pipe work"
+  },
+  {
+    "type": "tag",
+    "name": "Drip irrigation pipe fitting"
+  },
+  {
+    "type": "tag",
+    "name": "Water softener installation"
+  },
+  {
+    "type": "tag",
+    "name": "Dishwasher pipe fitting"
+  },
+  {
+    "type": "tag",
+    "name": "Washing machine inlet/outlet pipe fitting"
+  },
+  {
+    "type": "tag",
+    "name": "Bathroom renovation plumbing"
+  },
+  {
+    "type": "tag",
+    "name": "Geyser / water heater pipe fitting"
+  },
+  {
+    "type": "tag",
+    "name": "Sump / underground tank repair"
+  },
+  {
+    "type": "tag",
+    "name": "Overhead tank installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Bathroom fitting installation"
+  },
+  {
+    "type": "tag",
+    "name": "Water meter repair"
+  },
+  {
+    "type": "tag",
+    "name": "Pipeline replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Pipeline leak detection & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Drain cleaning / unclogging"
+  },
+  {
+    "type": "tag",
+    "name": "Shower fitting"
+  },
+  {
+    "type": "tag",
+    "name": "Kitchen sink installation"
+  },
+  {
+    "type": "tag",
+    "name": "Wash basin installation"
+  },
+  {
+    "type": "tag",
+    "name": "Toilet seat replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Flush tank repair / replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Tap / faucet repair or replacement"
+  },
+  {
+    "type": "tag",
+    "name": "AC annual maintenance contract (AMC)"
+  },
+  {
+    "type": "tag",
+    "name": "Cassette AC installation & servicing"
+  },
+  {
+    "type": "tag",
+    "name": "Duct AC installation & servicing"
+  },
+  {
+    "type": "tag",
+    "name": "Stabilizer installation for AC"
+  },
+  {
+    "type": "tag",
+    "name": "AC remote repair / replacement"
+  },
+  {
+    "type": "tag",
+    "name": "AC PCB / compressor repair"
+  },
+  {
+    "type": "tag",
+    "name": "AC repair (cooling issue, noise, leakage)"
+  },
+  {
+    "type": "tag",
+    "name": "AC gas refilling"
+  },
+  {
+    "type": "tag",
+    "name": "AC servicing (filter cleaning, coil wash)"
+  },
+  {
+    "type": "tag",
+    "name": "AC uninstallation & shifting"
+  },
+  {
+    "type": "tag",
+    "name": "AC installation (split / window)"
+  },
+  {
+    "type": "tag",
+    "name": "Refrigerator deep cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Water dispenser repair (fridge)"
+  },
+  {
+    "type": "tag",
+    "name": "Ice maker repair"
+  },
+  {
+    "type": "tag",
+    "name": "Door gasket replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Thermostat repair"
+  },
+  {
+    "type": "tag",
+    "name": "Compressor replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Gas refilling"
+  },
+  {
+    "type": "tag",
+    "name": "Refrigerator repair (cooling issue)"
+  },
+  {
+    "type": "tag",
+    "name": "Dryer installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Inlet / outlet pipe fitting"
+  },
+  {
+    "type": "tag",
+    "name": "PCB repair"
+  },
+  {
+    "type": "tag",
+    "name": "Motor / belt repair"
+  },
+  {
+    "type": "tag",
+    "name": "Drum cleaning & servicing"
+  },
+  {
+    "type": "tag",
+    "name": "Front load washing machine repair"
+  },
+  {
+    "type": "tag",
+    "name": "Top load washing machine repair"
+  },
+  {
+    "type": "tag",
+    "name": "Washing machine installation"
+  },
+  {
+    "type": "tag",
+    "name": "Remote programming"
+  },
+  {
+    "type": "tag",
+    "name": "Smart TV setup & configuration"
+  },
+  {
+    "type": "tag",
+    "name": "Sound bar / speaker installation"
+  },
+  {
+    "type": "tag",
+    "name": "Projector installation"
+  },
+  {
+    "type": "tag",
+    "name": "Set-top box installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Home theatre installation & wiring"
+  },
+  {
+    "type": "tag",
+    "name": "TV wall mounting"
+  },
+  {
+    "type": "tag",
+    "name": "LED / LCD / Smart TV repair"
+  },
+  {
+    "type": "tag",
+    "name": "OTT / streaming device setup (Fire stick, Chromecast)"
+  },
+  {
+    "type": "tag",
+    "name": "Smart home device setup"
+  },
+  {
+    "type": "tag",
+    "name": "CCTV DVR / NVR setup"
+  },
+  {
+    "type": "tag",
+    "name": "Network extender / mesh WiFi setup"
+  },
+  {
+    "type": "tag",
+    "name": "WiFi router installation & configuration"
+  },
+  {
+    "type": "tag",
+    "name": "Cartridge refill & replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Printer installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Virus removal & OS installation"
+  },
+  {
+    "type": "tag",
+    "name": "Data recovery"
+  },
+  {
+    "type": "tag",
+    "name": "Desktop / PC repair & assembly"
+  },
+  {
+    "type": "tag",
+    "name": "Laptop repair"
+  },
+  {
+    "type": "tag",
+    "name": "Electric chimney repair"
+  },
+  {
+    "type": "tag",
+    "name": "Water dispenser / purifier repair"
+  },
+  {
+    "type": "tag",
+    "name": "Dishwasher installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Electric kettle repair"
+  },
+  {
+    "type": "tag",
+    "name": "Induction cooktop repair"
+  },
+  {
+    "type": "tag",
+    "name": "Mixer / grinder repair"
+  },
+  {
+    "type": "tag",
+    "name": "OTG repair"
+  },
+  {
+    "type": "tag",
+    "name": "Microwave oven repair"
+  },
+  {
+    "type": "tag",
+    "name": "LPG connection transfer"
+  },
+  {
+    "type": "tag",
+    "name": "LPG new connection"
+  },
+  {
+    "type": "tag",
+    "name": "LPG cylinder delivery (commercial)"
+  },
+  {
+    "type": "tag",
+    "name": "LPG cylinder delivery (domestic)"
+  },
+  {
+    "type": "tag",
+    "name": "Gas stove burner cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "PNG bill payment assistance"
+  },
+  {
+    "type": "tag",
+    "name": "PNG (piped natural gas) new connection"
+  },
+  {
+    "type": "tag",
+    "name": "Gas leak inspection & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Gas stove repair & servicing"
+  },
+  {
+    "type": "tag",
+    "name": "Gas pipe / rubber tube replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Gas regulator replacement"
+  },
+  {
+    "type": "tag",
+    "name": "TV unit / entertainment unit making"
+  },
+  {
+    "type": "tag",
+    "name": "Study table / shelf making"
+  },
+  {
+    "type": "tag",
+    "name": "Bed frame repair / assembly"
+  },
+  {
+    "type": "tag",
+    "name": "Staircase railing (wooden) work"
+  },
+  {
+    "type": "tag",
+    "name": "Loft / storage unit making"
+  },
+  {
+    "type": "tag",
+    "name": "Wooden flooring installation"
+  },
+  {
+    "type": "tag",
+    "name": "Picture / frame / mirror hanging"
+  },
+  {
+    "type": "tag",
+    "name": "Curtain rod fitting"
+  },
+  {
+    "type": "tag",
+    "name": "Wooden partition work"
+  },
+  {
+    "type": "tag",
+    "name": "False ceiling (POP / gypsum) framing"
+  },
+  {
+    "type": "tag",
+    "name": "Modular kitchen installation"
+  },
+  {
+    "type": "tag",
+    "name": "Kitchen cabinet installation"
+  },
+  {
+    "type": "tag",
+    "name": "Wardrobe / cabinet making"
+  },
+  {
+    "type": "tag",
+    "name": "Furniture repair & polishing"
+  },
+  {
+    "type": "tag",
+    "name": "Furniture assembly (flat pack / IKEA type)"
+  },
+  {
+    "type": "tag",
+    "name": "Lock & hinge replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Window repair / replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Door repair / replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Brick wall construction"
+  },
+  {
+    "type": "tag",
+    "name": "RCC roof repair"
+  },
+  {
+    "type": "tag",
+    "name": "Parapet wall repair / construction"
+  },
+  {
+    "type": "tag",
+    "name": "Sunshade / pergola construction"
+  },
+  {
+    "type": "tag",
+    "name": "Kitchen renovation (civil work)"
+  },
+  {
+    "type": "tag",
+    "name": "Bathroom renovation (civil work)"
+  },
+  {
+    "type": "tag",
+    "name": "Room addition / extension construction"
+  },
+  {
+    "type": "tag",
+    "name": "Steps / staircase repair"
+  },
+  {
+    "type": "tag",
+    "name": "Compound wall repair"
+  },
+  {
+    "type": "tag",
+    "name": "Grouting & caulking"
+  },
+  {
+    "type": "tag",
+    "name": "Whitewashing / lime coating"
+  },
+  {
+    "type": "tag",
+    "name": "Plastering work"
+  },
+  {
+    "type": "tag",
+    "name": "Tile repair / replacement (floor / wall)"
+  },
+  {
+    "type": "tag",
+    "name": "Wall crack repair"
+  },
+  {
+    "type": "tag",
+    "name": "Epoxy floor coating"
+  },
+  {
+    "type": "tag",
+    "name": "Roof / ceiling painting"
+  },
+  {
+    "type": "tag",
+    "name": "Putty & primer work"
+  },
+  {
+    "type": "tag",
+    "name": "Wallpaper installation & removal"
+  },
+  {
+    "type": "tag",
+    "name": "Spray painting (furniture)"
+  },
+  {
+    "type": "tag",
+    "name": "Waterproof painting (terrace / bathroom)"
+  },
+  {
+    "type": "tag",
+    "name": "Metal gate / grill painting"
+  },
+  {
+    "type": "tag",
+    "name": "Wood polishing / varnishing"
+  },
+  {
+    "type": "tag",
+    "name": "Enamel / oil paint (doors & windows)"
+  },
+  {
+    "type": "tag",
+    "name": "Texture / designer wall painting"
+  },
+  {
+    "type": "tag",
+    "name": "Exterior wall painting"
+  },
+  {
+    "type": "tag",
+    "name": "Interior wall painting"
+  },
+  {
+    "type": "tag",
+    "name": "Crystalline / chemical waterproofing"
+  },
+  {
+    "type": "tag",
+    "name": "Balcony waterproofing"
+  },
+  {
+    "type": "tag",
+    "name": "Water tank waterproofing"
+  },
+  {
+    "type": "tag",
+    "name": "External wall waterproofing"
+  },
+  {
+    "type": "tag",
+    "name": "Basement waterproofing"
+  },
+  {
+    "type": "tag",
+    "name": "Bathroom waterproofing"
+  },
+  {
+    "type": "tag",
+    "name": "Terrace / roof waterproofing"
+  },
+  {
+    "type": "tag",
+    "name": "Skylight installation"
+  },
+  {
+    "type": "tag",
+    "name": "Aluminium railing work"
+  },
+  {
+    "type": "tag",
+    "name": "Mosquito mesh / net fitting"
+  },
+  {
+    "type": "tag",
+    "name": "Shower enclosure / cubicle installation"
+  },
+  {
+    "type": "tag",
+    "name": "Glass partition installation"
+  },
+  {
+    "type": "tag",
+    "name": "UPVC window installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Aluminium door installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Aluminium window installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Welding repair work (gates, grills)"
+  },
+  {
+    "type": "tag",
+    "name": "Shed / pergola (MS structure) fabrication"
+  },
+  {
+    "type": "tag",
+    "name": "Steel furniture fabrication"
+  },
+  {
+    "type": "tag",
+    "name": "Staircase railing (MS) fabrication"
+  },
+  {
+    "type": "tag",
+    "name": "Security grill for windows & doors"
+  },
+  {
+    "type": "tag",
+    "name": "Steel shelf / rack fabrication"
+  },
+  {
+    "type": "tag",
+    "name": "Steel railing fabrication"
+  },
+  {
+    "type": "tag",
+    "name": "MS grill / gate fabrication & installation"
+  },
+  {
+    "type": "tag",
+    "name": "Grease trap cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Drainage / pipeline jetting"
+  },
+  {
+    "type": "tag",
+    "name": "Manhole cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Septic tank cleaning & pumping"
+  },
+  {
+    "type": "tag",
+    "name": "Underground sump cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Overhead water tank cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Water dispenser installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Water softener installation & service"
+  },
+  {
+    "type": "tag",
+    "name": "Water purifier general servicing"
+  },
+  {
+    "type": "tag",
+    "name": "UV purifier installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "RO filter / membrane replacement"
+  },
+  {
+    "type": "tag",
+    "name": "RO water purifier installation"
+  },
+  {
+    "type": "tag",
+    "name": "General pest control (annual contract)"
+  },
+  {
+    "type": "tag",
+    "name": "Pigeon / bird netting installation"
+  },
+  {
+    "type": "tag",
+    "name": "Honeybee / wasp hive removal"
+  },
+  {
+    "type": "tag",
+    "name": "Snake removal"
+  },
+  {
+    "type": "tag",
+    "name": "Lizard control"
+  },
+  {
+    "type": "tag",
+    "name": "Rat / rodent control"
+  },
+  {
+    "type": "tag",
+    "name": "Mosquito fogging / spray"
+  },
+  {
+    "type": "tag",
+    "name": "Bed bug treatment"
+  },
+  {
+    "type": "tag",
+    "name": "Termite treatment (post-construction)"
+  },
+  {
+    "type": "tag",
+    "name": "Termite treatment (pre-construction)"
+  },
+  {
+    "type": "tag",
+    "name": "Ant treatment"
+  },
+  {
+    "type": "tag",
+    "name": "Cockroach treatment"
+  },
+  {
+    "type": "tag",
+    "name": "Move-in / move-out cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Post-renovation cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Car cleaning (doorstep)"
+  },
+  {
+    "type": "tag",
+    "name": "Pressure washing (driveway, walls, compound)"
+  },
+  {
+    "type": "tag",
+    "name": "Marble / floor polishing"
+  },
+  {
+    "type": "tag",
+    "name": "Balcony / terrace cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Window & glass cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Mattress cleaning & sanitisation"
+  },
+  {
+    "type": "tag",
+    "name": "Carpet / rug shampooing"
+  },
+  {
+    "type": "tag",
+    "name": "Sofa / upholstery cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Bathroom deep cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Kitchen deep cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Full home deep cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Auto-clean chimney servicing"
+  },
+  {
+    "type": "tag",
+    "name": "Chimney suction repair"
+  },
+  {
+    "type": "tag",
+    "name": "Kitchen chimney motor cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Kitchen chimney filter cleaning"
+  },
+  {
+    "type": "tag",
+    "name": "Vertical garden / terrace garden setup"
+  },
+  {
+    "type": "tag",
+    "name": "Garden pest control (plants)"
+  },
+  {
+    "type": "tag",
+    "name": "Potting & repotting (indoor plants)"
+  },
+  {
+    "type": "tag",
+    "name": "Drip irrigation installation"
+  },
+  {
+    "type": "tag",
+    "name": "Garden soil / compost / manure supply"
+  },
+  {
+    "type": "tag",
+    "name": "Plant supply & plantation"
+  },
+  {
+    "type": "tag",
+    "name": "Tree / shrub trimming & cutting"
+  },
+  {
+    "type": "tag",
+    "name": "Lawn mowing"
+  },
+  {
+    "type": "tag",
+    "name": "Regular garden maintenance"
+  },
+  {
+    "type": "tag",
+    "name": "Massage (at home)"
+  },
+  {
+    "type": "tag",
+    "name": "Mehendi artist"
+  },
+  {
+    "type": "tag",
+    "name": "Bridal makeup (home visit)"
+  },
+  {
+    "type": "tag",
+    "name": "Manicure & pedicure"
+  },
+  {
+    "type": "tag",
+    "name": "Waxing / threading"
+  },
+  {
+    "type": "tag",
+    "name": "Facial & cleanup"
+  },
+  {
+    "type": "tag",
+    "name": "Hair colour & treatment"
+  },
+  {
+    "type": "tag",
+    "name": "Haircut (ladies / gents / kids)"
+  },
+  {
+    "type": "tag",
+    "name": "Zumba / dance fitness (home)"
+  },
+  {
+    "type": "tag",
+    "name": "Dietitian / nutritionist consultation"
+  },
+  {
+    "type": "tag",
+    "name": "Physiotherapist (home visit)"
+  },
+  {
+    "type": "tag",
+    "name": "Yoga instructor (home visit)"
+  },
+  {
+    "type": "tag",
+    "name": "Personal trainer (home visit)"
+  },
+  {
+    "type": "tag",
+    "name": "Baby care nurse (newborn)"
+  },
+  {
+    "type": "tag",
+    "name": "Dialysis support (home)"
+  },
+  {
+    "type": "tag",
+    "name": "Medical equipment rental (wheelchair, oxygen concentrator, hospital bed)"
+  },
+  {
+    "type": "tag",
+    "name": "Physiotherapy (post-surgery / injury)"
+  },
+  {
+    "type": "tag",
+    "name": "Elder / patient caretaker"
+  },
+  {
+    "type": "tag",
+    "name": "ECG at home"
+  },
+  {
+    "type": "tag",
+    "name": "Blood test / sample collection (home)"
+  },
+  {
+    "type": "tag",
+    "name": "Nurse / injection / IV drip service"
+  },
+  {
+    "type": "tag",
+    "name": "Doctor home visit (GP / physician)"
+  },
+  {
+    "type": "tag",
+    "name": "Diet meal cooking"
+  },
+  {
+    "type": "tag",
+    "name": "Specific cuisine cook (South Indian, Chinese, etc.)"
+  },
+  {
+    "type": "tag",
+    "name": "Party / event cooking (at home)"
+  },
+  {
+    "type": "tag",
+    "name": "Tiffin / dabba service (subscription)"
+  },
+  {
+    "type": "tag",
+    "name": "Full-time cook"
+  },
+  {
+    "type": "tag",
+    "name": "Part-time cook (daily meals)"
+  },
+  {
+    "type": "tag",
+    "name": "Nanny (infant care)"
+  },
+  {
+    "type": "tag",
+    "name": "Patient caretaker (post-surgery / illness)"
+  },
+  {
+    "type": "tag",
+    "name": "Elder / senior citizen caretaker"
+  },
+  {
+    "type": "tag",
+    "name": "Babysitter / child caretaker"
+  },
+  {
+    "type": "tag",
+    "name": "Part-time maid (cleaning only)"
+  },
+  {
+    "type": "tag",
+    "name": "Full-time maid (live-in)"
+  },
+  {
+    "type": "tag",
+    "name": "One-way drop driver (on call)"
+  },
+  {
+    "type": "tag",
+    "name": "Outstation trip driver"
+  },
+  {
+    "type": "tag",
+    "name": "Part-time driver"
+  },
+  {
+    "type": "tag",
+    "name": "Full-time personal driver"
+  },
+  {
+    "type": "tag",
+    "name": "CCTV monitoring service"
+  },
+  {
+    "type": "tag",
+    "name": "Event security personnel"
+  },
+  {
+    "type": "tag",
+    "name": "Society security guard"
+  },
+  {
+    "type": "tag",
+    "name": "Full-time watchman (residential)"
+  },
+  {
+    "type": "tag",
+    "name": "Woollen / delicate garment laundry"
+  },
+  {
+    "type": "tag",
+    "name": "Curtain / bedsheet laundry"
+  },
+  {
+    "type": "tag",
+    "name": "Ironing-only service"
+  },
+  {
+    "type": "tag",
+    "name": "Dry cleaning (pickup & delivery)"
+  },
+  {
+    "type": "tag",
+    "name": "Clothes washing & ironing (doorstep pickup)"
+  },
+  {
+    "type": "tag",
+    "name": "Pet relocation"
+  },
+  {
+    "type": "tag",
+    "name": "Home unpacking & arrangement"
+  },
+  {
+    "type": "tag",
+    "name": "Office shifting"
+  },
+  {
+    "type": "tag",
+    "name": "Storage / warehousing (short term)"
+  },
+  {
+    "type": "tag",
+    "name": "Vehicle (car / bike) transportation"
+  },
+  {
+    "type": "tag",
+    "name": "Single furniture / item shifting"
+  },
+  {
+    "type": "tag",
+    "name": "Full home shifting (intercity / interstate)"
+  },
+  {
+    "type": "tag",
+    "name": "Full home shifting (local)"
+  },
+  {
+    "type": "tag",
+    "name": "Lock-out emergency service"
+  },
+  {
+    "type": "tag",
+    "name": "Car key duplicate / lost key solution"
+  },
+  {
+    "type": "tag",
+    "name": "Safe / locker installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Smart lock installation"
+  },
+  {
+    "type": "tag",
+    "name": "Duplicate key making"
+  },
+  {
+    "type": "tag",
+    "name": "Door lock repair / replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Water tanker delivery (private)"
+  },
+  {
+    "type": "tag",
+    "name": "Overhead tank pump repair"
+  },
+  {
+    "type": "tag",
+    "name": "Submersible pump repair"
+  },
+  {
+    "type": "tag",
+    "name": "Borewell pump repair"
+  },
+  {
+    "type": "tag",
+    "name": "Borewell pump installation"
+  },
+  {
+    "type": "tag",
+    "name": "Borewell drilling (new)"
+  },
+  {
+    "type": "tag",
+    "name": "Recharge & plan upgrade assistance"
+  },
+  {
+    "type": "tag",
+    "name": "Cable TV connection & repair"
+  },
+  {
+    "type": "tag",
+    "name": "DTH set-top box repair"
+  },
+  {
+    "type": "tag",
+    "name": "DTH dish alignment & repair"
+  },
+  {
+    "type": "tag",
+    "name": "DTH installation"
+  },
+  {
+    "type": "tag",
+    "name": "Net metering assistance"
+  },
+  {
+    "type": "tag",
+    "name": "Solar water heater installation & repair"
+  },
+  {
+    "type": "tag",
+    "name": "Solar inverter repair"
+  },
+  {
+    "type": "tag",
+    "name": "Solar panel cleaning & maintenance"
+  },
+  {
+    "type": "tag",
+    "name": "Solar panel installation (rooftop)"
+  },
+  {
+    "type": "tag",
+    "name": "Inverter AMC service"
+  },
+  {
+    "type": "tag",
+    "name": "Battery water top-up & maintenance"
+  },
+  {
+    "type": "tag",
+    "name": "Battery replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Inverter repair"
+  },
+  {
+    "type": "tag",
+    "name": "Inverter installation"
+  },
+  {
+    "type": "tag",
+    "name": "Dent & scratch repair (doorstep)"
+  },
+  {
+    "type": "tag",
+    "name": "Windshield crack repair"
+  },
+  {
+    "type": "tag",
+    "name": "Car AC gas refilling"
+  },
+  {
+    "type": "tag",
+    "name": "Battery jump-start & replacement"
+  },
+  {
+    "type": "tag",
+    "name": "Car / bike washing (doorstep)"
+  },
+  {
+    "type": "tag",
+    "name": "Tyre puncture repair (doorstep)"
+  },
+  {
+    "type": "tag",
+    "name": "Car doorstep servicing"
+  },
+  {
+    "type": "tag",
+    "name": "Two-wheeler doorstep servicing"
+  },
+  {
+    "type": "tag",
+    "name": "Turnkey renovation project"
+  },
+  {
+    "type": "tag",
+    "name": "Space planning & consultation"
+  },
+  {
+    "type": "tag",
+    "name": "Home office setup"
+  },
+  {
+    "type": "tag",
+    "name": "Bathroom design & renovation"
+  },
+  {
+    "type": "tag",
+    "name": "False ceiling design & installation"
+  },
+  {
+    "type": "tag",
+    "name": "Wardrobe design & installation"
+  },
+  {
+    "type": "tag",
+    "name": "Modular kitchen design & installation"
+  },
+  {
+    "type": "tag",
+    "name": "Full home interior design & execution"
+  },
+  {
+    "type": "tag",
+    "name": "AC / cooler rental (events)"
+  },
+  {
+    "type": "tag",
+    "name": "Chair / table / crockery rental"
+  },
+  {
+    "type": "tag",
+    "name": "Photographer / videographer"
+  },
+  {
+    "type": "tag",
+    "name": "Pandit / priest booking"
+  },
+  {
+    "type": "tag",
+    "name": "Flower decoration"
+  },
+  {
+    "type": "tag",
+    "name": "Event lighting & decoration"
+  },
+  {
+    "type": "tag",
+    "name": "Sound system / DJ setup"
+  },
+  {
+    "type": "tag",
+    "name": "Generator rental (events)"
+  },
+  {
+    "type": "tag",
+    "name": "Catering service"
+  },
+  {
+    "type": "tag",
+    "name": "Tent / shamiyana setup"
+  },
+  {
+    "type": "tag",
+    "name": "Society maintenance payment"
+  },
+  {
+    "type": "tag",
+    "name": "Rental agreement drafting & registration"
+  },
+  {
+    "type": "tag",
+    "name": "Police verification (tenant / domestic help)"
+  },
+  {
+    "type": "tag",
+    "name": "Notary / stamp paper services"
+  },
+  {
+    "type": "tag",
+    "name": "PAN card application"
+  },
+  {
+    "type": "tag",
+    "name": "LPG subsidy (PAHAL) linking"
+  },
+  {
+    "type": "tag",
+    "name": "NOC / utility document assistance"
+  },
+  {
+    "type": "tag",
+    "name": "Khata / property registration"
+  },
+  {
+    "type": "tag",
+    "name": "Property tax payment"
+  },
+  {
+    "type": "tag",
+    "name": "Voter ID services"
+  },
+  {
+    "type": "tag",
+    "name": "Aadhaar update / correction"
+  },
+  {
+    "type": "tag",
+    "name": "Ration card services"
+  },
+  {
+    "type": "tag",
+    "name": "Newspaper delivery"
+  },
+  {
+    "type": "tag",
+    "name": "Medicine / pharmacy delivery"
+  },
+  {
+    "type": "tag",
+    "name": "Bread / bakery delivery"
+  },
+  {
+    "type": "tag",
+    "name": "Egg delivery"
+  },
+  {
+    "type": "tag",
+    "name": "LPG cylinder delivery"
+  },
+  {
+    "type": "tag",
+    "name": "Packaged drinking water (jar) delivery"
+  },
+  {
+    "type": "tag",
+    "name": "Meat / fish delivery"
+  },
+  {
+    "type": "tag",
+    "name": "Grocery delivery"
+  },
+  {
+    "type": "tag",
+    "name": "Vegetable & fruit delivery"
+  },
+  {
+    "type": "tag",
+    "name": "Milk & dairy (subscription delivery)"
+  }
+]

@@ -1,4 +1,3 @@
-import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React from 'react'
 import { Text, View } from 'react-native'
@@ -6,8 +5,11 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { UsersIcon, BriefcaseIcon, ChevronRightIcon } from '@/svg/icons'
 import ScalePressable from '@/components/scale-pressable'
+import { useAppStore } from '@/lib/store'
+import { useTranslation } from 'react-i18next'
 
 export default function RoleSelection() {
+    const { t } = useTranslation();
     const user = useAppStore(state => state.user);
     const setUser = useAppStore(state => state.setUser);
 
@@ -25,8 +27,8 @@ export default function RoleSelection() {
         <SafeAreaProvider>
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
                 <View className='p-6 pt-12'>
-                    <Text className='text-3xl font-black text-slate-900 dark:text-slate-100'>Welcome to Utility</Text>
-                    <Text className='text-lg text-slate-500 mt-2'>How would you like to use the app today?</Text>
+                    <Text className='text-3xl font-black text-slate-900 dark:text-slate-100'>{t('welcomeToUtility')}</Text>
+                    <Text className='text-lg text-slate-500 mt-2'>{t('howUseAppToday')}</Text>
                 </View>
 
                 <View className='flex-1 px-6 justify-center gap-6'>
@@ -41,8 +43,8 @@ export default function RoleSelection() {
                             <UsersIcon size={32} color="#3B82F6" />
                         </View>
                         <View className='flex-1'>
-                            <Text className='text-xl font-bold text-slate-900 dark:text-slate-100'>I want to hire</Text>
-                            <Text className='text-sm text-slate-500 dark:text-slate-400 mt-1'>Find skilled professionals for your home or office services.</Text>
+                            <Text className='text-xl font-bold text-slate-900 dark:text-slate-100'>{t('iWantToHire')}</Text>
+                            <Text className='text-sm text-slate-500 dark:text-slate-400 mt-1'>{t('findSkilledProfessionals')}</Text>
                         </View>
                         <ChevronRightIcon size={20} color="#94A3B8" />
                     </ScalePressable>
@@ -58,21 +60,19 @@ export default function RoleSelection() {
                             <BriefcaseIcon size={32} color="#10B981" />
                         </View>
                         <View className='flex-1'>
-                            <Text className='text-xl font-bold text-slate-900 dark:text-slate-100'>I want to work</Text>
-                            <Text className='text-sm text-slate-500 dark:text-slate-400 mt-1'>List your services and get hired by customers in your area.</Text>
+                            <Text className='text-xl font-bold text-slate-900 dark:text-slate-100'>{t('iWantToWork')}</Text>
+                            <Text className='text-sm text-slate-500 dark:text-slate-400 mt-1'>{t('listYourServices')}</Text>
                         </View>
                         <ChevronRightIcon size={20} color="#94A3B8" />
                     </ScalePressable>
                 </View>
 
-
                 <View className='p-6 items-center'>
                     <Text className='text-slate-400 text-sm text-center dark:text-slate-500'>
-                        Logged in as <Text className='text-slate-600 dark:text-slate-350 font-bold'>{user?.name || user?.phone || "Guest"}</Text>
+                        {t('loggedInAs', { user: user?.name || user?.phone || t('guest') })}
                     </Text>
                 </View>
             </SafeAreaView>
         </SafeAreaProvider>
     )
 }
-

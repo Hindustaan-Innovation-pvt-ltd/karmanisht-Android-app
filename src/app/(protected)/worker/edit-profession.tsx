@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, TouchableOpacity, ScrollView,
@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 
 export default function EditProfession() {
+    const { t } = useTranslation();
     const user = useAppStore(state => state.user);
     const categories = useAppStore(state => state.categories);
     const fetchCategories = useAppStore(state => state.fetchCategories);
@@ -39,6 +40,29 @@ export default function EditProfession() {
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [availableTags, setAvailableTags] = useState<any[]>([]);
     const [tagsLoading, setTagsLoading] = useState(false);
+
+    // Fetch tags when editCategoryId changes inside modal
+    const fetchTagsForCategory = useCallback(async (categoryId: string) => {
+        if (!categoryId) return;
+        setTagsLoading(true);
+        try {
+            const { data, error } = await insforge.database
+                .from('service_tags')
+                .select('*')
+                .eq('category_id', categoryId);
+            if (data && !error) {
+                const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
+                setAvailableTags(sorted);
+            } else {
+                setAvailableTags([]);
+            }
+        } catch (err) {
+            console.error('Failed to fetch tags:', err);
+            setAvailableTags([]);
+        } finally {
+            setTagsLoading(false);
+        }
+    }, []);
 
     // Fetch saved profession (category + tags) from DB
     useEffect(() => {
@@ -78,29 +102,6 @@ export default function EditProfession() {
         fetchDetails();
     }, [user?.id, categories, fetchTagsForCategory]);
 
-    // Fetch tags when editCategoryId changes inside modal
-    const fetchTagsForCategory = useCallback(async (categoryId: string) => {
-        if (!categoryId) return;
-        setTagsLoading(true);
-        try {
-            const { data, error } = await insforge.database
-                .from('service_tags')
-                .select('*')
-                .eq('category_id', categoryId);
-            if (data && !error) {
-                const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
-                setAvailableTags(sorted);
-            } else {
-                setAvailableTags([]);
-            }
-        } catch (err) {
-            console.error('Failed to fetch tags:', err);
-            setAvailableTags([]);
-        } finally {
-            setTagsLoading(false);
-        }
-    }, []);
-
     // Inline category select — clear tags & re-fetch
     const handleCategoryChange = (catId: string) => {
         setSavedCategoryId(catId);
@@ -118,7 +119,7 @@ export default function EditProfession() {
 
     const handleSave = async () => {
         if (!savedCategoryId) {
-            Alert.alert('Error', 'Please select a profession.');
+            Alert.alert(t('error', 'Error'), t('pleaseSelectProfession', 'Please select a profession.'));
             return;
         }
 
@@ -137,10 +138,10 @@ export default function EditProfession() {
             if (profileSuccess && specialtySuccess) {
                 setShowSuccessModal(true);
             } else {
-                Alert.alert('Error', 'Failed to update profession details.');
+                Alert.alert(t('error', 'Error'), t('failedUpdateProfession', 'Failed to update profession details.'));
             }
         } catch {
-            Alert.alert('Error', 'An unexpected error occurred.');
+            Alert.alert(t('error', 'Error'), t('unexpectedError', 'An unexpected error occurred.'));
         } finally {
             setLoading(false);
         }
@@ -172,15 +173,15 @@ export default function EditProfession() {
                             <Ionicons name="checkmark" size={38} color="#16a34a" />
                         </View>
 
-                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>Profession & Services Updated!</Text>
-                        <Text style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>Your profession and services have been updated successfully.</Text>
+                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>{t('professionServicesUpdated', 'Profession & Services Updated!')}</Text>
+                        <Text style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>{t('professionServicesUpdatedSuccess', 'Your profession and services have been updated successfully.')}</Text>
 
                         <TouchableOpacity
                             onPress={handleSuccessOk}
                             activeOpacity={0.85}
                             style={{ backgroundColor: '#000', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 48, width: '100%', alignItems: 'center' }}
                         >
-                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>OK</Text>
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{t('ok', 'OK')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -197,7 +198,7 @@ export default function EditProfession() {
                     }} className="p-2">
                         <Ionicons name="arrow-back" size={24} color="black" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold ml-4">Edit Profession & Services</Text>
+                    <Text className="text-xl font-bold ml-4">{t('editProfessionAndServices', 'Edit Profession & Services')}</Text>
                 </View>
 
                 <KeyboardAvoidingView
@@ -207,13 +208,13 @@ export default function EditProfession() {
                     {fetching ? (
                         <View className="flex-1 items-center justify-center">
                             <ActivityIndicator size="large" color="black" />
-                            <Text className="mt-4 text-slate-500 font-medium">Loading profession details...</Text>
+                            <Text className="mt-4 text-slate-500 font-medium">{t('loadingProfessionDetails', 'Loading profession details...')}</Text>
                         </View>
                     ) : (
                         <ScrollView contentContainerStyle={{ padding: 20 }}>
                             {/* Profession Selection */}
                             <View className="mb-6">
-                                <Text className="text-sm font-bold text-slate-500 uppercase mb-3">Select Profession</Text>
+                                <Text className="text-sm font-bold text-slate-500 uppercase mb-3">{t('selectProfession', 'Select Profession')}</Text>
 
                                 {/* Category Dropdown Trigger */}
                                 <TouchableOpacity
@@ -226,8 +227,8 @@ export default function EditProfession() {
                                         <Text className={`text-base font-semibold flex-1 ${savedCategoryId ? 'text-slate-900' : 'text-slate-400'
                                             }`}>
                                             {savedCategoryId
-                                                ? (categories.find(c => c.id === savedCategoryId)?.name || 'Select profession')
-                                                : 'Select your profession'
+                                                ? t(categories.find(c => c.id === savedCategoryId)?.name || 'Select profession')
+                                                : t('selectYourProfession', 'Select your profession')
                                             }
                                         </Text>
                                     </View>
@@ -259,7 +260,7 @@ export default function EditProfession() {
                                                 >
                                                     <Text className={`flex-1 text-sm font-medium ${savedCategoryId === cat.id ? 'text-black font-bold' : 'text-slate-700'
                                                         }`}>
-                                                        {cat.name}
+                                                        {t(cat.name)}
                                                     </Text>
                                                     {savedCategoryId === cat.id && (
                                                         <Ionicons name="checkmark-circle" size={18} color="#000" />
@@ -275,10 +276,10 @@ export default function EditProfession() {
                             {savedCategoryId ? (
                                 <View className="mb-8">
                                     <View className="flex-row items-center justify-between mb-3">
-                                        <Text className="text-sm font-bold text-slate-500 uppercase">Services / Specialities</Text>
+                                        <Text className="text-sm font-bold text-slate-500 uppercase">{t('servicesSpecialities', 'Services / Specialities')}</Text>
                                         {savedTagIds.length > 0 && (
                                             <TouchableOpacity onPress={() => { setSavedTagIds([]); }}>
-                                                <Text className="text-xs text-red-400 font-semibold">Clear all</Text>
+                                                <Text className="text-xs text-red-400 font-semibold">{t('clearAll', 'Clear all')}</Text>
                                             </TouchableOpacity>
                                         )}
                                     </View>
@@ -286,7 +287,7 @@ export default function EditProfession() {
                                     {tagsLoading ? (
                                         <ActivityIndicator color="#000" size="small" />
                                     ) : availableTags.length === 0 ? (
-                                        <Text className="text-sm text-slate-400 italic">No sub-services for this category yet.</Text>
+                                        <Text className="text-sm text-slate-400 italic">{t('noSubServices', 'No sub-services for this category yet.')}</Text>
                                     ) : (
                                         <View className="flex-row flex-wrap">
                                             {availableTags.map(tag => {
@@ -306,7 +307,7 @@ export default function EditProfession() {
                                                         )}
                                                         <Text className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-700'
                                                             }`}>
-                                                            {tag.name}
+                                                            {t(tag.name)}
                                                         </Text>
                                                     </TouchableOpacity>
                                                 );
@@ -316,7 +317,7 @@ export default function EditProfession() {
 
                                     {!tagsLoading && (
                                         <Text className="text-xs text-slate-400 mt-2">
-                                            {savedTagIds.length} service{savedTagIds.length !== 1 ? 's' : ''} selected
+                                            {t('servicesSelectedCount', '{{count}} services selected', { count: savedTagIds.length })}
                                         </Text>
                                     )}
                                 </View>
@@ -331,7 +332,7 @@ export default function EditProfession() {
                                 {loading ? (
                                     <ActivityIndicator color="white" />
                                 ) : (
-                                    <Text className="text-white font-bold text-lg">Save Changes</Text>
+                                    <Text className="text-white font-bold text-lg">{t('saveChanges', 'Save Changes')}</Text>
                                 )}
                             </TouchableOpacity>
                         </ScrollView>
