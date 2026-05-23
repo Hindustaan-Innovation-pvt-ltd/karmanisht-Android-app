@@ -109,9 +109,9 @@ export default function VerifyIdentity() {
 
             // Upload all 3 images concurrently
             const [aadhaarFrontRes, aadhaarBackRes, panFrontRes] = await Promise.all([
-                uploadToInsForge('documents', `aadhaar_front_${user.id}_${ts}.jpg`, aadhaarFront),
-                uploadToInsForge('documents', `aadhaar_back_${user.id}_${ts}.jpg`, aadhaarBack),
-                uploadToInsForge('documents', `pan_front_${user.id}_${ts}.jpg`, panFront),
+                uploadToInsForge('aadhaar', `aadhaar_front_${user.id}_${ts}.jpg`, aadhaarFront),
+                uploadToInsForge('aadhaar', `aadhaar_back_${user.id}_${ts}.jpg`, aadhaarBack),
+                uploadToInsForge('aadhaar', `pan_front_${user.id}_${ts}.jpg`, panFront),
             ]);
 
             const aadhaarFrontUrl = aadhaarFrontRes?.url || '';
