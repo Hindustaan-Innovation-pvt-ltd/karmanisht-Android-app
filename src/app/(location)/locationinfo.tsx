@@ -35,6 +35,9 @@ export default function LocationInfo() {
     const [locationLabel, setLocationLabel] = React.useState(user?.location || 'Shankar Nagar, Raipur')
     const [loadingLocation, setLoadingLocation] = React.useState(false)
     const [cityWide, setCityWide] = React.useState(user?.role === 'worker' && user?.searchRadiusKm >= 30 ? true : false)
+    const [coords, setCoords] = React.useState<{ latitude: number; longitude: number } | null>(
+        user?.latitude && user?.longitude ? { latitude: user.latitude, longitude: user.longitude } : null
+    )
 
     React.useEffect(() => {
         if (user?.searchRadiusKm) {
@@ -46,7 +49,10 @@ export default function LocationInfo() {
         if (user?.location) {
             setLocationLabel(user.location)
         }
-    }, [user?.searchRadiusKm, user?.location, user?.role])
+        if (user?.latitude && user?.longitude) {
+            setCoords({ latitude: user.latitude, longitude: user.longitude })
+        }
+    }, [user?.searchRadiusKm, user?.location, user?.role, user?.latitude, user?.longitude])
 
     const handleFinish = async () => {
         if (!locationLabel.trim()) {
@@ -58,7 +64,9 @@ export default function LocationInfo() {
 
         await updateDatabaseProfile({
             location: locationLabel.trim(),
-            searchRadiusKm: finalRadius
+            searchRadiusKm: finalRadius,
+            latitude: coords ? coords.latitude : undefined,
+            longitude: coords ? coords.longitude : undefined
         });
 
         if (fromSettings) {
@@ -72,12 +80,14 @@ export default function LocationInfo() {
         }
     }
 
-    const detectCurrentLocation = async () => {
+    const detectCurrentLocation = async (isManual = false) => {
         setLoadingLocation(true);
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert(t('permissionDenied'), t('locationPermissionMsg'));
+                if (isManual) {
+                    Alert.alert(t('permissionDenied'), t('locationPermissionMsg'));
+                }
                 return;
             }
             const loc = await Location.getCurrentPositionAsync({});
@@ -91,16 +101,28 @@ export default function LocationInfo() {
                 const city = place.city || 'Raipur';
                 const label = area ? `${area}, ${city}` : city;
                 setLocationLabel(label);
+                setCoords({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
             } else {
-                Alert.alert(t('unableToResolve'), t('coordinatesResolveError'));
+                if (isManual) {
+                    Alert.alert(t('unableToResolve'), t('coordinatesResolveError'));
+                }
             }
         } catch (err) {
             console.log("Geocoding error:", err);
-            Alert.alert(t('error'), t('detectLocationError'));
+            if (isManual) {
+                Alert.alert(t('error'), t('detectLocationError'));
+            }
         } finally {
             setLoadingLocation(false);
         }
     };
+
+    React.useEffect(() => {
+        // Auto-detect current location on onboarding if it's the default Shankar Nagar location or not set
+        if (!user?.location || user.location === 'Shankar Nagar, Raipur' || !user?.latitude || !user?.longitude) {
+            detectCurrentLocation(false);
+        }
+    }, []);
 
     // Radar pulse animation shared value
     const radarPulse = useSharedValue(1);
@@ -167,7 +189,7 @@ export default function LocationInfo() {
                                     onChangeText={setLocationLabel}
                                 />
                                 <TouchableOpacity
-                                    onPress={detectCurrentLocation}
+                                    onPress={() => detectCurrentLocation(true)}
                                     disabled={loadingLocation}
                                     className='bg-slate-200/60 dark:bg-slate-800 p-2 rounded-full'
                                 >
@@ -235,6 +257,22 @@ export default function LocationInfo() {
                             <Text className="absolute top-2 left-2 text-[10px] font-bold text-slate-100 bg-slate-800/30 dark:bg-slate-100 py-2 px-6  rounded-2xl dark:text-slate-500 uppercase tracking-wider self-start">
                                 {t('coverageAreaPreview')}
                             </Text>
+
+                            {/* Coverage Info Badge */}
+                            <View className="w-full flex-row justify-between items-center bg-black/25 dark:bg-black/45 py-2.5 px-4 rounded-2xl mt-2">
+                                <View className="flex-1 mr-3">
+                                    <Text className="text-[8px] font-black text-slate-300 dark:text-slate-400 uppercase tracking-widest">{t('serviceArea', 'Service Area')}</Text>
+                                    <Text className="text-xs font-bold text-white leading-tight mt-0.5" numberOfLines={1}>
+                                        {locationLabel || t('locationNotSet')}
+                                    </Text>
+                                </View>
+                                <View className="items-end">
+                                    <Text className="text-[8px] font-black text-slate-300 dark:text-slate-400 uppercase tracking-widest">{t('range', 'Range')}</Text>
+                                    <Text className="text-xs font-black text-white mt-0.5">
+                                        {cityWide ? '50 KM (City-wide)' : `${radiusKm} KM`}
+                                    </Text>
+                                </View>
+                            </View>
                         </LinearGradient>
                     </View>
 

@@ -21,6 +21,8 @@ export interface UserProfile {
     isPremium?: boolean;
     email?: string;
     isGoogleUser?: boolean;
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface Category {

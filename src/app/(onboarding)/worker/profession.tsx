@@ -90,8 +90,8 @@ export default function Profession() {
     return (
         <SafeAreaProvider>
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
-                <BackButton />
                 <Progress currentStep={3} totalSteps={5} />
+                <BackButton onPress={() => router.back()} />
 
                 <View className='px-5 pt-4 pb-5'>
                     <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>{t('yourProfession', 'Your profession')}</Text>

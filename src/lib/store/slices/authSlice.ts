@@ -144,13 +144,15 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                         // Fetch location for worker
                         const { data: locData } = await insforge.database
                             .from('provider_locations')
-                            .select('service_radius_km, area_name')
+                            .select('service_radius_km, area_name, latitude, longitude')
                             .eq('provider_id', workerData.id)
                             .maybeSingle();
 
                         if (locData) {
                             profile.searchRadiusKm = locData.service_radius_km || 5;
                             profile.location = locData.area_name || '';
+                            profile.latitude = locData.latitude;
+                            profile.longitude = locData.longitude;
                         }
 
                         // Fetch specialties for worker
@@ -408,12 +410,14 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
 
                             const { data: locData } = await insforge.database
                                 .from('provider_locations')
-                                .select('service_radius_km, area_name')
+                                .select('service_radius_km, area_name, latitude, longitude')
                                 .eq('provider_id', activeUser.id)
                                 .maybeSingle();
                             if (locData) {
                                 updatedUser.searchRadiusKm = locData.service_radius_km || 5;
                                 updatedUser.location = locData.area_name || activeUser.location;
+                                updatedUser.latitude = locData.latitude;
+                                updatedUser.longitude = locData.longitude;
                             }
 
                             const { data: servicesData } = await insforge.database
@@ -675,7 +679,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     email: payload.email || null,
                 }]);
 
-                if (updates.location !== undefined || updates.searchRadiusKm !== undefined) {
+                if (updates.location !== undefined || updates.searchRadiusKm !== undefined || updates.latitude !== undefined || updates.longitude !== undefined) {
                     const { data: locData } = await insforge.database
                         .from('provider_locations')
                         .select('id')
@@ -685,13 +689,15 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     const locPayload: any = {};
                     if (updates.location !== undefined) locPayload.area_name = updates.location;
                     if (updates.searchRadiusKm !== undefined) locPayload.service_radius_km = updates.searchRadiusKm;
+                    if (updates.latitude !== undefined) locPayload.latitude = updates.latitude;
+                    if (updates.longitude !== undefined) locPayload.longitude = updates.longitude;
 
                     if (locData) {
                         await insforge.database.from('provider_locations').update(locPayload).eq('provider_id', newId);
                     } else {
                         locPayload.provider_id = newId;
-                        locPayload.latitude = get().userLocation?.coords?.latitude || 21.2514;
-                        locPayload.longitude = get().userLocation?.coords?.longitude || 81.6296;
+                        locPayload.latitude = updates.latitude !== undefined ? updates.latitude : (get().userLocation?.coords?.latitude || 21.2514);
+                        locPayload.longitude = updates.longitude !== undefined ? updates.longitude : (get().userLocation?.coords?.longitude || 81.6296);
                         await insforge.database.from('provider_locations').insert([locPayload]);
                     }
                 }

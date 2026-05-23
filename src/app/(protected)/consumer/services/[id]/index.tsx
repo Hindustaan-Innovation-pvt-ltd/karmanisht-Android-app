@@ -13,6 +13,7 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-spe
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { adjustHindiFont } from '@/lib/utils';
+import CustomAlert from '@/components/ui/custom-alert';
 
 const { width } = Dimensions.get('window');
 
@@ -22,9 +23,10 @@ interface ContactDetailModalProps {
     onClose: () => void;
     themeColor: string;
     categoryName: string;
+    showAlert: (title: string, message: string, type?: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
-const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryName }: ContactDetailModalProps) => {
+const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryName, showAlert }: ContactDetailModalProps) => {
     const { t } = useTranslation();
     if (!provider) return null;
 
@@ -32,14 +34,14 @@ const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryNa
         if (provider.mobile) {
             Linking.openURL(`tel:${provider.mobile}`);
         } else {
-            Alert.alert(t('error'), t('phoneNotAvailable'));
+            showAlert(t('error'), t('phoneNotAvailable'), 'error');
         }
     };
 
     const handleCopy = () => {
         if (provider.mobile) {
             Clipboard.setString(provider.mobile);
-            Alert.alert(t('copied'), t('copiedMsg'));
+            showAlert(t('copied'), t('copiedMsg'), 'success');
         }
     };
 
@@ -457,6 +459,18 @@ const CategoryPassModal = ({
 };
 
 export default function ServiceDetailScreen() {
+    const [alertConfig, setAlertConfig] = useState<{
+        visible: boolean;
+        title: string;
+        message: string;
+        type: 'success' | 'error' | 'warning' | 'info';
+        onClose?: () => void;
+    } | null>(null);
+
+    const showAlert = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'error', onClose?: () => void) => {
+        setAlertConfig({ visible: true, title, message, type, onClose });
+    };
+
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const user = useAppStore(state => state.user);
@@ -569,7 +583,7 @@ export default function ServiceDetailScreen() {
 
         const permissionGranted = await checkAndRequestVoicePermission();
         if (!permissionGranted) {
-            Alert.alert(t('permissionDenied'), t('micPermissionRequired'));
+            showAlert(t('permissionDenied'), t('micPermissionRequired'), 'error');
             return;
         }
 
@@ -580,7 +594,7 @@ export default function ServiceDetailScreen() {
             });
         } catch (err: any) {
             console.error("Failed to start speech recognition:", err);
-            Alert.alert(t('error'), t('voiceRecognitionError'));
+            showAlert(t('error'), t('voiceRecognitionError'), 'error');
         }
     };
 
@@ -608,7 +622,7 @@ export default function ServiceDetailScreen() {
 
     const handleUnlockContact = async (provider: any) => {
         if (!user?.id) {
-            Alert.alert(t('loginRequired'), t('pleaseLoginContact'));
+            showAlert(t('loginRequired'), t('pleaseLoginContact'), 'warning');
             return;
         }
 
@@ -680,10 +694,10 @@ export default function ServiceDetailScreen() {
                 setTempProviderForSuccess(providerToUnlock);
                 setShowSuccessModal(true);
             } else {
-                Alert.alert(t('paymentCancelled'), t('paymentNotCompleted'));
+                showAlert(t('paymentCancelled'), t('paymentNotCompleted'), 'warning');
             }
         } catch (err: any) {
-            Alert.alert(t('paymentError'), err.message);
+            showAlert(t('paymentError'), err.message, 'error');
         } finally {
             setLoading(false);
             setProviderToUnlock(null);
@@ -693,7 +707,7 @@ export default function ServiceDetailScreen() {
     // ── Category pass: one payment → all providers in category unlocked ──────
     const handleBuyCategoryPass = async () => {
         if (!user?.id) {
-            Alert.alert(t('loginRequired'), t('pleaseLoginContinue'));
+            showAlert(t('loginRequired'), t('pleaseLoginContinue'), 'warning');
             return;
         }
         setShowCategoryPassModal(false);
@@ -747,16 +761,16 @@ export default function ServiceDetailScreen() {
                     queryClient.invalidateQueries({ queryKey: ['activePasses', user.id] });
                 }
 
-                Alert.alert(
+                showAlert(
                     t('unlockSuccessTitle'),
                     t('unlockSuccessMsg', { count: providers.length, category: t(name), time: durationHours }),
-                    [{ text: t('ok'), style: 'default' }]
+                    'success'
                 );
             } else {
-                Alert.alert(t('paymentCancelled'), t('paymentNotCompleted'));
+                showAlert(t('paymentCancelled'), t('paymentNotCompleted'), 'warning');
             }
         } catch (err: any) {
-            Alert.alert(t('paymentError'), err.message);
+            showAlert(t('paymentError'), err.message, 'error');
         } finally {
             setCategoryPassLoading(false);
         }
@@ -1111,6 +1125,7 @@ export default function ServiceDetailScreen() {
                 }}
                 themeColor={color || '#3B82F6'}
                 categoryName={name}
+                showAlert={showAlert}
             />
 
             <SuccessModal
@@ -1150,6 +1165,16 @@ export default function ServiceDetailScreen() {
                 durationHours={pricingConfig?.unlock_duration_hours || 5}
                 loading={categoryPassLoading}
             />
+
+            {alertConfig && (
+                <CustomAlert
+                    visible={alertConfig.visible}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    type={alertConfig.type}
+                    onClose={alertConfig.onClose || (() => setAlertConfig(null))}
+                />
+            )}
         </View>
     );
 }

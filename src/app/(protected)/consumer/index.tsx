@@ -221,6 +221,7 @@ export default function ConsumerHome() {
                     onProfilePress={() => router.push('/(protected)/consumer/profile' as any)}
                     onLocationPress={() => router.push('/(location)/select-location' as any)}
                     isDark={isDark}
+                    profileImage={user.profile_image}
                 />
             ) : (
                 <View className="w-full bg-white dark:bg-slate-900 overflow-hidden relative shadow-sm dark:shadow-none">

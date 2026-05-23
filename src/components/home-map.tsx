@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useRef, useState, useCallback } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
 import MapView, { UrlTile } from 'react-native-maps';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +17,7 @@ interface HomeMapProps {
     onProfilePress?: () => void;
     onLocationPress?: () => void;
     isDark?: boolean;
+    profileImage?: string;
 }
 
 export default function HomeMap({
@@ -26,6 +27,7 @@ export default function HomeMap({
     onProfilePress,
     onLocationPress,
     isDark = false,
+    profileImage,
 }: HomeMapProps) {
     const mapRef = useRef<MapView>(null);
 
@@ -127,7 +129,15 @@ export default function HomeMap({
                     style={[styles.profileBtn, { top: topOffset }]}
                     activeOpacity={0.8}
                 >
-                    <Ionicons name="person" size={22} color="white" />
+                    {profileImage ? (
+                        <Image
+                            source={{ uri: profileImage }}
+                            style={{ width: '100%', height: '100%', borderRadius: 26 }}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <Ionicons name="person" size={22} color="white" />
+                    )}
                 </TouchableOpacity>
             )}
 

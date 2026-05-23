@@ -509,6 +509,20 @@ export default function WorkerSettings() {
                                 <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold text-center mt-1 px-4">
                                     {getRadiusDescription(tempRadius)}
                                 </Text>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setRadiusModalVisible(false);
+                                        router.push('/(location)/locationinfo?from=settings');
+                                    }}
+                                    activeOpacity={0.7}
+                                    className="mt-3 flex-row items-center gap-1.5 bg-slate-50 dark:bg-slate-800/40 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm"
+                                >
+                                    <Ionicons name="location-sharp" size={14} color="#3B82F6" />
+                                    <Text className="text-slate-700 dark:text-slate-350 text-xs font-bold" numberOfLines={1}>
+                                        {user?.location || t('locationNotSet', 'Location not set')}
+                                    </Text>
+                                    <Ionicons name="pencil" size={10} color="#94A3B8" style={{ marginLeft: 2 }} />
+                                </TouchableOpacity>
                             </View>
 
                             {/* Options Scroll Bar */}

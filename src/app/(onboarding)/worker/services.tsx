@@ -110,8 +110,8 @@ export default function Services() {
     return (
         <SafeAreaProvider>
             <SafeAreaView className='flex-1 bg-white dark:bg-slate-950'>
-                <BackButton />
                 <Progress currentStep={4} totalSteps={5} />
+                <BackButton onPress={() => router.back()} />
 
                 <View className='px-5 pt-4 pb-3'>
                     <Text className='text-2xl font-bold text-slate-900 dark:text-slate-100'>{t('yourServices', 'Your services')}</Text>
