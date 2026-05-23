@@ -160,7 +160,7 @@ export default function EditProfession() {
     };
 
     return (
-        <SafeAreaProvider>
+        <SafeAreaProvider style={{ flex: 1, backgroundColor: isDark ? '#090d16' : '#ffffff' }}>
             {/* ── Custom Success Modal ── */}
             <Modal
                 visible={showSuccessModal}

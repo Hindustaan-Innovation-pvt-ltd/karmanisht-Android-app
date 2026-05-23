@@ -59,8 +59,11 @@ export default function GoogleOnboarding() {
 
             await refreshProfile();
 
-            // Direct route to location setup first
-            router.replace('/(location)/locationinfo');
+            if (role === 'worker') {
+                router.replace('/(location)/locationinfo');
+            } else {
+                router.replace('/(protected)/consumer');
+            }
         } catch (err: any) {
             Alert.alert(t('onboardingError'), err.message || t('failedCompleteReg'));
         } finally {

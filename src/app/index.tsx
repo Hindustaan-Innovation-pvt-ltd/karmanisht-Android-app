@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import {
     ActivityIndicator, Image, Text, TouchableOpacity, View,
-    Modal, Pressable, Animated, Platform
+    Modal, Pressable, Animated, Platform, useColorScheme
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -76,6 +76,7 @@ const BackgroundPattern = () => {
 
 export default function Index() {
     const router = useRouter()
+    const isDark = useColorScheme() === 'dark'
     const { t, i18n } = useTranslation()
     const user = useAppStore(state => state.user)
     const isLoading = useAppStore(state => state.isLoading)
@@ -199,7 +200,7 @@ export default function Index() {
                     <Animated.View
                         style={{
                             transform: [{ translateY: slideAnim }],
-                            backgroundColor: 'white',
+                            backgroundColor: isDark ? '#0F172A' : 'white',
                             borderTopLeftRadius: 32,
                             borderTopRightRadius: 32,
                             paddingHorizontal: 24,
@@ -208,20 +209,20 @@ export default function Index() {
                         }}
                     >
                         {/* Handle bar */}
-                        <View style={{ width: 48, height: 5, borderRadius: 3, backgroundColor: '#E2E8F0', alignSelf: 'center', marginBottom: 24 }} />
+                        <View style={{ width: 48, height: 5, borderRadius: 3, backgroundColor: isDark ? '#334155' : '#E2E8F0', alignSelf: 'center', marginBottom: 24 }} />
 
                         {/* Globe icon + title */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6, gap: 10 }}>
-                            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
+                            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: isDark ? '#1E293B' : '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}>
                                 <Ionicons name="language" size={24} color="#3B82F6" />
                             </View>
                             <View>
-                                <Text style={{ fontSize: 20, fontWeight: '800', color: '#0F172A' }}>{t('chooseLanguage')}</Text>
-                                <Text style={{ fontSize: 12, color: '#94A3B8', fontWeight: '500', marginTop: 2 }}>{t('chooseLanguageDesc')}</Text>
+                                <Text style={{ fontSize: 20, fontWeight: '800', color: isDark ? '#F8FAFC' : '#0F172A' }}>{t('chooseLanguage')}</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#64748B' : '#94A3B8', fontWeight: '500', marginTop: 2 }}>{t('chooseLanguageDesc')}</Text>
                             </View>
                         </View>
 
-                        <View style={{ height: 1, backgroundColor: '#F1F5F9', marginVertical: 20 }} />
+                        <View style={{ height: 1, backgroundColor: isDark ? '#1E293B' : '#F1F5F9', marginVertical: 20 }} />
 
                         {/* English option */}
                         <TouchableOpacity
@@ -233,15 +234,29 @@ export default function Index() {
                                 padding: 18,
                                 borderRadius: 18,
                                 borderWidth: 2,
-                                borderColor: selectedLang === 'en' ? '#3B82F6' : '#F1F5F9',
-                                backgroundColor: selectedLang === 'en' ? '#EFF6FF' : '#FAFAFA',
+                                borderColor: selectedLang === 'en' ? '#3B82F6' : (isDark ? '#334155' : '#F1F5F9'),
+                                backgroundColor: selectedLang === 'en' ? (isDark ? '#1E293B' : '#EFF6FF') : (isDark ? '#020617' : '#FAFAFA'),
                                 marginBottom: 14,
                             }}
                         >
-                            <Text style={{ fontSize: 28, marginRight: 14 }}>🇬🇧</Text>
+                            <View style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 12,
+                                backgroundColor: selectedLang === 'en' ? '#3B82F6' : (isDark ? '#334155' : '#E2E8F0'),
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: 14
+                            }}>
+                                <Text style={{
+                                    fontSize: 20,
+                                    fontWeight: 'bold',
+                                    color: selectedLang === 'en' ? '#FFFFFF' : (isDark ? '#F1F5F9' : '#0F172A')
+                                }}>A</Text>
+                            </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 17, fontWeight: '700', color: selectedLang === 'en' ? '#1D4ED8' : '#0F172A' }}>English</Text>
-                                <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>Continue in English</Text>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: selectedLang === 'en' ? '#3B82F6' : (isDark ? '#F8FAFC' : '#0F172A') }}>English</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#64748B' : '#94A3B8', marginTop: 2 }}>Continue in English</Text>
                             </View>
                             {selectedLang === 'en' && (
                                 <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center' }}>
@@ -260,15 +275,29 @@ export default function Index() {
                                 padding: 18,
                                 borderRadius: 18,
                                 borderWidth: 2,
-                                borderColor: selectedLang === 'hi' ? '#3B82F6' : '#F1F5F9',
-                                backgroundColor: selectedLang === 'hi' ? '#EFF6FF' : '#FAFAFA',
+                                borderColor: selectedLang === 'hi' ? '#3B82F6' : (isDark ? '#334155' : '#F1F5F9'),
+                                backgroundColor: selectedLang === 'hi' ? (isDark ? '#1E293B' : '#EFF6FF') : (isDark ? '#020617' : '#FAFAFA'),
                                 marginBottom: 28,
                             }}
                         >
-                            <Text style={{ fontSize: 28, marginRight: 14 }}>🇮🇳</Text>
+                            <View style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 12,
+                                backgroundColor: selectedLang === 'hi' ? '#3B82F6' : (isDark ? '#334155' : '#E2E8F0'),
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: 14
+                            }}>
+                                <Text style={{
+                                    fontSize: 20,
+                                    fontWeight: 'bold',
+                                    color: selectedLang === 'hi' ? '#FFFFFF' : (isDark ? '#F1F5F9' : '#0F172A')
+                                }}>अ</Text>
+                            </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 17, fontWeight: '700', color: selectedLang === 'hi' ? '#1D4ED8' : '#0F172A' }}>हिंदी</Text>
-                                <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>हिंदी में जारी रखें</Text>
+                                <Text style={{ fontSize: 17, fontWeight: '700', color: selectedLang === 'hi' ? '#3B82F6' : (isDark ? '#F8FAFC' : '#0F172A') }}>हिंदी</Text>
+                                <Text style={{ fontSize: 12, color: isDark ? '#64748B' : '#94A3B8', marginTop: 2 }}>हिंदी में जारी रखें</Text>
                             </View>
                             {selectedLang === 'hi' && (
                                 <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center' }}>
@@ -283,7 +312,7 @@ export default function Index() {
                             onPress={handleContinue}
                             disabled={applyingLang}
                             style={{
-                                backgroundColor: '#000',
+                                backgroundColor: isDark ? '#F8FAFC' : '#000',
                                 borderRadius: 18,
                                 paddingVertical: 18,
                                 alignItems: 'center',
@@ -292,9 +321,9 @@ export default function Index() {
                             }}
                         >
                             {applyingLang ? (
-                                <ActivityIndicator color="white" />
+                                <ActivityIndicator color={isDark ? 'black' : 'white'} />
                             ) : (
-                                <Text style={{ color: 'white', fontSize: 16, fontWeight: '800' }}>
+                                <Text style={{ color: isDark ? '#0F172A' : 'white', fontSize: 16, fontWeight: '800' }}>
                                     {selectedLang === 'hi' ? 'जारी रखें →' : 'Continue →'}
                                 </Text>
                             )}

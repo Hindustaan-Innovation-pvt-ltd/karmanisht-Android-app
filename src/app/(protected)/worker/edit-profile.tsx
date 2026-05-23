@@ -119,7 +119,7 @@ export default function EditProfile() {
     };
 
     return (
-        <SafeAreaProvider>
+        <SafeAreaProvider style={{ flex: 1, backgroundColor: isDark ? '#090d16' : '#ffffff' }}>
             {/* ── Image Source Selection Modal (Bottom Sheet style) ── */}
             <Modal
                 visible={showSourceModal}

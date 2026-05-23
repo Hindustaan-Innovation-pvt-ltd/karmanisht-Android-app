@@ -1,7 +1,7 @@
 import { useAppStore } from '@/lib/store';
 import { useCategories } from '@/hooks/queries';
 // @ts-nocheck
-import HomeMap from '@/components/home-map';
+// import HomeMap from '@/components/home-map';
 import SafeIcon from '@/components/safe-icon';
 import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Keyboard, Modal, Alert } from 'react-native';
+import { FlatList, Image, Linking, Text, TouchableOpacity, View, TextInput, LayoutAnimation, Keyboard, Modal, Alert, Dimensions } from 'react-native';
 import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScalePressable from '@/components/scale-pressable';
@@ -35,6 +35,25 @@ export default function ConsumerHome() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const [showLiveMap, setShowLiveMap] = useState(true);
+
+    const banners = [
+        require('../../../../assets/images/banner1.png'),
+        require('../../../../assets/images/banner2.png'),
+        require('../../../../assets/images/banner3.png'),
+    ];
+    const [bannerIndices, setBannerIndices] = useState([0, 1, 2]);
+
+    const cycleBanners = () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setBannerIndices(prev => [prev[1], prev[2], prev[0]]);
+    };
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            cycleBanners();
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [bannerIndices]);
 
     useEffect(() => {
         refreshProfile().catch(err => console.error('[ConsumerHome] refreshProfile error:', err));
@@ -206,78 +225,133 @@ export default function ConsumerHome() {
             });
         }
     }, [userLocation]);
-
+     function truncate(str:string){
+        if(str.length>20){
+            return str.slice(0,20)+'...'  
+        }
+        return str
+     }
     // Priority: saved DB address > profile location > GPS address > fallback
     const locationName = savedAddressName || user.location || readableAddress || (userLocation ? t('locating') : "Shankar Nagar, Raipur");
 
     const renderHeader = () => (
-        <View className="w-full">
-            {/* Map Header Area */}
-            {showLiveMap ? (
-                <HomeMap
-                    userLocation={userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null}
-                    topOffset={topOffset}
-                    locationName={locationName}
-                    onProfilePress={() => router.push('/(protected)/consumer/profile' as any)}
-                    onLocationPress={() => router.push('/(location)/select-location' as any)}
-                    isDark={isDark}
-                    profileImage={user.profile_image}
-                />
-            ) : (
-                <View className="w-full bg-white dark:bg-slate-900 overflow-hidden relative shadow-sm dark:shadow-none">
+        <View className="w-full pt-4 bg-white dark:bg-slate-950">
+            {/* Top Bar: Location & Profile */}
+            <View className="px-5 flex-row items-center justify-between" style={{ marginTop: topOffset }}>
+                <View className="flex-1 mr-4">
+                    <ScalePressable
+                        onPress={() => router.push('/(location)/select-location' as any)}
+                        className="flex-row items-center mt-1"
+                    >
+                        <Ionicons name="location" size={18} color="#3B82F6" />
+                        <Text className="ml-1.5 text-base font-bold text-gray-900 dark:text-white" numberOfLines={1}>
+                            {truncate(locationName)}
+                        </Text>
+                        <Ionicons name="chevron-down" size={14} color="#94A3B8" className="ml-1" />
+                    </ScalePressable>
+                </View>
+
+                {/* Profile Button */}
+                <ScalePressable
+                    onPress={() => router.push('/(protected)/consumer/profile' as any)}
+                    hapticType="selection"
+                    scaleTo={0.92}
+                    className="w-12 h-12 bg-gray-100 dark:bg-slate-800 rounded-full items-center justify-center border border-gray-200 dark:border-slate-800 shadow-sm"
+                >
+                    {user?.profile_image ? (
+                        <Image source={{ uri: user.profile_image }} className="w-12 h-12 rounded-full" />
+                    ) : (
+                        <Ionicons name="person" size={20} color={isDark ? "#FFFFFF" : "#1E293B"} />
+                    )}
+                </ScalePressable>
+            </View>
+
+            {/* Welcome message & Search block */}
+            <View className="px-5 mt-6 gap-3">
+                <Text className="text-2xl font-black text-gray-900 dark:text-white leading-tight">
+                    {t('helloUser', 'Hello')}, {user?.name || t('guest')}!
+                </Text>
+                
+                {/* Search Bar */}
+                <TouchableOpacity
+                    onPress={() => {
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                        setIsSearchToggle(!isSearchToggle);
+                    }}
+                    activeOpacity={0.8}
+                    className="flex-row items-center bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3.5 mt-2"
+                >
+                    <Ionicons name="search" size={20} color="#9CA3AF" />
+                    <Text className="ml-3 text-gray-400 font-semibold text-sm flex-1">{t('searchServices', 'Search for services...')}</Text>
+                    <Ionicons name="mic-outline" size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+            </View>
+
+            {/* Banners Stack */}
+            <View className="mt-6" style={{ height: 182, width: '100%', position: 'relative' }}>
+                {/* Third Banner (Back) */}
+                <View
+                    style={{
+                        position: 'absolute',
+                        top: 24,
+                        left: 36,
+                        right: 36,
+                        height: 150,
+                        zIndex: 1,
+                        opacity: 0.65,
+                    }}
+                >
                     <Image
-                        source={require('../../../../assets/images/map.png')}
-                        className="w-full h-96"
+                        source={banners[bannerIndices[2]]}
+                        className="w-full h-full rounded-3xl"
                         resizeMode="cover"
                     />
+                </View>
 
-                    {/* Gradient Overlay */}
-                    <LinearGradient
-                        colors={
-                            isDark ? [
-                                'rgba(9,13,22,1)',
-                                'rgba(9,13,22,0.9)',
-                                'rgba(9,13,22,0.7)',
-                                'rgba(9,13,22,0.3)',
-                                'transparent',
-                            ] : [
-                                'rgba(255,255,255,1)',
-                                'rgba(255,255,255,0.9)',
-                                'rgba(255,255,255,0.7)',
-                                'rgba(255,255,255,0.3)',
-                                'transparent',
-                            ]
-                        }
-                        locations={[0, 0.1, 0.2, 0.5, 1]}
-                        className="absolute top-0 left-0 right-0 h-full z-10 opacity-100 dark:opacity-80"
+                {/* Second Banner (Middle) */}
+                <View
+                    style={{
+                        position: 'absolute',
+                        top: 12,
+                        left: 28,
+                        right: 28,
+                        height: 150,
+                        zIndex: 2,
+                        opacity: 0.85,
+                    }}
+                >
+                    <Image
+                        source={banners[bannerIndices[1]]}
+                        className="w-full h-full rounded-3xl"
+                        resizeMode="cover"
                     />
+                </View>
 
-                    <View className="absolute left-0 top-0 w-full bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center justify-between shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none">
-                        {/* Centered Location Bar */}
-                        <ScalePressable
-                            onPress={() => router.push('/(location)/select-location' as any)}
-                            style={{ top: topOffset }}
-                            className='w-[40%] flex-row items-center bg-white shadow-md rounded-lg p-1'
-                        >
-                            <Ionicons name="location" size={24} color="#3B82F6" />
-                            <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-xs" numberOfLines={1}>
-                                {locationName}
-                            </Text>
-                        </ScalePressable>
-
-                        {/* Profile Icon */}
-                        <ScalePressable
-                            onPress={() => router.push('/(protected)/consumer/profile' as any)}
-                            hapticType="selection"
-                            scaleTo={0.92}
-                            style={{ top: topOffset }}
-                            className="absolute right-4 w-14 h-14 bg-black dark:bg-slate-700 rounded-full items-center justify-center shadow-lg z-20 dark:shadow-none"
-                        >
-                            <Image source={{ uri: user.profile_image }} className="w-full h-full rounded-full" />
-                        </ScalePressable>
-                    </View>
-                </View>)}
-
+                {/* First Banner (Front) */}
+                <TouchableOpacity
+                    activeOpacity={0.95}
+                    onPress={cycleBanners}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 20,
+                        right: 20,
+                        height: 150,
+                        zIndex: 3,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.15,
+                        shadowRadius: 10,
+                        elevation: 5,
+                    }}
+                >
+                    <Image
+                        source={banners[bannerIndices[0]]}
+                        className="w-full h-full rounded-3xl"
+                        resizeMode="cover"
+                    />
+                </TouchableOpacity>
+            </View>
 
             {/* Your Contacts Section */}
             <View className="py-5 px-5">

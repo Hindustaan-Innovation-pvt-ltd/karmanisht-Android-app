@@ -243,7 +243,7 @@ export default function SettingsScreen() {
                 <View className="mb-6 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/80 rounded-[28px] overflow-hidden">
                     {/* Location Row */}
                     <ScalePressable
-                        onPress={() => router.push('/(location)/locationinfo')}
+                        onPress={() => router.push('/(location)/select-location')}
                         hapticType="light"
                         className="flex-row items-center justify-between p-4 bg-transparent"
                     >
