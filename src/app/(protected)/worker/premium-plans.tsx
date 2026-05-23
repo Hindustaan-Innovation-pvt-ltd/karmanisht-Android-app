@@ -7,13 +7,25 @@ import { useAppStore } from '@/lib/store';
 import { insforge } from '@/lib/insforge';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useCityPricing } from '@/hooks/queries';
 
 export default function PremiumPlans() {
     const { t } = useTranslation();
     const router = useRouter();
     const colorScheme = useColorScheme();
     const { user } = useAppStore();
+    const userLocation = useAppStore(state => state.userLocation);
     const [selectedPlan, setSelectedPlan] = useState<'premium' | 'basic'>('premium');
+
+    const categoryId = user?.professionId || '3489b160-1ea8-42cb-808f-7279e35cc717';
+    const { data: cityPricingData, isLoading: loadingPricing } = useCityPricing(
+        categoryId,
+        userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null
+    );
+
+    const pricingConfig = cityPricingData?.pricingConfig || null;
+    const premiumPrice = pricingConfig?.provider_premium_fee ?? 999;
+    const basicPrice = pricingConfig?.provider_basic_fee ?? 499;
 
     // Subscription state — from DB only (schema: provider_id, expires_at, is_active)
     const [subLoading, setSubLoading] = useState(true);
@@ -63,7 +75,7 @@ export default function PremiumPlans() {
     const isDark = colorScheme === 'dark';
 
     // ── Loading ─────────────────────────────────────────────────────────────
-    if (subLoading && user?.isPremium) {
+    if ((subLoading && user?.isPremium) || loadingPricing) {
         return (
             <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
                 <ActivityIndicator size="large" color="#F59E0B" />
@@ -196,7 +208,7 @@ export default function PremiumPlans() {
                         </View>
                     </View>
                     <View className="flex-row items-baseline mb-6">
-                        <Text className="text-4xl font-black text-white">₹999</Text>
+                        <Text className="text-4xl font-black text-white">₹{premiumPrice}</Text>
                         <Text className="text-slate-400 font-bold ml-1">{t('perYear', '/year')}</Text>
                     </View>
                     <View className="flex-col gap-3">
@@ -215,7 +227,7 @@ export default function PremiumPlans() {
                         ))}
                     </View>
                 </TouchableOpacity>
-
+ 
                 {/* BASIC CARD */}
                 <TouchableOpacity
                     onPress={() => setSelectedPlan('basic')}
@@ -237,7 +249,7 @@ export default function PremiumPlans() {
                         )}
                     </View>
                     <View className="flex-row items-baseline mb-6">
-                        <Text className="text-4xl font-black text-slate-900 dark:text-white">₹499</Text>
+                        <Text className="text-4xl font-black text-slate-900 dark:text-white">₹{basicPrice}</Text>
                         <Text className="text-slate-500 dark:text-slate-400 font-bold ml-1">{t('perYear', '/year')}</Text>
                     </View>
                     <View className="flex-col gap-3">
@@ -256,7 +268,7 @@ export default function PremiumPlans() {
                     </View>
                 </TouchableOpacity>
             </ScrollView>
-
+ 
             {/* Bottom CTA */}
             <View className="absolute bottom-0 left-0 right-0 p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
                 <TouchableOpacity
@@ -265,7 +277,9 @@ export default function PremiumPlans() {
                     className="bg-[#18181B] dark:bg-slate-100 py-4 rounded-2xl items-center justify-center flex-row gap-2"
                 >
                     <Text className="text-white dark:text-slate-950 font-black text-lg">
-                        {selectedPlan === 'premium' ? t('getPremiumPrice', 'Get Premium — ₹999/yr') : t('getBasicPrice', 'Get Basic — ₹499/yr')}
+                        {selectedPlan === 'premium' 
+                            ? t('getPremiumPrice', { price: premiumPrice }, `Get Premium — ₹${premiumPrice}/yr`) 
+                            : t('getBasicPrice', { price: basicPrice }, `Get Basic — ₹${basicPrice}/yr`)}
                     </Text>
                     <Feather name="arrow-right" size={18} color={isDark ? '#000' : '#fff'} />
                 </TouchableOpacity>

@@ -35,9 +35,9 @@ export const SUBCATEGORY_FALLBACKS = [
 ];
 
 // ─── 1. useCategories Hook ───────────────────────────────────────────────────
-export function useCategories() {
+export function useCategories(userId?: string) {
     return useQuery({
-        queryKey: ['categories'],
+        queryKey: ['categories', userId],
         queryFn: async () => {
             try {
                 const { data, error } = await insforge.database
@@ -90,7 +90,12 @@ interface ProviderLocationCoords {
     longitude: number;
 }
 
-export function useProviders(categoryId: string, userLocationCoords: ProviderLocationCoords | null, categoryName: string) {
+export function useProviders(
+    categoryId: string,
+    userLocationCoords: ProviderLocationCoords | null,
+    categoryName: string,
+    userId: string | undefined
+) {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const isValidId = uuidRegex.test(categoryId);
 
@@ -101,108 +106,50 @@ export function useProviders(categoryId: string, userLocationCoords: ProviderLoc
     const keyLng = userLocationCoords ? Math.round(userLocationCoords.longitude * 1000) / 1000 : null;
 
     return useQuery({
-        queryKey: ['providers', categoryId, keyLat, keyLng],
+        queryKey: ['providers', categoryId, keyLat, keyLng, userId],
         queryFn: async () => {
             if (!isValidId) {
                 return [];
             }
 
-            // 1. Fetch provider-to-services links
-            const { data: provSvcData, error: provSvcError } = await insforge.database
-                .from('provider_services')
-                .select('provider_id, tag_id')
-                .eq('category_id', categoryId);
+            const lat = userLocationCoords ? userLocationCoords.latitude : 21.2514;
+            const lng = userLocationCoords ? userLocationCoords.longitude : 81.6296;
+            const customerId = userId || '00000000-0000-0000-0000-000000000000';
 
-            if (provSvcError) throw provSvcError;
-            if (!provSvcData || provSvcData.length === 0) return [];
-
-            const providerIds = Array.from(new Set(provSvcData.map(p => p.provider_id)));
-
-            // 2. Fetch service provider details
-            const { data: providersList, error: providersError } = await insforge.database
-                .from('service_providers')
-                .select(`
-                    id,
-                    full_name,
-                    mobile,
-                    profile_image,
-                    experience_years,
-                    bio,
-                    average_rating,
-                    total_jobs_completed,
-                    is_active,
-                    is_premium
-                `)
-                .in('id', providerIds)
-                .eq('is_active', true);
-
-            if (providersError) throw providersError;
-            if (!providersList || providersList.length === 0) return [];
-
-            // 3. Fetch provider locations
-            const { data: locationsList } = await insforge.database
-                .from('provider_locations')
-                .select('provider_id, latitude, longitude, service_radius_km')
-                .in('provider_id', providerIds);
-
-            const locationMap = new Map(
-                locationsList?.map(l => [
-                    l.provider_id,
-                    { latitude: l.latitude, longitude: l.longitude, service_radius_km: l.service_radius_km }
-                ]) || []
-            );
-
-            // 4. Fetch subcategories for mapping tags
-            const { data: subCategories } = await insforge.database
-                .from('service_tags')
-                .select('id, name')
-                .eq('category_id', categoryId);
-
-            const tagsList = subCategories || [];
-
-            // 5. Format results
-            const formattedProviders = providersList.map(p => {
-                const loc = locationMap.get(p.id);
-                let distance_km = 1.5; // Default fallback
-                if (loc && userLocationCoords) {
-                    distance_km = parseFloat(getDistanceKm(
-                        userLocationCoords.latitude,
-                        userLocationCoords.longitude,
-                        loc.latitude,
-                        loc.longitude
-                    ).toFixed(1));
-                }
-
-                const providerTags = provSvcData
-                    .filter(ps => ps.provider_id === p.id && ps.tag_id)
-                    .map(ps => {
-                        const tagObj = tagsList.find(sc => sc.id === ps.tag_id);
-                        return tagObj ? tagObj.name : null;
-                    })
-                    .filter(Boolean) as string[];
-
-                return {
-                    provider_id: p.id,
-                    full_name: p.full_name,
-                    profile_image: p.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name)}`,
-                    average_rating: p.average_rating || 0.0,
-                    total_reviews: p.total_jobs_completed || 0,
-                    distance_km,
-                    experience_years: p.experience_years || 0,
-                    mobile: p.mobile,
-                    description: p.bio || `Expert ${categoryName} services.`,
-                    tags: providerTags,
-                    service_radius_km: loc ? (loc.service_radius_km || 5) : 5,
-                    is_premium: p.is_premium || false
-                };
+            const { data, error } = await insforge.database.rpc('get_nearby_providers_secure', {
+                p_customer_id: customerId,
+                p_category_id: categoryId,
+                p_user_lat: lat,
+                p_user_lng: lng
             });
 
-            // 6. Sort: premium first, then closest distance
-            return [...formattedProviders].sort((a, b) => {
-                if (a.is_premium && !b.is_premium) return -1;
-                if (!a.is_premium && b.is_premium) return 1;
-                return a.distance_km - b.distance_km;
-            });
+            if (error) {
+                console.error('[useProviders] RPC Error, fallback to empty list:', error);
+                throw error;
+            }
+
+            if (!data || data.length === 0) return [];
+
+            return data.map((p: any) => ({
+                provider_id: p.provider_id,
+                full_name: p.full_name,
+                business_name: p.business_name,
+                profile_image: p.profile_image || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name)}`,
+                average_rating: Number(p.average_rating) || 0.0,
+                total_reviews: p.total_reviews || 0,
+                distance_km: Number(p.distance_km) || 0,
+                experience_years: p.experience_years || 0,
+                mobile: p.mobile,
+                email: p.email,
+                latitude: p.latitude,
+                longitude: p.longitude,
+                is_unlocked: p.is_unlocked || false,
+                unlock_expires_in_seconds: p.unlock_expires_in_seconds || 0,
+                description: p.bio || `Expert ${categoryName} services.`,
+                tags: p.tags || [],
+                service_radius_km: Number(p.service_radius_km) || 5,
+                is_premium: p.is_premium || false
+            }));
         },
         enabled: !!categoryId,
     });
@@ -277,14 +224,19 @@ export function useCityPricing(categoryId: string, userLocationCoords: ProviderL
             if (!resolvedCity) {
                 return {
                     cityConfig: { id: '57b3868e-c554-4ae5-b80f-fb1bd0617542', name: 'Raipur', tier: 'tier_2' },
-                    pricingConfig: { unlock_price: 49, unlock_duration_hours: 5 }
+                    pricingConfig: {
+                        unlock_price: 49,
+                        provider_basic_fee: 1999,
+                        provider_premium_fee: 15000,
+                        unlock_duration_hours: 5
+                    }
                 };
             }
 
             // Fetch pricing config
             const { data: priceData, error: priceError } = await insforge.database
                 .from('city_pricing_config')
-                .select('unlock_price, unlock_duration_hours')
+                .select('unlock_price, provider_basic_fee, provider_premium_fee, unlock_duration_hours')
                 .eq('city_id', resolvedCity.id)
                 .eq('profession_id', categoryId)
                 .maybeSingle();
@@ -292,10 +244,14 @@ export function useCityPricing(categoryId: string, userLocationCoords: ProviderL
             const pricingConfig = (priceData && !priceError)
                 ? {
                     unlock_price: Number(priceData.unlock_price),
+                    provider_basic_fee: Number(priceData.provider_basic_fee),
+                    provider_premium_fee: Number(priceData.provider_premium_fee),
                     unlock_duration_hours: Number(priceData.unlock_duration_hours)
                 }
                 : {
                     unlock_price: resolvedCity.tier === 'tier_1' ? 99 : 49,
+                    provider_basic_fee: resolvedCity.tier === 'tier_1' ? 2999 : (resolvedCity.tier === 'tier_2' ? 1999 : 499),
+                    provider_premium_fee: resolvedCity.tier === 'tier_1' ? 20000 : (resolvedCity.tier === 'tier_2' ? 15000 : 5000),
                     unlock_duration_hours: 5
                 };
 

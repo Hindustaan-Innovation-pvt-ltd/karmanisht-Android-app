@@ -24,7 +24,7 @@ export default function ConsumerHome() {
     const { t } = useTranslation();
     const user = useAppStore(state => state.user);
     const unlockedProviders = useAppStore(state => state.unlockedProviders);
-    const { data: categories = [] } = useCategories();
+    const { data: categories = [] } = useCategories(user?.id);
     const userLocation = useAppStore(state => state.userLocation);
     const refreshProfile = useAppStore(state => state.refreshProfile);
     const { isDark } = useTheme();
@@ -69,20 +69,20 @@ export default function ConsumerHome() {
             // Silently kill the session and prepare for a new one
             try {
                 ExpoSpeechRecognitionModule.stop();
-            } catch {}
+            } catch { }
             setIsListening(false);
         } else {
             console.warn('[SpeechToText Error]', event.error, event.message);
             try {
                 ExpoSpeechRecognitionModule.stop();
-            } catch {}
+            } catch { }
             setIsListening(false);
         }
     });
 
     const checkAndRequestVoicePermission = async (): Promise<boolean> => {
         const permissionStatus = await ExpoSpeechRecognitionModule.getPermissionsAsync();
-        
+
         if (permissionStatus.granted) {
             return true;
         }
@@ -117,7 +117,7 @@ export default function ConsumerHome() {
 
         try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } catch {}
+        } catch { }
 
         const permissionGranted = await checkAndRequestVoicePermission();
         if (!permissionGranted) {
@@ -251,17 +251,15 @@ export default function ConsumerHome() {
                         className="absolute top-0 left-0 right-0 h-full z-10 opacity-100 dark:opacity-80"
                     />
 
-                    <View className="absolute left-0 top-0 w-full bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center justify-between px-4 shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none">
+                    <View className="absolute left-0 top-0 w-full bg-white dark:bg-slate-800 rounded-[15px] flex-row items-center justify-between shadow-lg z-20 border border-gray-100 dark:border-slate-700 dark:shadow-none">
                         {/* Centered Location Bar */}
                         <ScalePressable
                             onPress={() => router.push('/(location)/select-location' as any)}
-                            hapticType="selection"
-                            scaleTo={0.97}
                             style={{ top: topOffset }}
-                            className='w-[40%] flex-row items-center bg-white shadow-md rounded-lg p-2 '
+                            className='w-[40%] flex-row items-center bg-white shadow-md rounded-lg p-1'
                         >
                             <Ionicons name="location" size={24} color="#3B82F6" />
-                            <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-sm" numberOfLines={1}>
+                            <Text className="ml-3 flex-1 text-gray-900 dark:text-slate-100 font-bold text-xs" numberOfLines={1}>
                                 {locationName}
                             </Text>
                         </ScalePressable>
@@ -349,10 +347,10 @@ export default function ConsumerHome() {
                                     </TouchableOpacity>
                                 )}
                                 <TouchableOpacity onPress={handleVoiceSearch} className="p-0.5">
-                                    <Ionicons 
-                                        name={isListening ? "mic" : "mic-outline"} 
-                                        size={20} 
-                                        color={isListening ? "#EF4444" : "#94A3B8"} 
+                                    <Ionicons
+                                        name={isListening ? "mic" : "mic-outline"}
+                                        size={20}
+                                        color={isListening ? "#EF4444" : "#94A3B8"}
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -390,7 +388,7 @@ export default function ConsumerHome() {
                                                 <SafeIcon name={icon} size={20} color="white" />
                                             </View>
                                             <View className="ml-4 flex-1">
-                                                <Text 
+                                                <Text
                                                     style={{ fontSize: adjustHindiFont(t(item.name), 16, 1.15) }}
                                                     className="font-bold text-slate-900 dark:text-slate-100"
                                                 >
@@ -479,7 +477,9 @@ export default function ConsumerHome() {
                 data={filteredCategories}
                 keyExtractor={(item) => item.id}
                 numColumns={3}
-                columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 20 }}
+                columnWrapperStyle={{
+                    justifyContent: 'space-between', paddingHorizontal: 20
+                }}
                 renderItem={({ item, index }) => <ServiceCard service={item} index={index} />}
                 ListEmptyComponent={
                     searchQuery.length > 0 ? (
@@ -711,13 +711,12 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
                 } as any)}
                 hapticType="light"
                 scaleTo={0.93}
-                className="w-full h-full rounded-[20px] items-center justify-center shadow-sm"
+                className="w-full h-full rounded-lg items-center justify-center shadow-sm"
                 style={{ backgroundColor: color }}
             >
-                <SafeIcon name={icon} size={36} color="white" />
-                <Text 
-                    style={{ fontSize: adjustHindiFont(t(service.name), 10, 1.15) }}
-                    className="text-white font-black mt-2 text-center px-1 uppercase tracking-tighter"
+                <SafeIcon name={icon} size={28} color="white" />
+                <Text
+                    className="text-sm text-white font-medium mt-2 text-center px-1 uppercase tracking-tighter leading-none"
                 >
                     {t(service.name)}
                 </Text>

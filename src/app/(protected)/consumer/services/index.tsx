@@ -70,20 +70,20 @@ export default function ServicesScreen() {
             // Silently kill the session and prepare for a new one
             try {
                 ExpoSpeechRecognitionModule.stop();
-            } catch {}
+            } catch { }
             setIsListening(false);
         } else {
             console.warn('[SpeechToText Error]', event.error, event.message);
             try {
                 ExpoSpeechRecognitionModule.stop();
-            } catch {}
+            } catch { }
             setIsListening(false);
         }
     });
 
     const checkAndRequestVoicePermission = async (): Promise<boolean> => {
         const permissionStatus = await ExpoSpeechRecognitionModule.getPermissionsAsync();
-        
+
         if (permissionStatus.granted) {
             return true;
         }
@@ -118,7 +118,7 @@ export default function ServicesScreen() {
 
         try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } catch {}
+        } catch { }
 
         const permissionGranted = await checkAndRequestVoicePermission();
         if (!permissionGranted) {
@@ -191,10 +191,10 @@ export default function ServicesScreen() {
                                 </TouchableOpacity>
                             )}
                             <TouchableOpacity onPress={handleVoiceSearch} className="p-0.5">
-                                <Ionicons 
-                                    name={isListening ? "mic" : "mic-outline"} 
-                                    size={20} 
-                                    color={isListening ? "#EF4444" : "#94A3B8"} 
+                                <Ionicons
+                                    name={isListening ? "mic" : "mic-outline"}
+                                    size={20}
+                                    color={isListening ? "#EF4444" : "#94A3B8"}
                                 />
                             </TouchableOpacity>
                         </View>
@@ -223,7 +223,7 @@ export default function ServicesScreen() {
                                                 params: { id: item.id, name: item.name, color: color, icon: icon }
                                             } as any);
                                         }}
-                                        className="flex-row items-center bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-900/60 p-3 rounded-2xl active:scale-98"
+                                        className="flex-row items-center bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-900/60 p-3 rounded-lg active:scale-98"
                                     >
                                         <View
                                             style={{ backgroundColor: color }}
@@ -232,7 +232,7 @@ export default function ServicesScreen() {
                                             <SafeIcon name={icon} size={20} color="white" />
                                         </View>
                                         <View className="ml-4 flex-1">
-                                            <Text className="text-base font-bold text-slate-900 dark:text-slate-100">{t(item.name)}</Text>
+                                            <Text className="text-base font-medium text-slate-900 dark:text-slate-100">{t(item.name)}</Text>
                                             <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5">{t('exploreActiveProviders')}</Text>
                                         </View>
                                         <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#CBD5E1'} />

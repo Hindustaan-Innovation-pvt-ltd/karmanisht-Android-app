@@ -12,6 +12,7 @@ import { insforge } from '@/lib/insforge';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Confetti } from '@/components/Confetti';
 import { useTranslation } from 'react-i18next';
+import { useCityPricing } from '@/hooks/queries';
 
 
 const RAZORPAY_KEY = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SpC8XTKEi3eJGe';
@@ -22,9 +23,21 @@ export default function PremiumPayment() {
     const colorScheme = useColorScheme();
     const params = useLocalSearchParams();
     const { user, refreshProfile } = useAppStore();
+    const userLocation = useAppStore(state => state.userLocation);
 
     const plan = params.plan === 'basic' ? 'basic' : 'premium';
-    const basePrice = plan === 'basic' ? 499 : 999;
+
+    const categoryId = user?.professionId || '3489b160-1ea8-42cb-808f-7279e35cc717';
+    const { data: cityPricingData, isLoading: loadingPricing } = useCityPricing(
+        categoryId,
+        userLocation?.coords ? { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude } : null
+    );
+
+    const pricingConfig = cityPricingData?.pricingConfig || null;
+    const basePrice = plan === 'basic'
+        ? (pricingConfig?.provider_basic_fee ?? 499)
+        : (pricingConfig?.provider_premium_fee ?? 999);
+
     const gstPrice = Math.round(basePrice * 0.18);
     const totalPrice = basePrice + gstPrice;
     const totalPaisa = totalPrice * 100;
@@ -268,6 +281,14 @@ export default function PremiumPayment() {
         setShowSuccess(false);
         router.replace('/(protected)/worker/settings');
     };
+
+    if (loadingPricing) {
+        return (
+            <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950 items-center justify-center">
+                <ActivityIndicator size="large" color="#F59E0B" />
+            </SafeAreaView>
+        );
+    }
 
     const isDark = colorScheme === 'dark';
 
