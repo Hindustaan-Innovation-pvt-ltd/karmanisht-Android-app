@@ -119,7 +119,7 @@ export default function SelectLocation() {
                     {
                         signal: controller.signal,
                         headers: {
-                            'User-Agent': 'Hindustan-Innovations-App'
+                            'User-Agent': 'Hindustaan-Innovations-App'
                         }
                     }
                 );
