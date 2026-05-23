@@ -42,13 +42,12 @@ export default function SettingsScreen() {
 
     const { t, i18n } = useTranslation();
     const [languageModalVisible, setLanguageModalVisible] = useState(false);
-    const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'en');
     const changeLanguage = useAppStore(state => state.changeLanguage);
+    const currentLanguage = useAppStore(state => state.currentLanguage);
 
     const handleLanguageChange = async (lang: 'en' | 'hi') => {
         try {
             await changeLanguage(lang);
-            setCurrentLanguage(lang);
             setLanguageModalVisible(false);
         } catch (err) {
             console.error("Error setting language:", err);

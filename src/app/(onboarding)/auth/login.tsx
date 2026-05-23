@@ -1,5 +1,6 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react'
+import '@/lib/i18n';
+import React, { useState, useEffect } from 'react';
 import { Text, TextInput, View, Platform, KeyboardAvoidingView, Image, Alert, ActivityIndicator, useColorScheme } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Google } from '@/svg/Google'
@@ -50,7 +51,7 @@ export default function Login() {
         }
 
         if (cooldown > 0) {
-            Alert.alert(t('Please Wait'), t('cooldownMsg', { time: cooldown }));
+            Alert.alert(t('pleaseWait'), t('cooldownMsg', { time: cooldown }));
             return;
         }
 
@@ -67,7 +68,9 @@ export default function Login() {
             }
 
             if (!checkRes || !checkRes.exists) {
-                Alert.alert(t('Account Not Found'), t('Account Not FoundMsg'));
+                const title = t('accountNotFound');
+                const message = t('accountNotFoundMsg');
+                Alert.alert(title, message);
                 return;
             }
 
@@ -80,7 +83,7 @@ export default function Login() {
                 verificationId = confirmation.verificationId;
             }
 
-            Alert.alert(t('otpSent'), t('Otp Sent Msg'));
+            Alert.alert(t('otpSent'), t('otpSentMsg'));
             setCooldown(30); // 30 seconds cooldown
 
             // Pass the confirmation object's verificationId to the next screen
@@ -176,13 +179,13 @@ export default function Login() {
                     });
                 }
             } else if (result.type === 'cancel' || result.type === 'dismiss') {
-                Alert.alert('Sign-In Cancelled', 'Google sign-in was cancelled.');
+                Alert.alert(t('error'), 'Google sign-in was cancelled.');
             } else {
                 throw new Error('Sign in flow failed.');
             }
         } catch (error: any) {
             console.error('[Google Auth]', error);
-            Alert.alert('Google Sign-In Error', error.message || 'An unexpected error occurred.');
+            Alert.alert(t('error'), error.message || 'An unexpected error occurred.');
         } finally {
             setLoading(false);
         }
@@ -211,7 +214,7 @@ export default function Login() {
                         >
                             <Google className='absolute left-4' />
                             <Text className='w-full text-lg font-semibold text-center text-slate-900 dark:text-slate-100 -ms-4'>
-                                {t('Sign In With Google')}
+                                {t('signInWithGoogle')}
                             </Text>
                         </ScalePressable>
                         <Text className='text-center font-semibold text-slate-900 dark:text-slate-100'>{t('or')}</Text>
@@ -220,7 +223,7 @@ export default function Login() {
                     <View className='flex-col gap-4'>
                         <TextInput
                             className='rounded-lg outline p-4 border border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100'
-                            placeholder={t('Enter Mobile No')}
+                            placeholder={t('enterMobileNo')}
                             placeholderTextColor={colorScheme === 'dark' ? '#64748b' : '#94a3b8'}
                             keyboardType='phone-pad'
                             value={mobile}
@@ -245,13 +248,13 @@ export default function Login() {
                     </View>
 
                     <View className='flex-col gap-2'>
-                        <Text className='text-center text-lg font-medium text-slate-500'>{t("Don't Have Account")}</Text>
+                        <Text className='text-center text-lg font-medium text-slate-500'>{t('dontHaveAccount')}</Text>
                         <ScalePressable
                             onPress={() => router.push('/(onboarding)/auth/register')}
                             hapticType="light"
                             scaleTo={0.98}
                         >
-                            <Text className='text-center text-black dark:text-white font-bold'>{t('create New Account')}</Text>
+                            <Text className='text-center text-black dark:text-white font-bold'>{t('createNewAccount')}</Text>
                         </ScalePressable>
                     </View>
                 </View>
@@ -259,4 +262,3 @@ export default function Login() {
         </SafeAreaView>
     )
 }
-
