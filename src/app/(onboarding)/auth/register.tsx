@@ -54,6 +54,9 @@ export default function Register() {
 
     useEffect(() => {
         if (!showOtpModal) return;
+        const isDev = process.env.EXPO_PUBLIC_APP_MODE === 'development';
+        if (isDev) return;
+
         const unsubscribe = auth().onAuthStateChanged(async (user) => {
             if (user) {
                 console.log('Firebase user auto-authenticated in Register screen:', user.uid);
@@ -91,8 +94,15 @@ export default function Register() {
         }
         setLoading(true);
         try {
-            const confirmation = await auth().signInWithPhoneNumber('+91' + phone);
-            setVerificationId(confirmation.verificationId);
+            const isDev = process.env.EXPO_PUBLIC_APP_MODE === 'development';
+            let vId = 'mock-verification-id';
+
+            if (!isDev) {
+                const confirmation = await auth().signInWithPhoneNumber('+91' + phone);
+                vId = confirmation.verificationId;
+            }
+
+            setVerificationId(vId);
             Alert.alert('OTP Sent', 'OTP sent successfully!');
             setCooldown(30); // 30 seconds cooldown
             setShowOtpModal(true);
@@ -108,8 +118,15 @@ export default function Register() {
         if (cooldown > 0) return;
         setResendingOtp(true);
         try {
-            const confirmation = await auth().signInWithPhoneNumber('+91' + phone);
-            setVerificationId(confirmation.verificationId);
+            const isDev = process.env.EXPO_PUBLIC_APP_MODE === 'development';
+            let vId = 'mock-verification-id';
+
+            if (!isDev) {
+                const confirmation = await auth().signInWithPhoneNumber('+91' + phone);
+                vId = confirmation.verificationId;
+            }
+
+            setVerificationId(vId);
             Alert.alert('OTP Sent', 'OTP resent successfully!');
             setCooldown(30);
         } catch (err: any) {
@@ -181,6 +198,13 @@ export default function Register() {
     const handleVerifyOtp = async () => {
         if (otp.length < 6) return;
         setVerifyingOtp(true);
+
+        const isDev = process.env.EXPO_PUBLIC_APP_MODE === 'development';
+        if (isDev) {
+            await handleSuccessfulRegistration();
+            return;
+        }
+
         try {
             const credential = auth.PhoneAuthProvider.credential(verificationId, otp);
             await auth().signInWithCredential(credential);

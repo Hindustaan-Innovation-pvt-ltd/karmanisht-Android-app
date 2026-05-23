@@ -75,6 +75,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone for voice searching services.",
+          "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to use speech recognition to transcribe voice search queries."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",

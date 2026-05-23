@@ -70,7 +70,13 @@ export default function Login() {
             }
 
             // Firebase Phone Auth using native RN Firebase (no Recaptcha required)
-            const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
+            const isDev = process.env.EXPO_PUBLIC_APP_MODE === 'development';
+            let verificationId = 'mock-verification-id';
+
+            if (!isDev) {
+                const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
+                verificationId = confirmation.verificationId;
+            }
 
             Alert.alert('OTP Sent', 'OTP sent successfully!');
             setCooldown(30); // 30 seconds cooldown
@@ -78,7 +84,7 @@ export default function Login() {
             // Pass the confirmation object's verificationId to the next screen
             router.push({ 
                 pathname: '/(onboarding)/auth/otp', 
-                params: { mobile, initialCooldown: '30', verificationId: confirmation.verificationId } 
+                params: { mobile, initialCooldown: '30', verificationId: verificationId } 
             });
         } catch (err: any) {
             console.error('[Firebase OTP Error]', err);

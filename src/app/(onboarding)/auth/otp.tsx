@@ -27,6 +27,9 @@ export default function Otp() {
     const hasProcessedRef = useRef(false)
 
     useEffect(() => {
+        const isDev = process.env.EXPO_PUBLIC_APP_MODE === 'development';
+        if (isDev) return;
+
         const unsubscribe = auth().onAuthStateChanged(async (user) => {
             if (user) {
                 console.log('Firebase user auto-authenticated in OTP screen:', user.uid);
@@ -49,8 +52,13 @@ export default function Otp() {
         if (cooldown > 0) return;
         setLoading(true);
         try {
-            const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
-            setCurrentVerificationId(confirmation.verificationId);
+            const isDev = process.env.EXPO_PUBLIC_APP_MODE === 'development';
+            if (isDev) {
+                setCurrentVerificationId('mock-verification-id');
+            } else {
+                const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
+                setCurrentVerificationId(confirmation.verificationId);
+            }
             Alert.alert('OTP Sent', 'OTP resent successfully!');
             setCooldown(30); // restart cooldown
         } catch (err: any) {
@@ -122,6 +130,13 @@ export default function Otp() {
             return;
         }
         setLoading(true);
+
+        const isDev = process.env.EXPO_PUBLIC_APP_MODE === 'development';
+        if (isDev) {
+            await handleSuccessfulLogin();
+            return;
+        }
+
         try {
             const credential = auth.PhoneAuthProvider.credential(currentVerificationId, otp);
             await auth().signInWithCredential(credential);

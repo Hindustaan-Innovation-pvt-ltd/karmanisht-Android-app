@@ -1,13 +1,15 @@
 import { useAppStore } from '@/lib/store';
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, LayoutAnimation, Keyboard, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, LayoutAnimation, Keyboard, Modal, ActivityIndicator, Alert } from 'react-native';
 import SafeIcon from '@/components/safe-icon';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
+import * as Haptics from 'expo-haptics';
 
 const VIBRANT_COLORS = [
     '#EF4444', // Red
@@ -50,6 +52,88 @@ export default function ServicesScreen() {
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchToggle, setIsSearchToggle] = useState<boolean>(false);
+    const [isListening, setIsListening] = useState(false);
+
+    useSpeechRecognitionEvent('start', () => setIsListening(true));
+    useSpeechRecognitionEvent('end', () => setIsListening(false));
+    useSpeechRecognitionEvent('result', (event) => {
+        if (event.results && event.results[0]) {
+            const transcript = event.results[0].transcript;
+            const cleaned = transcript.trim().replace(/[.?,!]/g, "");
+            setSearchQuery(cleaned);
+        }
+    });
+    useSpeechRecognitionEvent('error', (event) => {
+        if (event.error === 'no-speech') {
+            // Silently kill the session and prepare for a new one
+            try {
+                ExpoSpeechRecognitionModule.stop();
+            } catch {}
+            setIsListening(false);
+        } else {
+            console.warn('[SpeechToText Error]', event.error, event.message);
+            try {
+                ExpoSpeechRecognitionModule.stop();
+            } catch {}
+            setIsListening(false);
+        }
+    });
+
+    const checkAndRequestVoicePermission = async (): Promise<boolean> => {
+        const permissionStatus = await ExpoSpeechRecognitionModule.getPermissionsAsync();
+        
+        if (permissionStatus.granted) {
+            return true;
+        }
+
+        return new Promise((resolve) => {
+            Alert.alert(
+                "Voice Search Access Required",
+                "HINDUSTAAN INNOVATIONS needs speech recognition and microphone permissions to search for services by voice.",
+                [
+                    {
+                        text: "Cancel",
+                        style: "cancel",
+                        onPress: () => resolve(false)
+                    },
+                    {
+                        text: "Allow",
+                        onPress: async () => {
+                            const requestResult = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+                            resolve(requestResult.granted);
+                        }
+                    }
+                ]
+            );
+        });
+    };
+
+    const handleVoiceSearch = async () => {
+        if (isListening) {
+            ExpoSpeechRecognitionModule.stop();
+            return;
+        }
+
+        try {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } catch {}
+
+        const permissionGranted = await checkAndRequestVoicePermission();
+        if (!permissionGranted) {
+            Alert.alert("Permission Denied", "Microphone access is required to use Voice Search.");
+            return;
+        }
+
+        try {
+            ExpoSpeechRecognitionModule.start({
+                lang: "en-IN",
+                interimResults: true,
+            });
+        } catch (err: any) {
+            console.error("Failed to start speech recognition:", err);
+            Alert.alert("Error", "Could not start voice recognition. Please try again.");
+        }
+    };
 
     const filteredCategories = (categories || []).filter(category => {
         const name = category?.name;
@@ -72,6 +156,7 @@ export default function ServicesScreen() {
                 onRequestClose={() => {
                     setIsSearchToggle(false);
                     setSearchQuery('');
+                    if (isListening) ExpoSpeechRecognitionModule.stop();
                 }}
             >
                 <View className="flex-1 bg-white dark:bg-slate-950 px-6" style={{ paddingTop: topOffset }}>
@@ -81,6 +166,7 @@ export default function ServicesScreen() {
                             onPress={() => {
                                 setIsSearchToggle(false);
                                 setSearchQuery('');
+                                if (isListening) ExpoSpeechRecognitionModule.stop();
                             }}
                             className="w-10 h-10 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900 active:scale-95"
                         >
@@ -91,17 +177,24 @@ export default function ServicesScreen() {
                             <Ionicons name="search" size={16} color="#94A3B8" />
                             <TextInput
                                 className="ml-2 flex-1 text-slate-900 dark:text-white font-semibold text-sm p-0 m-0"
-                                placeholder="Search services..."
+                                placeholder={isListening ? "Listening..." : "Search services..."}
                                 placeholderTextColor="#94A3B8"
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
                                 autoFocus
                             />
                             {searchQuery.length > 0 && (
-                                <TouchableOpacity onPress={() => setSearchQuery('')} className="p-0.5">
+                                <TouchableOpacity onPress={() => setSearchQuery('')} className="p-0.5 mr-1">
                                     <Ionicons name="close-circle" size={18} color="#94A3B8" />
                                 </TouchableOpacity>
                             )}
+                            <TouchableOpacity onPress={handleVoiceSearch} className="p-0.5">
+                                <Ionicons 
+                                    name={isListening ? "mic" : "mic-outline"} 
+                                    size={20} 
+                                    color={isListening ? "#EF4444" : "#94A3B8"} 
+                                />
+                            </TouchableOpacity>
                         </View>
                     </View>
 

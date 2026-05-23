@@ -441,7 +441,7 @@ export default function SettingsScreen() {
 
                 {/* Footer Brand */}
                 <Text className="text-center text-slate-350 dark:text-slate-700 text-[10px] font-black mb-16 tracking-widest uppercase">
-                    HINDUSTAN INNOVATIONS • {Application.nativeApplicationVersion}
+                    HINDUSTAAN INNOVATIONS Pvt Ltd • {Application.nativeApplicationVersion}
                 </Text>
             </ScrollView>
 
