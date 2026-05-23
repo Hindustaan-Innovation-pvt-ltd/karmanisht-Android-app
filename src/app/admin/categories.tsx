@@ -52,6 +52,18 @@ export default function AdminCategoriesConsole() {
     // Dropdown active card state
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
+    // Edit Category Modal state
+    const [editCategoryModalVisible, setEditCategoryModalVisible] = useState(false);
+    const [editCategoryName, setEditCategoryName] = useState('');
+    const [editCategoryIcon, setEditCategoryIcon] = useState('');
+    const [updatingCategory, setUpdatingCategory] = useState(false);
+
+    // Edit Subcategory (Tag) Modal state
+    const [editTagModalVisible, setEditTagModalVisible] = useState(false);
+    const [selectedTag, setSelectedTag] = useState<any | null>(null);
+    const [editTagName, setEditTagName] = useState('');
+    const [updatingTag, setUpdatingTag] = useState(false);
+
     const fetchCategoriesAndTags = async (isRef = false) => {
         if (isRef) setRefreshing(true);
         else setLoading(true);
@@ -166,6 +178,92 @@ export default function AdminCategoriesConsole() {
             Alert.alert("Database Error", err.message || "Failed to insert new tag.");
         } finally {
             setSubmittingTag(false);
+        }
+    };
+
+    const handleUpdateCategory = async () => {
+        if (!selectedCategory) return;
+        if (!editCategoryName.trim()) {
+            Alert.alert("Input Error", "Please enter a category name.");
+            return;
+        }
+        setUpdatingCategory(true);
+        try {
+            const { error } = await insforge.database
+                .from('service_categories')
+                .update({
+                    name: editCategoryName.trim(),
+                    icon: editCategoryIcon.trim() || 'tool'
+                })
+                .eq('id', selectedCategory.id);
+            if (error) throw error;
+
+            // Proactively register/upsert translation key for the category name
+            try {
+                await useAppStore.getState().upsertTranslation(
+                    editCategoryName.trim(),
+                    editCategoryName.trim(),
+                    editCategoryName.trim()
+                );
+            } catch (transErr) {
+                console.warn('[CategoriesConsole] Failed to register category translation key:', transErr);
+            }
+
+            Alert.alert("Success", "Category updated successfully!");
+            setEditCategoryModalVisible(false);
+            setSelectedCategory(null);
+            await fetchCategoriesAndTags();
+            await fetchCategories(true);
+        } catch (err: any) {
+            console.error(err);
+            Alert.alert("Database Error", err.message || "Failed to update category.");
+        } finally {
+            setUpdatingCategory(false);
+        }
+    };
+
+    const handleOpenEditTag = (tag: any) => {
+        setSelectedTag(tag);
+        setEditTagName(tag.name || '');
+        setEditTagModalVisible(true);
+    };
+
+    const handleUpdateTag = async () => {
+        if (!selectedTag) return;
+        if (!editTagName.trim()) {
+            Alert.alert("Input Error", "Please enter a tag name.");
+            return;
+        }
+        setUpdatingTag(true);
+        try {
+            const { error } = await insforge.database
+                .from('service_tags')
+                .update({
+                    name: editTagName.trim()
+                })
+                .eq('id', selectedTag.id);
+            if (error) throw error;
+
+            // Proactively register/upsert translation key for the tag name
+            try {
+                await useAppStore.getState().upsertTranslation(
+                    editTagName.trim(),
+                    editTagName.trim(),
+                    editTagName.trim()
+                );
+            } catch (transErr) {
+                console.warn('[CategoriesConsole] Failed to register tag translation key:', transErr);
+            }
+
+            Alert.alert("Success", "Specialty tag updated successfully!");
+            setEditTagModalVisible(false);
+            setSelectedTag(null);
+            await fetchCategoriesAndTags();
+        } catch (err: any) {
+            console.error(err);
+            Alert.alert("Database Error", err.message || "Failed to update specialty tag.");
+        } finally {
+            setUpdatingTag(false);
         }
     };
 
@@ -300,14 +398,18 @@ export default function AdminCategoriesConsole() {
                                             className={`w-[48%] p-4 rounded-3xl border relative ${cardBgClass}`}
                                             style={shadowSm}
                                         >
-                                            {/* Card Top Row with Icon & Settings Dropdown Toggle */}
-                                            <View className="flex-row justify-between items-center mb-3">
+                                            {/* Card Top Row with Icon Frame & Settings Dropdown Toggle */}
+                                            <View className="flex-row justify-between items-center mb-3.5">
                                                 <TouchableOpacity
                                                     onPress={() => {
                                                         setSelectedCategory(cat);
                                                         setTagsModalVisible(true);
                                                     }}
-                                                    className="w-10 h-10 items-center justify-center"
+                                                    className={`w-10 h-10 rounded-2xl items-center justify-center border ${
+                                                        isActive 
+                                                            ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100/60 dark:border-indigo-900/30' 
+                                                            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                                    }`}
                                                 >
                                                     <SafeIcon name={cat.icon || 'tool'} size={18} color={isActive ? "#6366F1" : "#64748B"} />
                                                 </TouchableOpacity>
@@ -336,9 +438,28 @@ export default function AdminCategoriesConsole() {
                                                     </Text>
                                                 </View>
 
+                                                {/* Inline specialty tag capsules */}
+                                                {categoryTags.length > 0 && (
+                                                    <View className="flex-row flex-wrap gap-1 mt-3">
+                                                        {categoryTags.slice(0, 2).map(tag => (
+                                                            <View 
+                                                                key={tag.id} 
+                                                                className={`px-2 py-0.5 rounded-full border ${isDark ? 'bg-slate-950/40 border-slate-800/80' : 'bg-slate-50 border-slate-200'}`}
+                                                            >
+                                                                <Text className={`text-[9px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{tag.name}</Text>
+                                                            </View>
+                                                        ))}
+                                                        {categoryTags.length > 2 && (
+                                                            <View className={`px-2 py-0.5 rounded-full border ${isDark ? 'bg-slate-950/40 border-slate-800/80' : 'bg-slate-50 border-slate-200'}`}>
+                                                                <Text className={`text-[9px] font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-650'}`}>+{categoryTags.length - 2}</Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                )}
+
                                                 <View className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex-row items-center gap-1.5">
                                                     <Feather name="tag" size={11} color="#A855F7" />
-                                                    <Text className="text-[11px] font-bold text-purple-650 dark:text-purple-400">
+                                                    <Text className="text-[11px] font-bold text-purple-600 dark:text-purple-400">
                                                         {categoryTags.length} {categoryTags.length === 1 ? 'specialty' : 'specialties'}
                                                     </Text>
                                                 </View>
@@ -362,6 +483,19 @@ export default function AdminCategoriesConsole() {
                                                         <Text className={`text-[10px] font-black uppercase tracking-wider ${textMainClass}`}>
                                                             {isActive ? 'Disable' : 'Enable'}
                                                         </Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setSelectedCategory(cat);
+                                                            setEditCategoryName(cat.name);
+                                                            setEditCategoryIcon(cat.icon || 'tool');
+                                                            setEditCategoryModalVisible(true);
+                                                            setActiveMenuId(null);
+                                                        }}
+                                                        className="flex-row items-center px-3 py-2.5 gap-2 border-t border-slate-100 dark:border-slate-850 active:bg-slate-100 dark:active:bg-slate-850 rounded-xl"
+                                                    >
+                                                        <Feather name="edit" size={13} color="#4F46E5" />
+                                                        <Text className={`text-[10px] font-black uppercase tracking-wider ${textMainClass}`}>Edit Info</Text>
                                                     </TouchableOpacity>
                                                     <TouchableOpacity
                                                         onPress={() => {
@@ -527,15 +661,20 @@ export default function AdminCategoriesConsole() {
                                             tagsList.filter(t => t.category_id === selectedCategory.id).map((tag) => (
                                                 <View
                                                     key={tag.id}
-                                                    className={`flex-row items-center pl-3.5 pr-2.5 py-1.5 rounded-full border ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
-                                                        }`}
+                                                    className={`flex-row items-center pl-4 pr-2.5 py-2 rounded-full border ${isDark ? 'bg-indigo-950/15 border-indigo-900/30' : 'bg-indigo-50/40 border-indigo-100'}`}
                                                 >
-                                                    <Text className={`text-xs font-bold ${textMainClass}`}>{tag.name}</Text>
+                                                    <Text className={`text-xs font-extrabold ${isDark ? 'text-indigo-300' : 'text-indigo-750'}`}>{tag.name}</Text>
+                                                    <TouchableOpacity
+                                                        onPress={() => handleOpenEditTag(tag)}
+                                                        className="ml-2.5 p-1 bg-indigo-500/10 rounded-full active:scale-90"
+                                                    >
+                                                        <Feather name="edit-2" size={10} color="#6366F1" />
+                                                    </TouchableOpacity>
                                                     <TouchableOpacity
                                                         onPress={() => deleteTag(tag.id)}
-                                                        className="ml-2.5 p-0.5"
+                                                        className="ml-1.5 p-1 bg-rose-500/10 rounded-full active:scale-90"
                                                     >
-                                                        <Ionicons name="close-circle" size={16} color="#EF4444" />
+                                                        <Feather name="x" size={10} color="#EF4444" />
                                                     </TouchableOpacity>
                                                 </View>
                                             ))
@@ -545,6 +684,127 @@ export default function AdminCategoriesConsole() {
                                 </ScrollView>
                             </View>
                         )}
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Edit Category Modal Dialog */}
+            <Modal
+                visible={editCategoryModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setEditCategoryModalVisible(false)}
+            >
+                <View className="flex-1 items-center justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                    <View className={`w-full p-6 rounded-t-[36px] border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} style={shadow2xl}>
+                        {/* Drawer bar */}
+                        <View className={`w-12 h-1.5 rounded-full self-center mb-6 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className={`text-xl font-black tracking-tight ${textMainClass}`}>Edit Category Info</Text>
+                            <TouchableOpacity
+                                onPress={() => setEditCategoryModalVisible(false)}
+                                className={`w-8 h-8 rounded-full items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
+                            >
+                                <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View className="gap-4">
+                            <View>
+                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Category Name</Text>
+                                <TextInput
+                                    value={editCategoryName}
+                                    onChangeText={setEditCategoryName}
+                                    placeholder="e.g. Electrician, Plumber, Painter..."
+                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-550/5 text-slate-800 border-slate-200'
+                                        }`}
+                                />
+                            </View>
+
+                            <View>
+                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Feather Icon Identifier</Text>
+                                <TextInput
+                                    value={editCategoryIcon}
+                                    onChangeText={setEditCategoryIcon}
+                                    placeholder="e.g. tool, scissors, brush, home, tv, camera..."
+                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-955 text-slate-100 border-slate-850' : 'bg-slate-550/5 text-slate-800 border-slate-200'
+                                        }`}
+                                />
+                                <Text className="text-[10px] text-slate-400 mt-1 ml-1 font-medium">Use any name from the Feather vector library.</Text>
+                            </View>
+
+                            <View className="flex-row gap-3 mt-4 mb-4">
+                                <TouchableOpacity
+                                    onPress={handleUpdateCategory}
+                                    className="flex-1 bg-indigo-600 py-4 rounded-2xl items-center"
+                                    disabled={updatingCategory}
+                                    style={Platform.OS === 'web' ? { boxShadow: '0 10px 15px -3px rgba(99, 102, 241, 0.3)' } : {}}
+                                >
+                                    {updatingCategory ? (
+                                        <ActivityIndicator size="small" color="white" />
+                                    ) : (
+                                        <Text className="text-sm font-bold text-white uppercase tracking-wider">Save Changes</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Edit Subcategory Modal Dialog */}
+            <Modal
+                visible={editTagModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setEditTagModalVisible(false)}
+            >
+                <View className="flex-1 items-center justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                    <View className={`w-full p-6 rounded-t-[36px] border-t ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} style={shadow2xl}>
+                        {/* Drawer bar */}
+                        <View className={`w-12 h-1.5 rounded-full self-center mb-6 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className={`text-xl font-black tracking-tight ${textMainClass}`}>Edit Specialty Tag</Text>
+                            <TouchableOpacity
+                                onPress={() => setEditTagModalVisible(false)}
+                                className={`w-8 h-8 rounded-full items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
+                            >
+                                <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View className="gap-4">
+                            <View>
+                                <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Specialty Tag Name</Text>
+                                <TextInput
+                                    value={editTagName}
+                                    onChangeText={setEditTagName}
+                                    placeholder="e.g. Fan Repair, Hair Styling..."
+                                    placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-550/5 text-slate-800 border-slate-200'
+                                        }`}
+                                />
+                            </View>
+
+                            <View className="flex-row gap-3 mt-4 mb-4">
+                                <TouchableOpacity
+                                    onPress={handleUpdateTag}
+                                    className="flex-1 bg-indigo-600 py-4 rounded-2xl items-center"
+                                    disabled={updatingTag}
+                                    style={Platform.OS === 'web' ? { boxShadow: '0 10px 15px -3px rgba(99, 102, 241, 0.3)' } : {}}
+                                >
+                                    {updatingTag ? (
+                                        <ActivityIndicator size="small" color="white" />
+                                    ) : (
+                                        <Text className="text-sm font-bold text-white uppercase tracking-wider">Save Changes</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
                 </View>
             </Modal>

@@ -11,7 +11,7 @@ import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from 'react-i18next';
-
+import { LinearGradient } from 'expo-linear-gradient';
 const shadowSm = Platform.OS === 'web'
     ? { boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
     : { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 };
@@ -188,42 +188,47 @@ export default function AdminDashboard() {
                     }
                 >
                     {/* Welcome Banner */}
-                    <View className="bg-indigo-600 rounded-[28px] p-6 mb-5 overflow-hidden relative">
-                        <View className="absolute right-0 bottom-0 opacity-10">
+                    <LinearGradient
+                        colors={['#4F46E5', '#6366F1', '#8B5CF6']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        className="rounded-[28px] p-6 mb-6 overflow-hidden relative"
+                    >
+                        <View className="absolute right-0 bottom-0 opacity-15">
                             <Feather name="trending-up" size={150} color="white" />
                         </View>
                         <Text className="text-white text-xs font-black uppercase tracking-widest opacity-80">{t('adminWelcomeBack', 'Welcome back')}</Text>
                         <Text className="text-white text-2xl font-black mt-1">{t('adminPlatformTelemetry', 'Platform Telemetry')}</Text>
-                        <Text className="text-indigo-100 text-xs font-medium mt-1.5 leading-relaxed">
+                        <Text className="text-indigo-50 text-xs font-medium mt-1.5 leading-relaxed">
                             {t('adminDashboardDesc', 'Monitor user compliance, configure skill classes, and audit removal processes globally.')}
                         </Text>
-                    </View>
+                    </LinearGradient>
 
                     {/* Analytics Overview Cards Grid */}
-                    <View className="flex-row flex-wrap justify-between gap-3 mb-5">
+                    <View className="flex-row flex-wrap justify-between gap-3 mb-6">
                         {/* Users Card */}
-                        <View className={`w-[48%] p-4 rounded-3xl border ${cardBgClass}`} style={shadowSm}>
+                        <View className={`w-[48%] p-4 rounded-3xl border-l-[5px] border-l-indigo-500 border ${cardBgClass}`} style={shadowSm}>
                             <View className="flex-row justify-between items-center mb-3">
-                                <View className="w-8 h-8 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}>
+                                <View className="w-8 h-8 rounded-xl items-center justify-center bg-indigo-500/10">
                                     <Feather name="users" size={16} color="#6366F1" />
                                 </View>
-                                <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{t('total', 'Total')}</Text>
+                                <Text className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{t('total', 'Total')}</Text>
                             </View>
                             <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('adminConsumers', 'Consumers')}</Text>
                             <Text className={`text-2xl font-black mt-0.5 ${textMainClass}`}>{stats.consumersCount}</Text>
                             <View className="mt-3 flex-row items-center justify-between">
                                 <Text className="text-[9px] font-bold text-slate-400">{t('active', 'Active')}: {stats.activeConsumers}</Text>
-                                <Text className="text-[9px] font-black text-green-500">{activeConsumersPercent}%</Text>
+                                <Text className="text-[9px] font-black text-indigo-500">{activeConsumersPercent}%</Text>
                             </View>
                             <View className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                                <View className="bg-green-500 h-full rounded-full" style={{ width: `${activeConsumersPercent}%` }} />
+                                <View className="bg-indigo-500 h-full rounded-full" style={{ width: `${activeConsumersPercent}%` }} />
                             </View>
                         </View>
 
                         {/* Workers Card */}
-                        <View className={`w-[48%] p-4 rounded-3xl border ${cardBgClass}`} style={shadowSm}>
+                        <View className={`w-[48%] p-4 rounded-3xl border-l-[5px] border-l-sky-500 border ${cardBgClass}`} style={shadowSm}>
                             <View className="flex-row justify-between items-center mb-3">
-                                <View className="w-8 h-8 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(14, 165, 233, 0.1)' }}>
+                                <View className="w-8 h-8 rounded-xl items-center justify-center bg-sky-500/10">
                                     <Feather name="tool" size={16} color="#0EA5E9" />
                                 </View>
                                 <Text className="text-[10px] font-black text-sky-500 uppercase tracking-widest">{t('total', 'Total')}</Text>
@@ -240,12 +245,12 @@ export default function AdminDashboard() {
                         </View>
 
                         {/* Requests Card */}
-                        <View className={`w-[48%] p-4 rounded-3xl border ${cardBgClass}`} style={shadowSm}>
+                        <View className={`w-[48%] p-4 rounded-3xl border-l-[5px] border-l-rose-500 border ${cardBgClass}`} style={shadowSm}>
                             <View className="flex-row justify-between items-center mb-3">
-                                <View className="w-8 h-8 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(244, 63, 94, 0.1)' }}>
+                                <View className="w-8 h-8 rounded-xl items-center justify-center bg-rose-500/10">
                                     <Feather name="trash-2" size={16} color="#F43F5E" />
                                 </View>
-                                <Text className="text-[10px] font-black text-rose-500 uppercase tracking-widest">{t('adminPending', 'Pending')}</Text>
+                                <Text className="text-[9px] font-black text-rose-500 uppercase tracking-widest">{t('adminPending', 'Pending')}</Text>
                             </View>
                             <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('adminDeletions', 'Deletions')}</Text>
                             <Text className={`text-2xl font-black mt-0.5 ${textMainClass}`}>{stats.deletionRequestsPending}</Text>
@@ -255,9 +260,9 @@ export default function AdminDashboard() {
                         </View>
 
                         {/* Taxonomy Card */}
-                        <View className={`w-[48%] p-4 rounded-3xl border ${cardBgClass}`} style={shadowSm}>
+                        <View className={`w-[48%] p-4 rounded-3xl border-l-[5px] border-l-purple-500 border ${cardBgClass}`} style={shadowSm}>
                             <View className="flex-row justify-between items-center mb-3">
-                                <View className="w-8 h-8 rounded-xl items-center justify-center" style={{ backgroundColor: 'rgba(168, 85, 247, 0.1)' }}>
+                                <View className="w-8 h-8 rounded-xl items-center justify-center bg-purple-500/10">
                                     <Feather name="grid" size={16} color="#A855F7" />
                                 </View>
                                 <Text className="text-[10px] font-black text-purple-500 uppercase tracking-widest">{t('adminTaxonomy', 'Taxonomy')}</Text>
@@ -316,8 +321,8 @@ export default function AdminDashboard() {
                                     <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminUserAccountsTitle', 'User Accounts Console')}</Text>
                                     <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminUserAccountsDesc', 'Manage, verify, suspension, and search consumers/workers')}</Text>
                                 </View>
+                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
-                            <Feather name="chevron-right" size={18} color="#94A3B8" />
                         </TouchableOpacity>
 
                         {/* Skill Taxonomy Grid */}
@@ -334,26 +339,44 @@ export default function AdminDashboard() {
                                     <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminCategoriesTagsTitle', 'Service Categories & Tags')}</Text>
                                     <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminCategoriesTagsDesc', 'Configure visual category items and sub specialty taxonomies')}</Text>
                                 </View>
+                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
-                            <Feather name="chevron-right" size={18} color="#94A3B8" />
                         </TouchableOpacity>
 
-                        {/* Languages Translations Console */}
+                        {/* Payments Console */}
                         <TouchableOpacity
-                            onPress={() => router.push('/admin/translations')}
+                            onPress={() => router.push('/admin/payments')}
                             className={`p-4 rounded-2xl flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
                             style={shadowSm}
                         >
                             <View className="flex-row items-center">
                                 <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-sky-500/10">
-                                    <Feather name="globe" size={18} color="#0EA5E9" />
+                                    <Feather name="credit-card" size={18} color="#0EA5E9" />
                                 </View>
                                 <View className="flex-1 mr-2">
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminLanguageConsoleTitle', 'Languages Console')}</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminLanguageConsoleDesc', 'Manage dynamic and static language dictionaries and translations')}</Text>
+                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminPaymentsConsoleTitle', 'Payments Console')}</Text>
+                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminPaymentsConsoleDesc', 'Configure tier defaults, gateways, regional overrides, and ledger')}</Text>
                                 </View>
+                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
-                            <Feather name="chevron-right" size={18} color="#94A3B8" />
+                        </TouchableOpacity>
+
+                        {/* Deletion Requests */}
+                        <TouchableOpacity
+                            onPress={() => router.push('/admin/requests')}
+                            className={`p-4 rounded-2xl flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
+                            style={shadowSm}
+                        >
+                            <View className="flex-row items-center">
+                                <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-rose-500/10">
+                                    <Feather name="alert-triangle" size={18} color="#F43F5E" />
+                                </View>
+                                <View className="flex-1 mr-2">
+                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminDeletionRequestsTitle', 'Deletion Requests')}</Text>
+                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminDeletionRequestsDesc', 'Review user complaints and process cascading account purges')}</Text>
+                                </View>
+                                <Feather name="chevron-right" size={18} color="#94A3B8" />
+                            </View>
                         </TouchableOpacity>
 
                         {/* Auditing */}
@@ -370,8 +393,8 @@ export default function AdminDashboard() {
                                     <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminAuditTrailsTitle', 'Administrative Audit Trails')}</Text>
                                     <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminAuditTrailsDesc', 'Review audit logs and compliance records')}</Text>
                                 </View>
+                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
-                            <Feather name="chevron-right" size={18} color="#94A3B8" />
                         </TouchableOpacity>
                     </View>
                 </ScrollView>

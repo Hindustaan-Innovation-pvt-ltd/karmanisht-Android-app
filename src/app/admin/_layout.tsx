@@ -91,17 +91,14 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="audit"
         options={{
-          title: t('adminAuditTab', 'Audit Logs'),
-          tabBarIcon: ({ color, focused }) => (
-            <Feather name="shield" size={22} color={color} />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
         name="requests"
         options={{
           title: t('adminRequestsTab', 'Requests'),
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color }) => (
             <Feather name="alert-triangle" size={22} color={color} />
           ),
         }}
@@ -109,19 +106,13 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="categories"
         options={{
-          title: t('adminCategoriesTab', 'Categories'),
-          tabBarIcon: ({ color, focused }) => (
-            <Feather name="grid" size={22} color={color} />
-          ),
+          href: null,
         }}
       />
       <Tabs.Screen
-        name="translations"
+        name="payments"
         options={{
-          title: t('adminLanguagesTab', 'Languages'),
-          tabBarIcon: ({ color, focused }) => (
-            <Feather name="globe" size={22} color={color} />
-          ),
+          href: null,
         }}
       />
     </Tabs>

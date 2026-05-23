@@ -327,8 +327,6 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                 }
             }
 
-            // Immediately fetch categories in parallel
-            let categoriesPromise = get().fetchCategories().catch(() => { });
             let hasToken = !!token && !isTokenExpired(token);
 
             if (refreshToken && (!token || isTokenExpired(token))) {
@@ -351,13 +349,19 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                     }
                 } catch (refreshErr) {
                     console.error('[refreshProfile] Refresh failed:', refreshErr);
+                    // Clear the expired token from client to enable anonymous queries
+                    insforge.setAccessToken(null);
+                    await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
+                    await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+                    hasToken = false;
                 }
+            } else if (!hasToken) {
+                // Clear the expired or missing token from client so we query anonymously
+                insforge.setAccessToken(null);
             }
 
-            // If we have an active access token, force-fetch the full database categories list
-            if (hasToken) {
-                categoriesPromise = get().fetchCategories(true).catch(() => { });
-            }
+            // Immediately fetch categories in parallel after resolving token state
+            let categoriesPromise = get().fetchCategories(hasToken).catch(() => { });
 
             // A. Revalidate User Profile from DB
             const activeUser = get().user;

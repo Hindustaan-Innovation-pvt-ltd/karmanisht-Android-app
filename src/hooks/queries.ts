@@ -221,14 +221,59 @@ export function useCityPricing(categoryId: string, userLocationCoords: ProviderL
                 }
             }
 
+            // Fetch dynamic payment settings defaults from the database
+            const { data: settingsData } = await insforge.database
+                .from('payment_settings')
+                .select('*');
+
+            const settings: Record<string, string> = {};
+            if (settingsData) {
+                settingsData.forEach((s: any) => {
+                    settings[s.key] = s.value;
+                });
+            }
+
+            const defaultUnlockHours = settings['default_unlock_duration_hours'] 
+                ? Number(settings['default_unlock_duration_hours']) 
+                : 5;
+            const unlockPriceTier1 = settings['default_unlock_price_tier_1'] 
+                ? Number(settings['default_unlock_price_tier_1']) 
+                : 99;
+            const unlockPriceTier2 = settings['default_unlock_price_tier_2'] 
+                ? Number(settings['default_unlock_price_tier_2']) 
+                : 49;
+            const unlockPriceTier3 = settings['default_unlock_price_tier_3'] 
+                ? Number(settings['default_unlock_price_tier_3']) 
+                : 49;
+
+            const basicFeeTier1 = settings['default_provider_basic_fee_tier_1'] 
+                ? Number(settings['default_provider_basic_fee_tier_1']) 
+                : 2999;
+            const basicFeeTier2 = settings['default_provider_basic_fee_tier_2'] 
+                ? Number(settings['default_provider_basic_fee_tier_2']) 
+                : 1999;
+            const basicFeeTier3 = settings['default_provider_basic_fee_tier_3'] 
+                ? Number(settings['default_provider_basic_fee_tier_3']) 
+                : 499;
+
+            const premiumFeeTier1 = settings['default_provider_premium_fee_tier_1'] 
+                ? Number(settings['default_provider_premium_fee_tier_1']) 
+                : 20000;
+            const premiumFeeTier2 = settings['default_provider_premium_fee_tier_2'] 
+                ? Number(settings['default_provider_premium_fee_tier_2']) 
+                : 15000;
+            const premiumFeeTier3 = settings['default_provider_premium_fee_tier_3'] 
+                ? Number(settings['default_provider_premium_fee_tier_3']) 
+                : 5000;
+
             if (!resolvedCity) {
                 return {
                     cityConfig: { id: '57b3868e-c554-4ae5-b80f-fb1bd0617542', name: 'Raipur', tier: 'tier_2' },
                     pricingConfig: {
-                        unlock_price: 49,
-                        provider_basic_fee: 1999,
-                        provider_premium_fee: 15000,
-                        unlock_duration_hours: 5
+                        unlock_price: unlockPriceTier2,
+                        provider_basic_fee: basicFeeTier2,
+                        provider_premium_fee: premiumFeeTier2,
+                        unlock_duration_hours: defaultUnlockHours
                     }
                 };
             }
@@ -249,10 +294,10 @@ export function useCityPricing(categoryId: string, userLocationCoords: ProviderL
                     unlock_duration_hours: Number(priceData.unlock_duration_hours)
                 }
                 : {
-                    unlock_price: resolvedCity.tier === 'tier_1' ? 99 : 49,
-                    provider_basic_fee: resolvedCity.tier === 'tier_1' ? 2999 : (resolvedCity.tier === 'tier_2' ? 1999 : 499),
-                    provider_premium_fee: resolvedCity.tier === 'tier_1' ? 20000 : (resolvedCity.tier === 'tier_2' ? 15000 : 5000),
-                    unlock_duration_hours: 5
+                    unlock_price: resolvedCity.tier === 'tier_1' ? unlockPriceTier1 : (resolvedCity.tier === 'tier_2' ? unlockPriceTier2 : unlockPriceTier3),
+                    provider_basic_fee: resolvedCity.tier === 'tier_1' ? basicFeeTier1 : (resolvedCity.tier === 'tier_2' ? basicFeeTier2 : basicFeeTier3),
+                    provider_premium_fee: resolvedCity.tier === 'tier_1' ? premiumFeeTier1 : (resolvedCity.tier === 'tier_2' ? premiumFeeTier2 : premiumFeeTier3),
+                    unlock_duration_hours: defaultUnlockHours
                 };
 
             return {

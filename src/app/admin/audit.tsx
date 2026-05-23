@@ -9,6 +9,7 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface AuditLog {
     id: string;
@@ -133,33 +134,62 @@ export default function AdminAuditConsole() {
                 <View className="flex-row gap-2 mb-2">
                     <TouchableOpacity 
                         onPress={() => setActionFilter('all')}
-                        className={`px-4 py-2 rounded-xl border ${
-                            actionFilter === 'all' 
-                                ? 'bg-indigo-600 border-indigo-600' 
-                                : isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-                        }`}
+                        className="rounded-xl overflow-hidden active:scale-[0.97]"
                     >
-                        <Text className={`text-xs font-bold ${actionFilter === 'all' ? 'text-white' : textSubClass}`}>All Actions</Text>
+                        {actionFilter === 'all' ? (
+                            <LinearGradient
+                                colors={['#4F46E5', '#6366F1']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="px-4 py-2.5"
+                            >
+                                <Text className="text-xs font-extrabold text-white">All Actions</Text>
+                            </LinearGradient>
+                        ) : (
+                            <View className={`px-4 py-2.5 border rounded-xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <Text className={`text-xs font-extrabold ${textSubClass}`}>All Actions</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
+
                     <TouchableOpacity 
                         onPress={() => setActionFilter('created')}
-                        className={`px-4 py-2 rounded-xl border ${
-                            actionFilter === 'created' 
-                                ? 'bg-green-600 border-green-600' 
-                                : isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-                        }`}
+                        className="rounded-xl overflow-hidden active:scale-[0.97]"
                     >
-                        <Text className={`text-xs font-bold ${actionFilter === 'created' ? 'text-white' : textSubClass}`}>Created</Text>
+                        {actionFilter === 'created' ? (
+                            <LinearGradient
+                                colors={['#10B981', '#059669']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="px-4 py-2.5"
+                            >
+                                <Text className="text-xs font-extrabold text-white">Created</Text>
+                            </LinearGradient>
+                        ) : (
+                            <View className={`px-4 py-2.5 border rounded-xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <Text className={`text-xs font-extrabold ${textSubClass}`}>Created</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
+
                     <TouchableOpacity 
                         onPress={() => setActionFilter('deleted')}
-                        className={`px-4 py-2 rounded-xl border ${
-                            actionFilter === 'deleted' 
-                                ? 'bg-red-600 border-red-600' 
-                                : isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-                        }`}
+                        className="rounded-xl overflow-hidden active:scale-[0.97]"
                     >
-                        <Text className={`text-xs font-bold ${actionFilter === 'deleted' ? 'text-white' : textSubClass}`}>Deleted</Text>
+                        {actionFilter === 'deleted' ? (
+                            <LinearGradient
+                                colors={['#EF4444', '#DC2626']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="px-4 py-2.5"
+                            >
+                                <Text className="text-xs font-extrabold text-white">Deleted</Text>
+                            </LinearGradient>
+                        ) : (
+                            <View className={`px-4 py-2.5 border rounded-xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <Text className={`text-xs font-extrabold ${textSubClass}`}>Deleted</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>
@@ -184,62 +214,75 @@ export default function AdminAuditConsole() {
                                 <Text className="text-xs font-bold text-slate-400 mt-4 tracking-widest">NO MATCHING AUDIT LOGS</Text>
                             </View>
                         ) : (
-                            getFilteredAuditLogs().map((log) => {
-                                const isDeletion = (log.action || '').toLowerCase() === 'deleted';
-                                return (
-                                    <View 
-                                        key={log.id} 
-                                        className={`flex-row mb-4 rounded-[24px] p-5 border ${cardBgClass}`}
-                                        style={shadowSm}
-                                    >
-                                        <View className="mr-4 items-center">
+                            <View className="relative pl-8 pr-1 py-2">
+                                {/* The vertical timeline connector line */}
+                                <View 
+                                    className={`absolute left-[13px] top-4 bottom-4 w-[2px] ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} 
+                                />
+
+                                {getFilteredAuditLogs().map((log) => {
+                                    const isDeletion = (log.action || '').toLowerCase() === 'deleted';
+                                    return (
+                                        <View key={log.id} className="flex-row items-start mb-6 relative">
+                                            {/* Timeline Node Dot */}
                                             <View 
-                                                className="w-10 h-10 rounded-2xl items-center justify-center border"
-                                                style={{
-                                                    backgroundColor: isDeletion ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-                                                    borderColor: isDeletion ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'
-                                                }}
+                                                className={`absolute left-[-29px] top-5 w-4 h-4 rounded-full border-2 z-10 items-center justify-center ${
+                                                    isDeletion 
+                                                        ? 'bg-rose-500 border-rose-200 dark:border-rose-900/60' 
+                                                        : 'bg-emerald-500 border-emerald-200 dark:border-emerald-900/60'
+                                                }`}
                                             >
-                                                <Feather 
-                                                    name={isDeletion ? "user-x" : "user-check"} 
-                                                    size={16} 
-                                                    color={isDeletion ? "#EF4444" : "#22C55E"} 
-                                                />
+                                                <View className="w-1.5 h-1.5 rounded-full bg-white" />
                                             </View>
-                                            <View className={`w-0.5 flex-1 my-2 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-                                        </View>
-                                        <View className="flex-1">
-                                            <View className="flex-row items-center justify-between">
-                                                <View 
-                                                    className="px-2.5 py-1 rounded-full"
-                                                    style={{ backgroundColor: isDeletion ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)' }}
-                                                >
-                                                    <Text className={`text-[9px] font-black uppercase tracking-wider ${isDeletion ? 'text-red-500' : 'text-green-600'}`}>
-                                                        {log.action}
+
+                                            {/* Content Card */}
+                                            <View 
+                                                className={`flex-1 rounded-[24px] p-5 border ${cardBgClass}`}
+                                                style={shadowSm}
+                                            >
+                                                <View className="flex-row items-center justify-between">
+                                                    <View className="flex-row items-center gap-2">
+                                                        <View 
+                                                            className={`w-6 h-6 rounded-lg items-center justify-center border ${
+                                                                isDeletion 
+                                                                    ? 'bg-rose-500/10 border-rose-500/20' 
+                                                                    : 'bg-emerald-500/10 border-emerald-500/20'
+                                                            }`}
+                                                        >
+                                                            <Feather 
+                                                                name={isDeletion ? "user-x" : "user-check"} 
+                                                                size={11} 
+                                                                color={isDeletion ? "#EF4444" : "#22C55E"} 
+                                                            />
+                                                        </View>
+                                                        <Text className={`text-[10px] font-black uppercase tracking-wider ${isDeletion ? 'text-red-500' : 'text-green-600'}`}>
+                                                            {log.action}
+                                                        </Text>
+                                                    </View>
+                                                    <Text className="text-[10px] font-bold text-slate-400">
+                                                        {new Date(log.created_at).toLocaleDateString()}
                                                     </Text>
                                                 </View>
-                                                <Text className="text-[10px] font-bold text-slate-400">
-                                                    {new Date(log.created_at).toLocaleDateString()}
-                                                </Text>
-                                            </View>
-                                            <Text className={`text-base font-bold mt-2 ${textMainClass}`}>{log.full_name || 'Anonymous User'}</Text>
-                                            <Text className={`text-xs font-semibold mt-0.5 ${textSubClass}`}>Mobile: {log.mobile} ({log.user_type})</Text>
-                                            
-                                            <View 
-                                                className="mt-3 p-3 rounded-2xl border"
-                                                style={isDark 
-                                                    ? { backgroundColor: 'rgba(2, 6, 23, 0.4)', borderColor: 'rgba(30, 41, 59, 0.8)' } 
-                                                    : { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9' }
-                                                }
-                                            >
-                                                <Text className="text-[10px] font-bold text-slate-400">
-                                                    Operator: <Text className="text-indigo-600 dark:text-indigo-400 font-black">{log.performed_by || 'system'}</Text>
-                                                </Text>
+                                                
+                                                <Text className={`text-base font-black mt-3 leading-tight ${textMainClass}`}>{log.full_name || 'Anonymous User'}</Text>
+                                                <Text className={`text-xs font-semibold mt-0.5 ${textSubClass}`}>Mobile: {log.mobile} ({log.user_type})</Text>
+                                                
+                                                <View 
+                                                    className="mt-3.5 p-3 rounded-2xl border"
+                                                    style={isDark 
+                                                        ? { backgroundColor: 'rgba(2, 6, 23, 0.4)', borderColor: 'rgba(30, 41, 59, 0.8)' } 
+                                                        : { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9' }
+                                                    }
+                                                >
+                                                    <Text className="text-[10px] font-bold text-slate-400">
+                                                        Operator: <Text className="text-indigo-600 dark:text-indigo-400 font-black">{log.performed_by || 'system'}</Text>
+                                                    </Text>
+                                                </View>
                                             </View>
                                         </View>
-                                    </View>
-                                );
-                            })
+                                    );
+                                })}
+                            </View>
                         )}
                         <View className="h-10" />
                     </ScrollView>

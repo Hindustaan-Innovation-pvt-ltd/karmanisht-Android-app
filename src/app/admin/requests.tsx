@@ -2,13 +2,31 @@
 import React, { useState, useEffect } from 'react';
 import { 
     View, Text, ScrollView, TouchableOpacity, 
-    TextInput, ActivityIndicator, Alert, Modal, Platform, RefreshControl 
+    TextInput, ActivityIndicator, Alert, Modal, Platform, RefreshControl,
+    Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { insforge } from '@/lib/insforge';
 import { useTheme } from '@/lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const avatarGradients = [
+    ['#6366F1', '#4F46E5'], // Indigo
+    ['#06B6D4', '#0891B2'], // Cyan
+    ['#10B981', '#059669'], // Emerald
+    ['#F43F5E', '#E11D48'], // Rose
+    ['#F59E0B', '#D97706'], // Amber
+    ['#8B5CF6', '#7C3AED'], // Violet
+];
+
+const getInitials = (name: string | null) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
+};
 
 interface DeletionRequest {
     id: string;
@@ -258,33 +276,62 @@ export default function AdminRequestsConsole() {
                 <View className="flex-row gap-2 mb-2">
                     <TouchableOpacity 
                         onPress={() => setStatusFilter('all')}
-                        className={`px-4 py-2 rounded-xl border ${
-                            statusFilter === 'all' 
-                                ? 'bg-indigo-600 border-indigo-600' 
-                                : isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-                        }`}
+                        className="rounded-xl overflow-hidden active:scale-[0.97]"
                     >
-                        <Text className={`text-xs font-bold ${statusFilter === 'all' ? 'text-white' : textSubClass}`}>All Requests</Text>
+                        {statusFilter === 'all' ? (
+                            <LinearGradient
+                                colors={['#4F46E5', '#6366F1']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="px-4 py-2.5"
+                            >
+                                <Text className="text-xs font-extrabold text-white">All Requests</Text>
+                            </LinearGradient>
+                        ) : (
+                            <View className={`px-4 py-2.5 border rounded-xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <Text className={`text-xs font-extrabold ${textSubClass}`}>All Requests</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
+
                     <TouchableOpacity 
                         onPress={() => setStatusFilter('pending')}
-                        className={`px-4 py-2 rounded-xl border ${
-                            statusFilter === 'pending' 
-                                ? 'bg-amber-600 border-amber-600' 
-                                : isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-                        }`}
+                        className="rounded-xl overflow-hidden active:scale-[0.97]"
                     >
-                        <Text className={`text-xs font-bold ${statusFilter === 'pending' ? 'text-white' : textSubClass}`}>Pending ({deletionRequests.filter(r => (r.status || 'pending') === 'pending').length})</Text>
+                        {statusFilter === 'pending' ? (
+                            <LinearGradient
+                                colors={['#D97706', '#F59E0B']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="px-4 py-2.5"
+                            >
+                                <Text className="text-xs font-extrabold text-white">Pending ({deletionRequests.filter(r => (r.status || 'pending') === 'pending').length})</Text>
+                            </LinearGradient>
+                        ) : (
+                            <View className={`px-4 py-2.5 border rounded-xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <Text className={`text-xs font-extrabold ${textSubClass}`}>Pending ({deletionRequests.filter(r => (r.status || 'pending') === 'pending').length})</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
+
                     <TouchableOpacity 
                         onPress={() => setStatusFilter('processed')}
-                        className={`px-4 py-2 rounded-xl border ${
-                            statusFilter === 'processed' 
-                                ? 'bg-slate-600 border-slate-600' 
-                                : isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-                        }`}
+                        className="rounded-xl overflow-hidden active:scale-[0.97]"
                     >
-                        <Text className={`text-xs font-bold ${statusFilter === 'processed' ? 'text-white' : textSubClass}`}>Processed</Text>
+                        {statusFilter === 'processed' ? (
+                            <LinearGradient
+                                colors={['#475569', '#64748B']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="px-4 py-2.5"
+                            >
+                                <Text className="text-xs font-extrabold text-white">Processed</Text>
+                            </LinearGradient>
+                        ) : (
+                            <View className={`px-4 py-2.5 border rounded-xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                <Text className={`text-xs font-extrabold ${textSubClass}`}>Processed</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>
@@ -309,53 +356,94 @@ export default function AdminRequestsConsole() {
                                 <Text className="text-xs font-bold text-slate-400 mt-4 tracking-widest">NO MATCHING REQUESTS</Text>
                             </View>
                         ) : (
-                            getFilteredRequests().map((req) => (
-                                <View 
-                                    key={req.id} 
-                                    className={`p-5 rounded-[24px] mb-3 border ${cardBgClass}`}
-                                    style={shadowSm}
-                                >
-                                    <View className="flex-row justify-between items-start">
-                                        <View className="flex-1 pr-2">
-                                            <Text className={`text-base font-bold ${textMainClass}`}>{req.full_name || 'Anonymous User'}</Text>
-                                            <Text className={`text-xs font-medium mt-1 ${textSubClass}`}>Mobile: {req.mobile} ({req.user_type})</Text>
-                                        </View>
-                                        {(req.status || 'pending') === 'pending' ? (
-                                            <TouchableOpacity 
-                                                onPress={() => processDeletionRequest(req)}
-                                                className="px-4 py-2 rounded-xl flex-row items-center bg-indigo-500/10 border border-indigo-500/20 active:scale-95"
-                                            >
-                                                <Feather name="settings" size={13} color="#6366F1" />
-                                                <Text className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest ml-1.5">Action</Text>
-                                            </TouchableOpacity>
-                                        ) : (
-                                            <View className="px-3 py-1 rounded-full bg-slate-500/10 border border-slate-500/15">
-                                                <Text className="text-[9px] font-black text-slate-450 uppercase tracking-wider">Processed</Text>
-                                            </View>
-                                        )}
-                                    </View>
+                            getFilteredRequests().map((req) => {
+                                const initials = getInitials(req.full_name);
+                                const nameHash = req.full_name ? req.full_name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
+                                const gradientColors = avatarGradients[nameHash % avatarGradients.length];
+
+                                return (
                                     <View 
-                                        className="mt-4 p-4 rounded-2xl border"
-                                        style={isDark 
-                                            ? { backgroundColor: 'rgba(2, 6, 23, 0.4)', borderColor: 'rgba(30, 41, 59, 0.8)' } 
-                                            : { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9' }
-                                        }
+                                        key={req.id} 
+                                        className={`p-5 rounded-[24px] mb-4 border ${cardBgClass}`}
+                                        style={shadowSm}
                                     >
-                                        <Text className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Reason / Telemetry Remarks</Text>
-                                        <Text className={`text-xs font-semibold mt-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{req.reason || 'Self-deletion confirmed by client device.'}</Text>
-                                    </View>
-                                    <View className="mt-4 flex-row justify-between items-center text-[10px] text-slate-400 font-semibold">
-                                        <Text className="text-[10px] font-bold text-slate-400">
-                                            Filed: {new Date(req.requested_at || req.processed_at).toLocaleDateString()}
-                                        </Text>
-                                        {req.processed_by && (
-                                            <Text className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
-                                                By: {req.processed_by}
+                                        <View className="flex-row items-center justify-between mb-3">
+                                            <View className="flex-row items-center flex-1 pr-2">
+                                                <LinearGradient
+                                                    colors={gradientColors}
+                                                    start={{ x: 0, y: 0 }}
+                                                    end={{ x: 1, y: 1 }}
+                                                    className="w-12 h-12 rounded-full items-center justify-center mr-3.5"
+                                                >
+                                                    <Text className="text-white font-extrabold text-sm tracking-wider">{initials}</Text>
+                                                </LinearGradient>
+                                                
+                                                <View className="flex-1">
+                                                    <Text className={`text-base font-extrabold tracking-tight ${textMainClass}`}>
+                                                        {req.full_name || 'Anonymous User'}
+                                                    </Text>
+                                                    <View className="flex-row items-center flex-wrap gap-2 mt-1">
+                                                        <Text className={`text-xs font-semibold ${textSubClass}`}>
+                                                            {req.mobile}
+                                                        </Text>
+                                                        <View className={`px-2 py-0.5 rounded-md ${req.user_type === 'worker' ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-sky-500/10 border border-sky-500/20'}`}>
+                                                            <Text className={`text-[9px] font-bold uppercase tracking-wider ${req.user_type === 'worker' ? 'text-indigo-500' : 'text-sky-500'}`}>
+                                                                {req.user_type}
+                                                            </Text>
+                                                        </View>
+                                                        {(req.status || 'pending') === 'pending' ? (
+                                                            <View className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/25">
+                                                                <Text className="text-[9px] font-bold uppercase tracking-wider text-amber-500">Pending</Text>
+                                                            </View>
+                                                        ) : (
+                                                            <View className="px-2 py-0.5 rounded-md bg-slate-500/10 border border-slate-500/20">
+                                                                <Text className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Processed</Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                </View>
+                                            </View>
+
+                                            {(req.status || 'pending') === 'pending' ? (
+                                                <TouchableOpacity 
+                                                    onPress={() => processDeletionRequest(req)}
+                                                    className="w-10 h-10 rounded-2xl items-center justify-center bg-indigo-500/10 border border-indigo-500/20 active:scale-95"
+                                                >
+                                                    <Feather name="settings" size={15} color="#6366F1" />
+                                                </TouchableOpacity>
+                                            ) : (
+                                                <View className="w-10 h-10 rounded-2xl items-center justify-center bg-slate-500/10 border border-slate-500/15">
+                                                    <Feather name="check" size={15} color="#64748B" />
+                                                </View>
+                                            )}
+                                        </View>
+
+                                        <View 
+                                            className="mt-3 p-4 rounded-2xl border"
+                                            style={isDark 
+                                                ? { backgroundColor: 'rgba(2, 6, 23, 0.4)', borderColor: 'rgba(30, 41, 59, 0.8)' } 
+                                                : { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9' }
+                                            }
+                                        >
+                                            <Text className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Reason / Telemetry Remarks</Text>
+                                            <Text className={`text-xs font-semibold mt-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                {req.reason || 'Self-deletion confirmed by client device.'}
                                             </Text>
-                                        )}
+                                        </View>
+
+                                        <View className="mt-3 flex-row justify-between items-center">
+                                            <Text className="text-[10px] font-bold text-slate-400">
+                                                Filed: {new Date(req.requested_at || req.processed_at).toLocaleDateString()}
+                                            </Text>
+                                            {req.processed_by && (
+                                                <Text className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                                                    By: {req.processed_by}
+                                                </Text>
+                                            )}
+                                        </View>
                                     </View>
-                                </View>
-                            ))
+                                );
+                            })
                         )}
                         <View className="h-10" />
                     </ScrollView>
@@ -370,15 +458,22 @@ export default function AdminRequestsConsole() {
                 onRequestClose={() => setDeleteModalVisible(false)}
             >
                 <View className="flex-1 items-center justify-center p-6" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
-                    <View className={`w-full p-6 rounded-[32px] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} style={shadow2xl}>
-                        <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
-                            <Text className={`text-xl font-black tracking-tight ${textMainClass}`}>Confirm Cascaded Removal</Text>
+                    <View className={`w-full p-6 rounded-[32px] border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} style={shadow2xl}>
+                        {/* Top Gradient Stripe */}
+                        <LinearGradient
+                            colors={['#EF4444', '#F43F5E']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{ height: 4, position: 'absolute', top: 0, left: 0, right: 0 }}
+                        />
+                        <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-800 mt-2">
+                            <Text className={`text-xl font-black tracking-tight ${textMainClass}`}>Confirm Removal</Text>
                             <TouchableOpacity 
                                 onPress={() => {
                                     setDeleteModalVisible(false);
                                     setSelectedUser(null);
                                 }}
-                                className={`w-8 h-8 rounded-full items-center justify-center ${isDark ? 'bg-slate-850' : 'bg-slate-100'}`}
+                                className={`w-8 h-8 rounded-full items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
                                 style={shadowSm}
                             >
                                 <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
@@ -386,7 +481,7 @@ export default function AdminRequestsConsole() {
                         </View>
 
                         {selectedUser && (
-                            <View className="mb-4 p-4 rounded-2xl border" style={{ backgroundColor: 'rgba(244, 63, 94, 0.1)', borderColor: 'rgba(244, 63, 94, 0.2)', borderWidth: 1 }}>
+                            <View className="mb-4 p-4 rounded-2xl border" style={{ backgroundColor: 'rgba(244, 63, 94, 0.08)', borderColor: 'rgba(244, 63, 94, 0.2)', borderWidth: 1 }}>
                                 <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Account Profile</Text>
                                 <Text className="text-base font-bold text-red-500 mt-1">{selectedUser.full_name || 'Anonymous User'}</Text>
                                 <Text className="text-xs font-semibold text-red-400 mt-0.5">Mobile ID: {selectedUser.mobile}</Text>
@@ -421,7 +516,7 @@ export default function AdminRequestsConsole() {
                                         setDeleteModalVisible(false);
                                         setSelectedUser(null);
                                     }}
-                                    className={`flex-1 py-4 rounded-2xl items-center ${isDark ? 'bg-slate-850' : 'bg-slate-100'}`}
+                                    className={`flex-1 py-4 rounded-2xl items-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
                                 >
                                     <Text className={`text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Cancel</Text>
                                 </TouchableOpacity>

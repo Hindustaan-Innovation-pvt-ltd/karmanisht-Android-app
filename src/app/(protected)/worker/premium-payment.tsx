@@ -46,7 +46,7 @@ export default function PremiumPayment() {
     const [showSuccess, setShowSuccess] = useState(false);
 
     // Open Razorpay directly with known plan amount — no edge fn / city_pricing_config needed
-    const openRazorpay = (): Promise<'success' | 'cancelled' | 'unavailable'> => {
+    const openRazorpay = (customKey?: string): Promise<'success' | 'cancelled' | 'unavailable'> => {
         return new Promise((resolve) => {
             try {
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -55,7 +55,7 @@ export default function PremiumPayment() {
                     description: `Karmanisht ${plan === 'premium' ? 'Premium' : 'Basic'} Subscription`,
                     image: 'https://i.imgur.com/3g7UR1G.png',
                     currency: 'INR',
-                    key: RAZORPAY_KEY,
+                    key: customKey || RAZORPAY_KEY,
                     amount: totalPaisa,   // paise — order_id is optional without Razorpay Orders API
                     name: 'Karmanisht',
                     prefill: {
@@ -242,19 +242,68 @@ export default function PremiumPayment() {
     const handlePay = async () => {
         setLoading(true);
         try {
+            // Load dynamic gateway configurations from database
+            let activeGateway = 'razorpay';
+            let keyId = RAZORPAY_KEY;
+            let keyStripe = 'pk_test_stripe';
+            let keyPaytm = 'paytm_test_key';
+
+            try {
+                const { data: settingsData } = await insforge.database
+                    .from('payment_settings')
+                    .select('*');
+
+                if (settingsData) {
+                    settingsData.forEach((s: any) => {
+                        if (s.key === 'active_gateway') activeGateway = s.value || 'razorpay';
+                        if (s.key === 'gateway_key_razorpay') keyId = s.value || RAZORPAY_KEY;
+                        if (s.key === 'gateway_key_stripe') keyStripe = s.value || 'pk_test_stripe';
+                        if (s.key === 'gateway_key_paytm') keyPaytm = s.value || 'paytm_test_key';
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to fetch payment settings in worker premium-payment:", e);
+            }
+
             const isLinked = !!NativeModules.RNRazorpayCheckout;
 
-            // No real SDK linked or web → mock confirm flow
-            if (Platform.OS === 'web' || !isLinked) {
+            // 1. Mock Gateway or Web platform
+            if (Platform.OS === 'web' || activeGateway === 'mock') {
                 await runMockFlow();
                 return;
             }
 
-            // Real Razorpay SDK flow
-            const result = await openRazorpay();
+            // 2. Stripe or Paytm gateways (simulated)
+            if (activeGateway === 'stripe' || activeGateway === 'paytm') {
+                const confirmed = await new Promise<boolean>((resolve) => {
+                    Alert.alert(
+                        activeGateway === 'stripe' ? "Stripe Checkout" : "Paytm Checkout",
+                        `Amount: \u20b9${totalPrice} for ${plan === 'premium' ? 'Premium' : 'Basic'} plan\nKey: ${activeGateway === 'stripe' ? keyStripe : keyPaytm}\n\n(Simulating premium checkout sheet since native modules are development-mocked)`,
+                        [
+                            { text: t('cancel', 'Cancel'), onPress: () => resolve(false), style: 'cancel' },
+                            { text: `Pay Now (₹${totalPrice})`, onPress: () => resolve(true) },
+                        ]
+                    );
+                });
+                if (!confirmed) { setLoading(false); return; }
+                const ok = await activatePremium(`${activeGateway}_pay_${Date.now()}`);
+                setLoading(false);
+                if (ok) setShowSuccess(true);
+                else Alert.alert(t('error', 'Error'), t('activationFailed', 'Activation failed. Please contact support.'));
+                return;
+            }
+
+            // 3. Razorpay SDK flow
+            // If not linked, fallback to mock
+            if (!isLinked) {
+                await runMockFlow();
+                return;
+            }
+
+            // Override RAZORPAY_KEY in runtime call by modifying openRazorpay to accept the dynamic keyId
+            const result = await openRazorpay(keyId);
 
             if (result === 'unavailable') {
-                // SDK crashed — fallback to mock
                 await runMockFlow();
                 return;
             }
@@ -265,7 +314,7 @@ export default function PremiumPayment() {
                 return;
             }
 
-            // Payment success — activate premium directly in DB
+            // Payment success
             const ok = await activatePremium();
             setLoading(false);
             if (ok) setShowSuccess(true);

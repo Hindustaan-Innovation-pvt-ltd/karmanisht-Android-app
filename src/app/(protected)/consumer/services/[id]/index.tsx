@@ -456,6 +456,13 @@ const CategoryPassModal = ({
     );
 };
 
+const generateUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
 export default function ServiceDetailScreen() {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
@@ -640,12 +647,25 @@ export default function ServiceDetailScreen() {
             const success = await handleRazorpayPayment(providerToUnlock, dynamicPrice);
 
             if (success) {
-                // 1. Create a row in unlock_passes table
+                // Get active gateway for logging
+                let gatewayName = 'razorpay';
+                try {
+                    const { data: activeGw } = await insforge.database
+                        .from('payment_settings')
+                        .select('value')
+                        .eq('key', 'active_gateway')
+                        .maybeSingle();
+                    if (activeGw?.value) gatewayName = activeGw.value;
+                } catch (err) {}
+
+                const passId = generateUUID();
                 const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
 
+                // 1. Create a row in unlock_passes table
                 const { error: passError } = await insforge.database
                     .from('unlock_passes')
                     .insert([{
+                        id: passId,
                         customer_id: user.id,
                         profession_id: id,
                         city_id: cityConfig?.id || '57b3868e-c554-4ae5-b80f-fb1bd0617542',
@@ -671,6 +691,23 @@ export default function ServiceDetailScreen() {
 
                 if (txError) {
                     console.error("Failed to insert unlock lead transaction:", txError);
+                }
+
+                // 3. Create record in payments ledger
+                try {
+                    await insforge.database
+                        .from('payments')
+                        .insert([{
+                            user_id: user.id,
+                            payment_type: 'unlock_pass',
+                            reference_id: passId,
+                            amount: dynamicPrice,
+                            gateway: gatewayName,
+                            gateway_payment_id: `pay_unl_${Date.now()}`,
+                            payment_status: 'paid'
+                        }]);
+                } catch (payErr) {
+                    console.error("Failed to insert payment record in payments table:", payErr);
                 }
 
                 // Refresh passes, profile state AND the secure providers RPC
@@ -718,12 +755,25 @@ export default function ServiceDetailScreen() {
             const success = await handleRazorpayPayment(proxy, passPrice);
 
             if (success) {
+                // Get active gateway for logging
+                let gatewayName = 'razorpay';
+                try {
+                    const { data: activeGw } = await insforge.database
+                        .from('payment_settings')
+                        .select('value')
+                        .eq('key', 'active_gateway')
+                        .maybeSingle();
+                    if (activeGw?.value) gatewayName = activeGw.value;
+                } catch (err) {}
+
+                const passId = generateUUID();
                 const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
 
                 // 1. Create the category-level unlock pass
                 const { error: passError } = await insforge.database
                     .from('unlock_passes')
                     .insert([{
+                        id: passId,
                         customer_id: user.id,
                         profession_id: id,
                         city_id: cityConfig?.id || '57b3868e-c554-4ae5-b80f-fb1bd0617542',
@@ -733,6 +783,21 @@ export default function ServiceDetailScreen() {
                     }]);
 
                 if (passError) console.error('Category pass insert failed:', passError);
+
+                // Insert into payments ledger
+                try {
+                    await insforge.database.from('payments').insert([{
+                        user_id: user.id,
+                        payment_type: 'unlock_pass',
+                        reference_id: passId,
+                        amount: passPrice,
+                        gateway: gatewayName,
+                        gateway_payment_id: `pay_unl_${Date.now()}`,
+                        payment_status: 'paid'
+                    }]);
+                } catch (payErr) {
+                    console.error("Failed to insert category pass payment record:", payErr);
+                }
 
                 // 2. Bulk-insert unlock_transactions for every provider in category
                 const transactions = providers.map(p => ({
@@ -875,14 +940,14 @@ export default function ServiceDetailScreen() {
                             // Show only 4 items if not expanded
                             const visibleOptions = isExpanded ? allOptions : allOptions.slice(0, 4);
 
-                            return visibleOptions.map((item) => {
+                            return visibleOptions.map((item, index) => {
                                 const isSelected = item.name === null
                                     ? selectedSubCategories.length === 0
                                     : selectedSubCategories.includes(item.name);
 
                                 return (
                                     <TouchableOpacity
-                                        key={item.id}
+                                        key={item.id ? `${item.id}-${index}` : `subcat-${index}`}
                                         onPress={() => toggleSubCategory(item.name)}
                                         style={{
                                             width: width - 40,

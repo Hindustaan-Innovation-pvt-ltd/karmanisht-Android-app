@@ -2,14 +2,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
     View, Text, ScrollView, TouchableOpacity, 
-    TextInput, ActivityIndicator, Alert, Modal, Platform, RefreshControl 
+    TextInput, ActivityIndicator, Alert, Modal, Platform, RefreshControl,
+    Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { insforge } from '@/lib/insforge';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '@/lib/theme';
+
+const avatarGradients = [
+    ['#6366F1', '#4F46E5'], // Indigo
+    ['#06B6D4', '#0891B2'], // Cyan
+    ['#10B981', '#059669'], // Emerald
+    ['#F43F5E', '#E11D48'], // Rose
+    ['#F59E0B', '#D97706'], // Amber
+    ['#8B5CF6', '#7C3AED'], // Violet
+];
+
+const getInitials = (name: string | null) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
+};
 
 type UserType = 'consumer' | 'worker';
 
@@ -314,20 +332,46 @@ export default function AdminAccountsConsole() {
 
             <View className="flex-1 px-5 pt-5">
                 {/* Toggle Segment Selector */}
-                <View className="flex-row p-1 rounded-2xl mb-4 gap-1" style={isDark ? { backgroundColor: 'rgba(15, 23, 42, 0.6)' } : { backgroundColor: 'rgba(226, 232, 240, 0.4)' }}>
+                <View className="flex-row p-1.5 rounded-2xl mb-4 gap-1.5 border" style={isDark ? { backgroundColor: 'rgba(15, 23, 42, 0.4)', borderColor: 'rgba(30, 41, 59, 0.8)' } : { backgroundColor: 'rgba(226, 232, 240, 0.4)', borderColor: 'rgba(226, 232, 240, 0.8)' }}>
                     <TouchableOpacity 
                         onPress={() => setUserType('consumer')}
-                        className={`flex-1 py-2.5 rounded-xl items-center ${userType === 'consumer' ? 'bg-indigo-600' : ''}`}
-                        style={userType === 'consumer' ? shadowSm : {}}
+                        className="flex-1 rounded-xl overflow-hidden active:scale-[0.98]"
                     >
-                        <Text className={`text-xs font-bold uppercase tracking-wider ${userType === 'consumer' ? 'text-white' : textSubClass}`}>Consumers ({consumers.length})</Text>
+                        {userType === 'consumer' ? (
+                            <LinearGradient
+                                colors={['#4F46E5', '#6366F1']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="w-full py-2.5 items-center justify-center"
+                                style={shadowSm}
+                            >
+                                <Text className="text-xs font-black uppercase tracking-wider text-white">Consumers ({consumers.length})</Text>
+                            </LinearGradient>
+                        ) : (
+                            <View className="w-full py-2.5 items-center justify-center">
+                                <Text className={`text-xs font-black uppercase tracking-wider ${textSubClass}`}>Consumers ({consumers.length})</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                     <TouchableOpacity 
                         onPress={() => setUserType('worker')}
-                        className={`flex-1 py-2.5 rounded-xl items-center ${userType === 'worker' ? 'bg-indigo-600' : ''}`}
-                        style={userType === 'worker' ? shadowSm : {}}
+                        className="flex-1 rounded-xl overflow-hidden active:scale-[0.98]"
                     >
-                        <Text className={`text-xs font-bold uppercase tracking-wider ${userType === 'worker' ? 'text-white' : textSubClass}`}>Workers ({workers.length})</Text>
+                        {userType === 'worker' ? (
+                            <LinearGradient
+                                colors={['#4F46E5', '#6366F1']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                className="w-full py-2.5 items-center justify-center"
+                                style={shadowSm}
+                            >
+                                <Text className="text-xs font-black uppercase tracking-wider text-white">Workers ({workers.length})</Text>
+                            </LinearGradient>
+                        ) : (
+                            <View className="w-full py-2.5 items-center justify-center">
+                                <Text className={`text-xs font-black uppercase tracking-wider ${textSubClass}`}>Workers ({workers.length})</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
 
@@ -362,131 +406,168 @@ export default function AdminAccountsConsole() {
                                 <Text className="text-xs font-bold text-slate-400 mt-4 tracking-widest">NO MATCHING ACCOUNTS</Text>
                             </View>
                         ) : (
-                            getFilteredAccounts().map((userObj) => (
-                                <View 
-                                    key={userObj.id} 
-                                    className={`p-5 rounded-[24px] mb-3 border ${cardBgClass}`}
-                                    style={shadowSm}
-                                >
-                                    <View className="flex-row justify-between items-start">
-                                        <View className="flex-1 pr-2">
-                                            <Text className={`text-base font-bold ${textMainClass}`}>{userObj.full_name || 'Anonymous User'}</Text>
-                                            <Text className={`text-xs font-medium mt-1 ${textSubClass}`}>{userObj.mobile}</Text>
-                                            {userType === 'worker' && userObj.business_name && (
-                                                <View className="flex-row items-center mt-2">
-                                                     <Feather name="briefcase" size={12} color="#6366F1" />
-                                                     <Text className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 ml-1.5">{userObj.business_name}</Text>
-                                                </View>
-                                            )}
-                                        </View>
-                                        <TouchableOpacity 
-                                            onPress={() => {
-                                                setSelectedUser({
-                                                    id: userObj.id,
-                                                    type: userType,
-                                                    mobile: userObj.mobile,
-                                                    full_name: userObj.full_name
-                                                });
-                                                setDeletionReason('');
-                                                setDeleteModalVisible(true);
-                                            }}
-                                            className="px-4 py-2 rounded-xl flex-row items-center bg-rose-500/10 border border-rose-500/25 active:scale-95"
-                                        >
-                                            <Feather name="trash-2" size={13} color="#EF4444" />
-                                            <Text className="text-[10px] font-black text-red-500 uppercase tracking-widest ml-1.5">Expunge</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                            getFilteredAccounts().map((userObj) => {
+                                const initials = getInitials(userObj.full_name);
+                                const hasImage = !!userObj.profile_image;
+                                const nameHash = userObj.full_name ? userObj.full_name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
+                                const gradientColors = avatarGradients[nameHash % avatarGradients.length];
 
-                                    {/* Action Switches / Badges Row */}
-                                    {userType === 'consumer' ? (
-                                        <View className="mt-4 flex-row items-center justify-between border-t pt-3.5" style={isDark ? { borderTopColor: 'rgba(30, 41, 59, 0.8)' } : { borderTopColor: '#F1F5F9' }}>
-                                            <Text className="text-[10px] font-bold text-slate-400">
-                                                Joined: {new Date(userObj.created_at).toLocaleDateString()}
-                                            </Text>
-                                            
+                                return (
+                                    <View 
+                                        key={userObj.id} 
+                                        className={`p-5 rounded-[24px] mb-4 border ${cardBgClass}`}
+                                        style={shadowSm}
+                                    >
+                                        <View className="flex-row items-center justify-between mb-4">
+                                            <View className="flex-row items-center flex-1 pr-2">
+                                                {hasImage ? (
+                                                    <Image 
+                                                        source={{ uri: userObj.profile_image! }} 
+                                                        className="w-12 h-12 rounded-full mr-3.5" 
+                                                    />
+                                                ) : (
+                                                    <LinearGradient
+                                                        colors={gradientColors}
+                                                        start={{ x: 0, y: 0 }}
+                                                        end={{ x: 1, y: 1 }}
+                                                        className="w-12 h-12 rounded-full items-center justify-center mr-3.5"
+                                                    >
+                                                        <Text className="text-white font-extrabold text-sm tracking-wider">{initials}</Text>
+                                                    </LinearGradient>
+                                                )}
+                                                
+                                                <View className="flex-1">
+                                                    <Text className={`text-base font-extrabold tracking-tight ${textMainClass}`}>
+                                                        {userObj.full_name || 'Anonymous User'}
+                                                    </Text>
+                                                    <Text className={`text-xs font-semibold mt-0.5 ${textSubClass}`}>
+                                                        {userObj.mobile}
+                                                    </Text>
+                                                    {userObj.email && (
+                                                        <Text className={`text-[11px] font-medium mt-0.5 ${textSubClass}`}>
+                                                            {userObj.email}
+                                                        </Text>
+                                                    )}
+                                                </View>
+                                            </View>
+
                                             <TouchableOpacity 
-                                                onPress={() => toggleUserField(userObj.id, 'consumer', 'is_active', userObj.is_active !== false)}
-                                                className="px-3 py-1.5 rounded-xl border flex-row items-center"
-                                                style={{ 
-                                                    backgroundColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
-                                                    borderColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'
+                                                onPress={() => {
+                                                    setSelectedUser({
+                                                        id: userObj.id,
+                                                        type: userType,
+                                                        mobile: userObj.mobile,
+                                                        full_name: userObj.full_name
+                                                    });
+                                                    setDeletionReason('');
+                                                    setDeleteModalVisible(true);
                                                 }}
+                                                className="w-10 h-10 rounded-2xl items-center justify-center bg-rose-500/10 border border-rose-500/25 active:scale-95"
                                             >
-                                                <Feather name={userObj.is_active !== false ? "check-circle" : "slash"} size={11} color={userObj.is_active !== false ? "#16A34A" : "#EF4444"} />
-                                                <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
-                                                    userObj.is_active !== false ? 'text-green-600 dark:text-green-400' : 'text-red-500'
-                                                }`}>
-                                                    {userObj.is_active !== false ? 'Active' : 'Suspended'}
-                                                </Text>
+                                                <Feather name="trash-2" size={15} color="#EF4444" />
                                             </TouchableOpacity>
                                         </View>
-                                    ) : (
-                                        <View className="mt-4 border-t pt-3.5" style={isDark ? { borderTopColor: 'rgba(30, 41, 59, 0.8)' } : { borderTopColor: '#F1F5F9' }}>
-                                            <View className="flex-row justify-between items-center mb-3">
+
+                                        {userType === 'worker' && userObj.business_name && (
+                                            <View className={`flex-row items-center px-3.5 py-2.5 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/40' : 'bg-slate-50'}`}>
+                                                 <Feather name="briefcase" size={12} color="#6366F1" />
+                                                 <Text className={`text-xs font-bold ml-2.5 ${textMainClass}`}>
+                                                     {userObj.business_name}
+                                                 </Text>
+                                            </View>
+                                        )}
+
+                                        {/* Action Switches / Badges Row */}
+                                        {userType === 'consumer' ? (
+                                            <View className="mt-2 flex-row items-center justify-between border-t pt-4" style={isDark ? { borderTopColor: 'rgba(30, 41, 59, 0.8)' } : { borderTopColor: '#F1F5F9' }}>
                                                 <Text className="text-[10px] font-bold text-slate-400">
                                                     Joined: {new Date(userObj.created_at).toLocaleDateString()}
                                                 </Text>
-                                                <Text className="text-[10px] font-bold text-slate-400">
-                                                    Jobs: {userObj.total_jobs_completed || 0}
-                                                </Text>
-                                            </View>
-
-                                            <View className="flex-row flex-wrap items-center gap-2">
-                                                {/* Active status */}
+                                                
                                                 <TouchableOpacity 
-                                                    onPress={() => toggleUserField(userObj.id, 'worker', 'is_active', userObj.is_active !== false)}
-                                                    className="px-2.5 py-1.5 rounded-xl border flex-row items-center"
+                                                    onPress={() => toggleUserField(userObj.id, 'consumer', 'is_active', userObj.is_active !== false)}
+                                                    className="px-3.5 py-2 rounded-xl border flex-row items-center active:scale-[0.97]"
                                                     style={{ 
                                                         backgroundColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
                                                         borderColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'
                                                     }}
                                                 >
                                                     <Feather name={userObj.is_active !== false ? "check-circle" : "slash"} size={11} color={userObj.is_active !== false ? "#16A34A" : "#EF4444"} />
-                                                    <Text className={`text-[9px] font-black uppercase tracking-wider ml-1 ${
+                                                    <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
                                                         userObj.is_active !== false ? 'text-green-600 dark:text-green-400' : 'text-red-500'
                                                     }`}>
                                                         {userObj.is_active !== false ? 'Active' : 'Suspended'}
                                                     </Text>
                                                 </TouchableOpacity>
-
-                                                {/* Verified status */}
-                                                <TouchableOpacity 
-                                                    onPress={() => toggleUserField(userObj.id, 'worker', 'is_verified', userObj.is_verified === true)}
-                                                    className="px-2.5 py-1.5 rounded-xl border flex-row items-center"
-                                                    style={{ 
-                                                        backgroundColor: userObj.is_verified === true ? 'rgba(99, 102, 241, 0.08)' : 'rgba(100, 116, 139, 0.08)',
-                                                        borderColor: userObj.is_verified === true ? 'rgba(99, 102, 241, 0.15)' : 'rgba(100, 116, 139, 0.15)'
-                                                    }}
-                                                >
-                                                    <Feather name="award" size={11} color={userObj.is_verified === true ? "#4F46E5" : "#64748B"} />
-                                                    <Text className={`text-[9px] font-black uppercase tracking-wider ml-1 ${
-                                                        userObj.is_verified === true ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'
-                                                    }`}>
-                                                        Verified
-                                                    </Text>
-                                                </TouchableOpacity>
-
-                                                {/* KYC status */}
-                                                <TouchableOpacity 
-                                                    onPress={() => toggleUserField(userObj.id, 'worker', 'is_kyc_verified', userObj.is_kyc_verified === true)}
-                                                    className="px-2.5 py-1.5 rounded-xl border flex-row items-center"
-                                                    style={{ 
-                                                        backgroundColor: userObj.is_kyc_verified === true ? 'rgba(14, 165, 233, 0.08)' : 'rgba(100, 116, 139, 0.08)',
-                                                        borderColor: userObj.is_kyc_verified === true ? 'rgba(14, 165, 233, 0.15)' : 'rgba(100, 116, 139, 0.15)'
-                                                    }}
-                                                >
-                                                    <Feather name="shield" size={11} color={userObj.is_kyc_verified === true ? "#0284C7" : "#64748B"} />
-                                                    <Text className={`text-[9px] font-black uppercase tracking-wider ml-1 ${
-                                                        userObj.is_kyc_verified === true ? 'text-sky-600 dark:text-sky-400' : 'text-slate-500'
-                                                    }`}>
-                                                        KYC
-                                                    </Text>
-                                                </TouchableOpacity>
                                             </View>
-                                        </View>
-                                    )}
-                                </View>
-                            ))
+                                        ) : (
+                                            <View className="mt-2 border-t pt-4" style={isDark ? { borderTopColor: 'rgba(30, 41, 59, 0.8)' } : { borderTopColor: '#F1F5F9' }}>
+                                                <View className="flex-row justify-between items-center mb-3">
+                                                    <Text className="text-[10px] font-bold text-slate-400">
+                                                        Joined: {new Date(userObj.created_at).toLocaleDateString()}
+                                                    </Text>
+                                                    <Text className="text-[10px] font-bold text-slate-400">
+                                                        Jobs: {userObj.total_jobs_completed || 0}
+                                                    </Text>
+                                                </View>
+
+                                                <View className="flex-row flex-wrap items-center gap-2">
+                                                    {/* Active status */}
+                                                    <TouchableOpacity 
+                                                        onPress={() => toggleUserField(userObj.id, 'worker', 'is_active', userObj.is_active !== false)}
+                                                        className="px-3 py-2 rounded-xl border flex-row items-center active:scale-[0.97]"
+                                                        style={{ 
+                                                            backgroundColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                                                            borderColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'
+                                                        }}
+                                                    >
+                                                        <Feather name={userObj.is_active !== false ? "check-circle" : "slash"} size={11} color={userObj.is_active !== false ? "#16A34A" : "#EF4444"} />
+                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
+                                                            userObj.is_active !== false ? 'text-green-600 dark:text-green-400' : 'text-red-500'
+                                                        }`}>
+                                                            {userObj.is_active !== false ? 'Active' : 'Suspended'}
+                                                        </Text>
+                                                    </TouchableOpacity>
+
+                                                    {/* Verified status */}
+                                                    <TouchableOpacity 
+                                                        onPress={() => toggleUserField(userObj.id, 'worker', 'is_verified', userObj.is_verified === true)}
+                                                        className="px-3 py-2 rounded-xl border flex-row items-center active:scale-[0.97]"
+                                                        style={{ 
+                                                            backgroundColor: userObj.is_verified === true ? 'rgba(99, 102, 241, 0.08)' : 'rgba(100, 116, 139, 0.08)',
+                                                            borderColor: userObj.is_verified === true ? 'rgba(99, 102, 241, 0.15)' : 'rgba(100, 116, 139, 0.15)'
+                                                        }}
+                                                    >
+                                                        <Feather name="award" size={11} color={userObj.is_verified === true ? "#4F46E5" : "#64748B"} />
+                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
+                                                            userObj.is_verified === true ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'
+                                                        }`}>
+                                                            Verified
+                                                        </Text>
+                                                    </TouchableOpacity>
+
+                                                    {/* KYC status */}
+                                                    <TouchableOpacity 
+                                                        onPress={() => toggleUserField(userObj.id, 'worker', 'is_kyc_verified', userObj.is_kyc_verified === true)}
+                                                        className="px-3 py-2 rounded-xl border flex-row items-center active:scale-[0.97]"
+                                                        style={{ 
+                                                            backgroundColor: userObj.is_kyc_verified === true ? 'rgba(14, 165, 233, 0.08)' : 'rgba(100, 116, 139, 0.08)',
+                                                            borderColor: userObj.is_kyc_verified === true ? 'rgba(14, 165, 233, 0.15)' : 'rgba(100, 116, 139, 0.15)'
+                                                        }}
+                                                    >
+                                                        <Feather name="shield" size={11} color={userObj.is_kyc_verified === true ? "#0284C7" : "#64748B"} />
+                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
+                                                            userObj.is_kyc_verified === true ? 'text-sky-600 dark:text-sky-400' : 'text-slate-500'
+                                                        }`}>
+                                                            KYC
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+                                        )}
+                                    </View>
+                                );
+                            })
                         )}
                         <View className="h-10" />
                     </ScrollView>

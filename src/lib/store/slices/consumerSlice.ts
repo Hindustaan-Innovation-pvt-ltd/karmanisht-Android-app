@@ -62,10 +62,63 @@ export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSli
         const actualAmount = amount !== undefined ? amount : 50;
         const amountPaisa = actualAmount * 100;
 
-        if (Platform.OS === 'web') {
+        let activeGateway = 'razorpay';
+        let keyId = 'rzp_test_SpC8XTKEi3eJGe';
+        let keyStripe = 'pk_test_stripe';
+        let keyPaytm = 'paytm_test_key';
+
+        try {
+            const { data: settingsData } = await insforge.database
+                .from('payment_settings')
+                .select('*');
+
+            if (settingsData) {
+                settingsData.forEach((s: any) => {
+                    if (s.key === 'active_gateway') activeGateway = s.value || 'razorpay';
+                    if (s.key === 'gateway_key_razorpay') keyId = s.value || 'rzp_test_SpC8XTKEi3eJGe';
+                    if (s.key === 'gateway_key_stripe') keyStripe = s.value || 'pk_test_stripe';
+                    if (s.key === 'gateway_key_paytm') keyPaytm = s.value || 'paytm_test_key';
+                });
+            }
+        } catch (e) {
+            console.error("Failed to fetch payment gateway settings:", e);
+        }
+
+        if (Platform.OS === 'web' || activeGateway === 'mock') {
             return new Promise((resolve) => {
-                alert(`Web Mock Payment Successful (${actualAmount} INR)`);
-                resolve(true);
+                Alert.alert(
+                    activeGateway === 'mock' ? "Mock Payment" : "Web Mock Payment",
+                    `Amount: ${actualAmount} INR\nGateway Mode: Mock/Sandbox`,
+                    [
+                        { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
+                        {
+                            text: `Pay with Mock (${actualAmount} INR)`,
+                            onPress: () => {
+                                Alert.alert("Success", "Mock Payment Successful!");
+                                resolve(true);
+                            }
+                        }
+                    ]
+                );
+            });
+        }
+
+        if (activeGateway === 'stripe' || activeGateway === 'paytm') {
+            return new Promise((resolve) => {
+                Alert.alert(
+                    activeGateway === 'stripe' ? "Stripe Checkout" : "Paytm Checkout",
+                    `Amount: ${actualAmount} INR\nKey: ${activeGateway === 'stripe' ? keyStripe : keyPaytm}\n\n(Simulating premium checkout sheet since native modules are development-mocked)`,
+                    [
+                        { text: "Cancel", onPress: () => resolve(false), style: "cancel" },
+                        {
+                            text: `Pay Now (₹${actualAmount})`,
+                            onPress: () => {
+                                Alert.alert("Success", "Payment processed successfully via simulated gateway!");
+                                resolve(true);
+                            }
+                        }
+                    ]
+                );
             });
         }
 
@@ -95,9 +148,8 @@ export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSli
             try {
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
                 const RazorpayCheckout = require('react-native-razorpay').default;
-                const keyId = process.env.EXPO_PUBLIC_Test_Key_ID || 'rzp_test_SpC8XTKEi3eJGe';
                 const options = {
-                    description: `Unlock contact for ${provider.full_name}`,
+                    description: `Unlock contact for ${provider.full_name || 'Service'}`,
                     image: provider.profile_image || 'https://i.imgur.com/3g7UR1G.png',
                     currency: 'INR',
                     key: keyId,
@@ -105,8 +157,8 @@ export const createConsumerSlice: StateCreator<AppStoreType, [], [], ConsumerSli
                     name: 'Karmanisht',
                     prefill: {
                         email: 'customer@karmanisht.com',
-                        contact: currentUser.phone || '',
-                        name: currentUser.name || 'Customer'
+                        contact: currentUser?.phone || '',
+                        name: currentUser?.name || 'Customer'
                     },
                     theme: { color: '#3B82F6' }
                 };
