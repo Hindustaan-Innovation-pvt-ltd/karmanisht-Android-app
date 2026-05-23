@@ -161,6 +161,10 @@ export const staticResources = {
       faqA2: "We support UPI, Credit/Debit cards, and Cash after service.",
       faqQ3: "Can I cancel my booking?",
       faqA3: "Yes, you can cancel up to 2 hours before the scheduled time.",
+      faqQ4: "Is my personal data secure?",
+      faqA4: "Yes, we prioritize your privacy. All your details and transaction data are highly secured.",
+      faqQ5: "How can I contact a service provider directly?",
+      faqA5: "Once you select a category and view service providers, you can unlock and view their contact details to call them.",
 
       // Navbar tabs
       home: "Home",
@@ -472,6 +476,10 @@ export const staticResources = {
       faqA2: "हम UPI, क्रेडिट/डेबिट कार्ड और सेवा के बाद नकद का समर्थन करते हैं।",
       faqQ3: "क्या मैं अपनी बुकिंग रद्द कर सकता हूं?",
       faqA3: "हां, आप निर्धारित समय से 2 घंटे पहले तक रद्द कर सकते हैं।",
+      faqQ4: "क्या मेरा व्यक्तिगत डेटा सुरक्षित है?",
+      faqA4: "हाँ, हम आपकी गोपनीयता को प्राथमिकता देते हैं। आपका सारा विवरण और लेनदेन डेटा अत्यधिक सुरक्षित है।",
+      faqQ5: "मैं किसी सेवा प्रदाता से सीधे कैसे संपर्क कर सकता हूं?",
+      faqA5: "एक बार जब आप एक श्रेणी का चयन करते हैं और सेवा प्रदाताओं को देखते हैं, तो आप उन्हें कॉल करने के लिए उनके संपर्क विवरणों को अनलॉक करके देख सकते हैं।",
 
       // Navbar tabs
       home: "होम",

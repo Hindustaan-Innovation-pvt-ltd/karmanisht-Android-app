@@ -34,7 +34,7 @@ export default function ConsumerHome() {
     const [readableAddress, setReadableAddress] = useState<string | null>(null);
     const router = useRouter();
     const params = useLocalSearchParams();
-    const [showLiveMap, setShowLiveMap] = useState(false);
+    const [showLiveMap, setShowLiveMap] = useState(true);
 
     useEffect(() => {
         refreshProfile().catch(err => console.error('[ConsumerHome] refreshProfile error:', err));
@@ -149,7 +149,7 @@ export default function ConsumerHome() {
             try {
                 const { data } = await insforge.database
                     .from('user_addresses')
-                    .select('name, address_line')
+                    .select('name, address_line, latitude, longitude')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
                     .limit(1)
@@ -159,9 +159,27 @@ export default function ConsumerHome() {
                     // Strip leading Google Plus Codes like "6M28+PPC, " and show address_line only
                     const clean = data.address_line.replace(/^[A-Z0-9]{4,}\+[A-Z0-9]+,\s*/i, '');
                     setSavedAddressName(clean);
+
+                    // Sync the active user location coordinates with this latest saved address
+                    if (data.latitude && data.longitude) {
+                        useAppStore.setState({
+                            userLocation: {
+                                coords: {
+                                    latitude: Number(data.latitude),
+                                    longitude: Number(data.longitude),
+                                    altitude: 0,
+                                    accuracy: 5,
+                                    altitudeAccuracy: 5,
+                                    heading: 0,
+                                    speed: 0
+                                },
+                                timestamp: Date.now()
+                            }
+                        });
+                    }
                 }
-            } catch {
-                // Ignore address fetch errors silently
+            } catch (err) {
+                console.error("Error fetching saved address inside consumer home:", err);
             }
         }
         fetchSavedAddress();
