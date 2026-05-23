@@ -105,13 +105,17 @@ export default function VerifyIdentity() {
         try {
             if (!user?.id) throw new Error('User not found.');
 
-            const ts = Date.now();
+            const safeUserName = (user?.name || 'user')
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '_')
+                .replace(/__+/g, '_')
+                .replace(/^_+|_+$/g, '');
 
-            // Upload all 3 images concurrently
+            // Upload all 3 images concurrently to proper storage buckets
             const [aadhaarFrontRes, aadhaarBackRes, panFrontRes] = await Promise.all([
-                uploadToInsForge('aadhaar', `aadhaar_front_${user.id}_${ts}.jpg`, aadhaarFront),
-                uploadToInsForge('aadhaar', `aadhaar_back_${user.id}_${ts}.jpg`, aadhaarBack),
-                uploadToInsForge('aadhaar', `pan_front_${user.id}_${ts}.jpg`, panFront),
+                uploadToInsForge('aadhaar', `aadhaar_front_${safeUserName}_${user.id}_${ts}.jpg`, aadhaarFront),
+                uploadToInsForge('aadhaar', `aadhaar_back_${safeUserName}_${user.id}_${ts}.jpg`, aadhaarBack),
+                uploadToInsForge('pan', `pan_front_${safeUserName}_${user.id}_${ts}.jpg`, panFront),
             ]);
 
             const aadhaarFrontUrl = aadhaarFrontRes?.url || '';
