@@ -11,7 +11,6 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import MediaLibraryPicker from '@/components/media-library-picker';
 import { useTranslation } from 'react-i18next';
  
 export default function EditProfile() {
@@ -31,7 +30,6 @@ export default function EditProfile() {
     const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
-    const [showMediaPicker, setShowMediaPicker] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showSourceModal, setShowSourceModal] = useState(false);
  
@@ -64,6 +62,22 @@ export default function EditProfile() {
         }
     };
  
+    const chooseFromLibrary = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                setSelectedImage({ uri: asset.uri, size: asset.fileSize });
+            }
+        } catch (err: any) {
+            Alert.alert(t('errorPickingImage'), err.message);
+        }
+    };
+
     const handleSelectPhoto = () => {
         setShowSourceModal(true);
     };
@@ -183,7 +197,7 @@ export default function EditProfile() {
                         <TouchableOpacity
                             onPress={() => {
                                 setShowSourceModal(false);
-                                setTimeout(() => setShowMediaPicker(true), 100);
+                                setTimeout(chooseFromLibrary, 100);
                             }}
                             activeOpacity={0.7}
                             style={{ 
@@ -342,12 +356,7 @@ export default function EditProfile() {
                         </ScrollView>
                     )}
                 </KeyboardAvoidingView>
- 
-                <MediaLibraryPicker
-                    visible={showMediaPicker}
-                    onClose={() => setShowMediaPicker(false)}
-                    onSelect={(img) => setSelectedImage(img)}
-                />
+
             </SafeAreaView>
         </SafeAreaProvider>
     );

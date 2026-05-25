@@ -11,7 +11,6 @@ import { useAppStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadToInsForge, insforge } from '@/lib/insforge';
-import MediaLibraryPicker from '@/components/media-library-picker';
 import { useTranslation } from 'react-i18next';
 
 export default function ProfileInfoScreen() {
@@ -26,7 +25,6 @@ export default function ProfileInfoScreen() {
     const [location, setLocation] = useState(user.location || '');
     const [selectedImage, setSelectedImage] = useState<{ uri: string; size?: number } | null>(null);
     const [saving, setSaving] = useState(false);
-    const [showMediaPicker, setShowMediaPicker] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     
     // Track focused input fields for highlighting
@@ -93,13 +91,33 @@ export default function ProfileInfoScreen() {
         }
     };
 
+    const chooseFromLibrary = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                setSelectedImage({
+                    uri: asset.uri,
+                    size: asset.fileSize,
+                });
+            }
+        } catch (err: any) {
+            Alert.alert("Error picking image", err.message);
+        }
+    };
+
     const handleSelectPhoto = () => {
         Alert.alert(
             t('profilePhoto'),
             t('profilePhoto'),
             [
                 { text: t('takePhoto'), onPress: takePhoto },
-                { text: t('chooseFromLibrary'), onPress: () => setShowMediaPicker(true) },
+                { text: t('chooseFromLibrary'), onPress: chooseFromLibrary },
                 { text: t('cancel'), style: "cancel" }
             ]
         );
@@ -356,11 +374,6 @@ export default function ProfileInfoScreen() {
                     </ScrollView>
                 </KeyboardAvoidingView>
 
-                <MediaLibraryPicker
-                    visible={showMediaPicker}
-                    onClose={() => setShowMediaPicker(false)}
-                    onSelect={(img) => setSelectedImage(img)}
-                />
             </SafeAreaView>
         </SafeAreaProvider>
     );

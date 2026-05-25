@@ -7,7 +7,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router'
 
 import { ShieldIcon, UploadIcon, CheckCircleIcon } from '@/svg/icons'
 import * as ImagePicker from 'expo-image-picker'
-import MediaLibraryPicker from '@/components/media-library-picker'
 import { insforge, uploadToInsForge } from '@/lib/insforge'
 import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
@@ -38,7 +37,6 @@ export default function VerifyIdentity() {
     const [aadhaarBackStatus, setAadhaarBackStatus] = useState<DocStatus>('pending')
     const [panFrontStatus, setPanFrontStatus] = useState<DocStatus>('pending')
 
-    const [showMediaPicker, setShowMediaPicker] = useState(false)
     const [activeUploadType, setActiveUploadType] = useState<UploadType | null>(null)
     const [uploading, setUploading] = useState(false)
 
@@ -74,22 +72,18 @@ export default function VerifyIdentity() {
     };
 
     const chooseFromLibrary = async () => {
-        if (Platform.OS === 'web') {
-            try {
-                const result = await ImagePicker.launchImageLibraryAsync({
-                    allowsEditing: true,
-                    aspect: [1.586, 1],
-                    quality: 0.85,
-                });
-                if (!result.canceled && result.assets?.length > 0) {
-                    const asset = result.assets[0];
-                    if (activeUploadType) setDocForType(activeUploadType, { uri: asset.uri, size: asset.fileSize });
-                }
-            } catch (err: any) {
-                Alert.alert(t('errorPickingImage', 'Error picking image'), err.message);
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                allowsEditing: true,
+                aspect: [1.586, 1],
+                quality: 0.85,
+            });
+            if (!result.canceled && result.assets?.length > 0) {
+                const asset = result.assets[0];
+                if (activeUploadType) setDocForType(activeUploadType, { uri: asset.uri, size: asset.fileSize });
             }
-        } else {
-            setShowMediaPicker(true);
+        } catch (err: any) {
+            Alert.alert(t('errorPickingImage', 'Error picking image'), err.message);
         }
     };
 
@@ -509,16 +503,6 @@ export default function VerifyIdentity() {
                         <Text className='text-center text-sm text-slate-400 font-medium'>{t('skipLater', "Skip, I'll do this later")}</Text>
                     </TouchableOpacity>
                 </View>
-
-                <MediaLibraryPicker
-                    visible={showMediaPicker}
-                    onClose={() => { setShowMediaPicker(false); setActiveUploadType(null); }}
-                    onSelect={(img) => {
-                        if (activeUploadType) setDocForType(activeUploadType, img);
-                        setShowMediaPicker(false);
-                        setActiveUploadType(null);
-                    }}
-                />
             </SafeAreaView>
         </SafeAreaProvider>
     )

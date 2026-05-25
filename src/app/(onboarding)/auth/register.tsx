@@ -10,7 +10,6 @@ import { UserIcon, BriefcaseIcon, PhoneIcon, ClockIcon } from '@/svg/icons'
 import { useAppStore } from '@/lib/store'
 import { Feather } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
-import MediaLibraryPicker from '@/components/media-library-picker'
 import {
     InputOTP,
     InputOTPGroup,
@@ -76,7 +75,6 @@ export default function Register() {
     const [showOtpModal, setShowOtpModal] = useState(false)
     const [otp, setOtp] = useState('')
     const [verifyingOtp, setVerifyingOtp] = useState(false)
-    const [showMediaPicker, setShowMediaPicker] = useState(false)
     const [verificationId, setVerificationId] = useState('')
     const hasProcessedRef = useRef(false)
 
@@ -277,13 +275,33 @@ export default function Register() {
         }
     };
 
+    const chooseFromLibrary = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                setSelectedImage({
+                    uri: asset.uri,
+                    size: asset.fileSize,
+                });
+            }
+        } catch (err: any) {
+            showAlert(t('errorPickingImage', 'Error picking image'), err.message, 'error');
+        }
+    };
+
     const handleSelectPhoto = () => {
         Alert.alert(
             t('profilePhoto'),
             t('selectPhotoOption'),
             [
                 { text: t('takePhoto'), onPress: takePhoto },
-                { text: t('chooseFromLibrary'), onPress: () => setShowMediaPicker(true) },
+                { text: t('chooseFromLibrary'), onPress: chooseFromLibrary },
                 { text: t('cancel'), style: "cancel" }
             ]
         );
@@ -546,12 +564,6 @@ export default function Register() {
                     </View>
                 </View>
             </Modal>
-
-            <MediaLibraryPicker
-                visible={showMediaPicker}
-                onClose={() => setShowMediaPicker(false)}
-                onSelect={(img) => setSelectedImage(img)}
-            />
 
             {alertConfig && (
                 <CustomAlert
