@@ -5,47 +5,47 @@ import { AppStoreType, AuthSlice, UserProfile, STORAGE_KEYS, defaultUser } from 
 import { insforge } from '../../insforge';
 
 function isTokenExpired(token: string | null): boolean {
-  if (!token) return true;
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return true;
-    const base64Url = parts[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    let jsonPayload: string;
-    
-    if (typeof atob !== 'undefined') {
-      jsonPayload = atob(base64);
-    } else {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-      const lookup = new Uint8Array(256);
-      for (let i = 0; i < chars.length; i++) {
-        lookup[chars.charCodeAt(i)] = i;
-      }
-      let buffer = '';
-      const cleanStr = base64.replace(/=+$/, '');
-      const len = cleanStr.length;
-      for (let i = 0; i < len; i += 4) {
-        const encoded1 = lookup[cleanStr.charCodeAt(i)];
-        const encoded2 = lookup[cleanStr.charCodeAt(i + 1)];
-        const encoded3 = i + 2 < len ? lookup[cleanStr.charCodeAt(i + 2)] : 0;
-        const encoded4 = i + 3 < len ? lookup[cleanStr.charCodeAt(i + 3)] : 0;
-        const bytes = (encoded1 << 18) | (encoded2 << 12) | (encoded3 << 6) | encoded4;
-        buffer += String.fromCharCode((bytes >> 16) & 255);
-        if (i + 2 < len) buffer += String.fromCharCode((bytes >> 8) & 255);
-        if (i + 3 < len) buffer += String.fromCharCode(bytes & 255);
-      }
-      jsonPayload = buffer;
+    if (!token) return true;
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return true;
+        const base64Url = parts[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        let jsonPayload: string;
+
+        if (typeof atob !== 'undefined') {
+            jsonPayload = atob(base64);
+        } else {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+            const lookup = new Uint8Array(256);
+            for (let i = 0; i < chars.length; i++) {
+                lookup[chars.charCodeAt(i)] = i;
+            }
+            let buffer = '';
+            const cleanStr = base64.replace(/=+$/, '');
+            const len = cleanStr.length;
+            for (let i = 0; i < len; i += 4) {
+                const encoded1 = lookup[cleanStr.charCodeAt(i)];
+                const encoded2 = lookup[cleanStr.charCodeAt(i + 1)];
+                const encoded3 = i + 2 < len ? lookup[cleanStr.charCodeAt(i + 2)] : 0;
+                const encoded4 = i + 3 < len ? lookup[cleanStr.charCodeAt(i + 3)] : 0;
+                const bytes = (encoded1 << 18) | (encoded2 << 12) | (encoded3 << 6) | encoded4;
+                buffer += String.fromCharCode((bytes >> 16) & 255);
+                if (i + 2 < len) buffer += String.fromCharCode((bytes >> 8) & 255);
+                if (i + 3 < len) buffer += String.fromCharCode(bytes & 255);
+            }
+            jsonPayload = buffer;
+        }
+
+        const payload = JSON.parse(jsonPayload);
+        if (payload.exp) {
+            const now = Math.floor(Date.now() / 1000);
+            return payload.exp - now < 300; // expires in < 5 minutes
+        }
+    } catch {
+        return true;
     }
-    
-    const payload = JSON.parse(jsonPayload);
-    if (payload.exp) {
-      const now = Math.floor(Date.now() / 1000);
-      return payload.exp - now < 300; // expires in < 5 minutes
-    }
-  } catch {
     return true;
-  }
-  return true;
 }
 
 export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (set, get) => ({
@@ -733,7 +733,7 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             try {
                 const tableName = get().user.role === 'worker' ? 'service_providers' : 'users';
                 await insforge.database.from(tableName).update({ is_active: v }).eq('id', userId);
-                
+
                 // For workers, keep the users table in sync too
                 if (get().user.role === 'worker') {
                     await insforge.database.from('users').update({ is_active: v }).eq('id', userId);
