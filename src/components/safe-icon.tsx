@@ -47,7 +47,7 @@ const ICON_MAPPING: Record<string, { family: string; name: string }> = {
     'fan': { family: 'MaterialCommunityIcons', name: 'fan' },
     'leaf': { family: 'Ionicons', name: 'leaf' },
     'scissors': { family: 'Ionicons', name: 'cut' },
-    'dumbbell': { family: 'Ionicons', name: 'dumbbell' },
+    'dumbbell': { family: 'Ionicons', name: 'barbell' },
     'stethoscope': { family: 'Ionicons', name: 'medical' },
     'utensils': { family: 'MaterialCommunityIcons', name: 'silverware-fork-knife' },
     'users': { family: 'Ionicons', name: 'people' },

@@ -148,7 +148,7 @@ function IconPickerModal({ visible, onClose, onSelect, currentIcon, isDark }: {
                         </TouchableOpacity>
                     </View>
 
-                    <View className={`flex-row items-center px-4 py-3 rounded-2xl mb-4 border ${isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-550 border-slate-200'}`}>
+                    <View className={`flex-row items-center px-4 py-3 rounded-2xl mb-4 border ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                         <Feather name="search" size={16} color="#64748B" />
                         <TextInput
                             value={searchQuery}
@@ -173,7 +173,7 @@ function IconPickerModal({ visible, onClose, onSelect, currentIcon, isDark }: {
                                         onPress={() => setActiveTab(id as any)}
                                         className={`px-4 py-2.5 rounded-full border ${active
                                             ? 'bg-indigo-600 border-indigo-600'
-                                            : (isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-50 border-slate-200')
+                                            : (isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200')
                                             }`}
                                     >
                                         <Text className={`text-[10px] font-black uppercase tracking-wider ${active ? 'text-white' : 'text-slate-400'
@@ -205,7 +205,7 @@ function IconPickerModal({ visible, onClose, onSelect, currentIcon, isDark }: {
                                             }}
                                             className={`w-[22%] aspect-square rounded-2xl items-center justify-center border ${isSelected
                                                 ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500'
-                                                : 'bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-850'
+                                                : 'bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800'
                                                 }`}
                                         >
                                             <SafeIcon name={name} size={22} color={isSelected ? '#6366F1' : (isDark ? '#94A3B8' : '#475569')} />
@@ -250,6 +250,7 @@ export default function AdminCategoriesConsole() {
     const [createModalVisible, setCreateModalVisible] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryIcon, setNewCategoryIcon] = useState('tool');
+    const [newCategoryActive, setNewCategoryActive] = useState(true);
     const [submittingCategory, setSubmittingCategory] = useState(false);
 
     // Specialty Tags Modal state
@@ -261,10 +262,14 @@ export default function AdminCategoriesConsole() {
     // Dropdown active card state
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
+    // Active Category Filter status
+    const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
     // Edit Category Modal state
     const [editCategoryModalVisible, setEditCategoryModalVisible] = useState(false);
     const [editCategoryName, setEditCategoryName] = useState('');
     const [editCategoryIcon, setEditCategoryIcon] = useState('');
+    const [editCategoryActive, setEditCategoryActive] = useState(true);
     const [updatingCategory, setUpdatingCategory] = useState(false);
 
     // Edit Subcategory (Tag) Modal state
@@ -323,7 +328,7 @@ export default function AdminCategoriesConsole() {
                     {
                         name: newCategoryName.trim(),
                         icon: newCategoryIcon.trim() || 'tool',
-                        is_active: true
+                        is_active: newCategoryActive
                     }
                 ]);
             if (error) throw error;
@@ -342,6 +347,7 @@ export default function AdminCategoriesConsole() {
             Alert.alert("Success", "Category created successfully!");
             setNewCategoryName('');
             setNewCategoryIcon('tool');
+            setNewCategoryActive(true);
             setCreateModalVisible(false);
 
             await fetchCategoriesAndTags();
@@ -405,7 +411,8 @@ export default function AdminCategoriesConsole() {
                 .from('service_categories')
                 .update({
                     name: editCategoryName.trim(),
-                    icon: editCategoryIcon.trim() || 'tool'
+                    icon: editCategoryIcon.trim() || 'tool',
+                    is_active: editCategoryActive
                 })
                 .eq('id', selectedCategory.id);
             if (error) throw error;
@@ -521,9 +528,16 @@ export default function AdminCategoriesConsole() {
 
     // Filter categories based on search
     const getFilteredCategories = () => {
+        let list = categoriesList;
+        if (activeFilter === 'active') {
+            list = categoriesList.filter(c => c.is_active !== false);
+        } else if (activeFilter === 'inactive') {
+            list = categoriesList.filter(c => c.is_active === false);
+        }
+
         const query = searchQuery.toLowerCase();
-        if (!query) return categoriesList;
-        return categoriesList.filter(c =>
+        if (!query) return list;
+        return list.filter(c =>
             (c.name || '').toLowerCase().includes(query) ||
             tagsList.some(t => t.category_id === c.id && (t.name || '').toLowerCase().includes(query))
         );
@@ -581,6 +595,51 @@ export default function AdminCategoriesConsole() {
                     />
                 </View>
 
+                {/* Premium Active/Inactive Filter Tabs */}
+                <View className="flex-row gap-2 mb-4 bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+                    {(['all', 'active', 'inactive'] as const).map((filter) => {
+                        const isSelected = activeFilter === filter;
+                        const label = filter === 'all' ? 'All' : filter === 'active' ? 'Active' : 'Disabled';
+                        
+                        // Compute category counts for each status
+                        let count = categoriesList.length;
+                        if (filter === 'active') {
+                            count = categoriesList.filter(c => c.is_active !== false).length;
+                        } else if (filter === 'inactive') {
+                            count = categoriesList.filter(c => c.is_active === false).length;
+                        }
+
+                        return (
+                            <TouchableOpacity
+                                key={filter}
+                                onPress={() => setActiveFilter(filter)}
+                                className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl border ${
+                                    isSelected
+                                        ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm'
+                                        : 'border-transparent'
+                                }`}
+                            >
+                                <Text className={`text-[10px] font-black uppercase tracking-wider ${
+                                    isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'
+                                }`}>
+                                    {label}
+                                </Text>
+                                <View className={`ml-2 px-1.5 py-0.5 rounded-full ${
+                                    isSelected
+                                        ? 'bg-indigo-50 dark:bg-indigo-950/50'
+                                        : 'bg-slate-200/50 dark:bg-slate-800/40'
+                                }`}>
+                                    <Text className={`text-[9px] font-extrabold ${
+                                        isSelected ? 'text-indigo-650 dark:text-indigo-450' : 'text-slate-500'
+                                    }`}>
+                                        {count}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+
                 {loading ? (
                     <View className="flex-1 items-center justify-center">
                         <ActivityIndicator size="large" color="#6366F1" />
@@ -607,7 +666,9 @@ export default function AdminCategoriesConsole() {
                                     return (
                                         <View
                                             key={cat.id}
-                                            className={`w-[48%] p-4 rounded-3xl border relative ${cardBgClass}`}
+                                            className={`w-[48%] p-4 rounded-3xl border relative ${cardBgClass} ${
+                                                !isActive ? 'opacity-65 border-dashed border-slate-350 dark:border-slate-800' : ''
+                                            }`}
                                             style={shadowSm}
                                         >
                                             {/* Card Top Row with Icon Frame & Settings Dropdown Toggle */}
@@ -688,7 +749,7 @@ export default function AdminCategoriesConsole() {
                                                             toggleCategoryActive(cat.id, isActive);
                                                             setActiveMenuId(null);
                                                         }}
-                                                        className="flex-row items-center px-3 py-2.5 gap-2 active:bg-slate-100 dark:active:bg-slate-850 rounded-xl"
+                                                        className="flex-row items-center px-3 py-2.5 gap-2 active:bg-slate-100 dark:active:bg-slate-800 rounded-xl"
                                                     >
                                                         <Feather name={isActive ? "slash" : "check"} size={13} color={isActive ? "#EF4444" : "#22C55E"} />
                                                         <Text className={`text-[10px] font-black uppercase tracking-wider ${textMainClass}`}>
@@ -700,10 +761,11 @@ export default function AdminCategoriesConsole() {
                                                             setSelectedCategory(cat);
                                                             setEditCategoryName(cat.name);
                                                             setEditCategoryIcon(cat.icon || 'tool');
+                                                            setEditCategoryActive(cat.is_active !== false);
                                                             setEditCategoryModalVisible(true);
                                                             setActiveMenuId(null);
                                                         }}
-                                                        className="flex-row items-center px-3 py-2.5 gap-2 border-t border-slate-100 dark:border-slate-850 active:bg-slate-100 dark:active:bg-slate-850 rounded-xl"
+                                                        className="flex-row items-center px-3 py-2.5 gap-2 border-t border-slate-100 dark:border-slate-800 active:bg-slate-100 dark:active:bg-slate-800 rounded-xl"
                                                     >
                                                         <Feather name="edit" size={13} color="#4F46E5" />
                                                         <Text className={`text-[10px] font-black uppercase tracking-wider ${textMainClass}`}>Edit Info</Text>
@@ -714,7 +776,7 @@ export default function AdminCategoriesConsole() {
                                                             setTagsModalVisible(true);
                                                             setActiveMenuId(null);
                                                         }}
-                                                        className="flex-row items-center px-3 py-2.5 gap-2 border-t border-slate-100 dark:border-slate-850 active:bg-slate-100 dark:active:bg-slate-850 rounded-xl"
+                                                        className="flex-row items-center px-3 py-2.5 gap-2 border-t border-slate-100 dark:border-slate-800 active:bg-slate-100 dark:active:bg-slate-800 rounded-xl"
                                                     >
                                                         <Feather name="edit-2" size={13} color="#6366F1" />
                                                         <Text className={`text-[10px] font-black uppercase tracking-wider ${textMainClass}`}>Edit Tags</Text>
@@ -760,7 +822,7 @@ export default function AdminCategoriesConsole() {
                                     onChangeText={setNewCategoryName}
                                     placeholder="e.g. Electrician, Plumber, Painter..."
                                     placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
-                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-50 text-slate-800 border-slate-200'
+                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-800' : 'bg-slate-50 text-slate-800 border-slate-200'
                                         }`}
                                 />
                             </View>
@@ -768,7 +830,7 @@ export default function AdminCategoriesConsole() {
                             <View className="gap-2">
                                 <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Icon</Text>
                                 <View className="flex-row items-center gap-3">
-                                    <View className={`w-14 h-14 rounded-2xl items-center justify-center border ${isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-50 border-slate-200'}`}>
+                                    <View className={`w-14 h-14 rounded-2xl items-center justify-center border ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                                         <SafeIcon name={newCategoryIcon} size={24} color="#6366F1" />
                                     </View>
                                     <View className="flex-1">
@@ -782,6 +844,22 @@ export default function AdminCategoriesConsole() {
                                         <Text className="text-xs font-bold text-[#6366F1]">Choose Icon</Text>
                                     </TouchableOpacity>
                                 </View>
+                            </View>
+
+                            <View className="flex-row items-center justify-between px-1 py-1 mt-1">
+                                <View>
+                                    <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Status</Text>
+                                    <Text className="text-[10px] text-slate-400 font-medium mt-0.5">Enable service category for consumers</Text>
+                                </View>
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={() => setNewCategoryActive(!newCategoryActive)}
+                                    className={`w-12 h-7 rounded-full p-1 flex-row items-center ${
+                                        newCategoryActive ? 'bg-indigo-600 justify-end' : 'bg-slate-200 dark:bg-slate-800 justify-start'
+                                    }`}
+                                >
+                                    <View className="w-5 h-5 rounded-full bg-white shadow-sm" />
+                                </TouchableOpacity>
                             </View>
 
                             <View className="flex-row gap-3 mt-4 mb-4">
@@ -848,7 +926,7 @@ export default function AdminCategoriesConsole() {
                                         onChangeText={setNewTagName}
                                         placeholder="Add new specialty (e.g. Fan Repair, Hair Styling)..."
                                         placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
-                                        className={`flex-1 px-4 py-3 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-50 text-slate-800 border-slate-200'
+                                        className={`flex-1 px-4 py-3 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-800' : 'bg-slate-50 text-slate-800 border-slate-200'
                                             }`}
                                     />
                                     <TouchableOpacity
@@ -871,8 +949,8 @@ export default function AdminCategoriesConsole() {
                                     <View className="flex-row flex-wrap gap-2.5">
                                         {tagsList.filter(t => t.category_id === selectedCategory.id).length === 0 ? (
                                             <View className="py-8 items-center justify-center w-full">
-                                                <Feather name="tag" size={32} color="#64748B" className="opacity-50" />
-                                                <Text className="text-xs text-slate-450 font-semibold italic mt-2">No specialty tags defined yet.</Text>
+                                                <Feather name="tag" size={32} color="#64748B" style={{ opacity: 0.5 }} />
+                                                <Text className="text-xs text-slate-400 font-semibold italic mt-2">No specialty tags defined yet.</Text>
                                             </View>
                                         ) : (
                                             tagsList.filter(t => t.category_id === selectedCategory.id).map((tag) => (
@@ -935,7 +1013,7 @@ export default function AdminCategoriesConsole() {
                                     onChangeText={setEditCategoryName}
                                     placeholder="e.g. Electrician, Plumber, Painter..."
                                     placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
-                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-550/5 text-slate-800 border-slate-200'
+                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-800' : 'bg-slate-50/5 text-slate-800 border-slate-200'
                                         }`}
                                 />
                             </View>
@@ -943,7 +1021,7 @@ export default function AdminCategoriesConsole() {
                             <View className="gap-2">
                                 <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category Icon</Text>
                                 <View className="flex-row items-center gap-3">
-                                    <View className={`w-14 h-14 rounded-2xl items-center justify-center border ${isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-50 border-slate-200'}`}>
+                                    <View className={`w-14 h-14 rounded-2xl items-center justify-center border ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                                         <SafeIcon name={editCategoryIcon} size={24} color="#6366F1" />
                                     </View>
                                     <View className="flex-1">
@@ -957,6 +1035,22 @@ export default function AdminCategoriesConsole() {
                                         <Text className="text-xs font-bold text-[#6366F1]">Choose Icon</Text>
                                     </TouchableOpacity>
                                 </View>
+                            </View>
+
+                            <View className="flex-row items-center justify-between px-1 py-1 mt-1">
+                                <View>
+                                    <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Status</Text>
+                                    <Text className="text-[10px] text-slate-400 font-medium mt-0.5">Enable service category for consumers</Text>
+                                </View>
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={() => setEditCategoryActive(!editCategoryActive)}
+                                    className={`w-12 h-7 rounded-full p-1 flex-row items-center ${
+                                        editCategoryActive ? 'bg-indigo-600 justify-end' : 'bg-slate-200 dark:bg-slate-800 justify-start'
+                                    }`}
+                                >
+                                    <View className="w-5 h-5 rounded-full bg-white shadow-sm" />
+                                </TouchableOpacity>
                             </View>
 
                             <View className="flex-row gap-3 mt-4 mb-4">
@@ -1008,7 +1102,7 @@ export default function AdminCategoriesConsole() {
                                     onChangeText={setEditTagName}
                                     placeholder="e.g. Fan Repair, Hair Styling..."
                                     placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
-                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-550/5 text-slate-800 border-slate-200'
+                                    className={`px-4 py-3.5 text-sm font-semibold rounded-2xl border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-800' : 'bg-slate-50/5 text-slate-800 border-slate-200'
                                         }`}
                                 />
                             </View>

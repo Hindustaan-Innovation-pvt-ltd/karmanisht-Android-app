@@ -459,7 +459,7 @@ const CategoryPassModal = ({
 };
 
 const generateUUID = () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
@@ -670,7 +670,7 @@ export default function ServiceDetailScreen() {
                         .eq('key', 'active_gateway')
                         .maybeSingle();
                     if (activeGw?.value) gatewayName = activeGw.value;
-                } catch (err) {}
+                } catch (err) { }
 
                 const passId = generateUUID();
                 const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
@@ -778,7 +778,7 @@ export default function ServiceDetailScreen() {
                         .eq('key', 'active_gateway')
                         .maybeSingle();
                     if (activeGw?.value) gatewayName = activeGw.value;
-                } catch (err) {}
+                } catch (err) { }
 
                 const passId = generateUUID();
                 const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
@@ -1108,10 +1108,6 @@ export default function ServiceDetailScreen() {
                         className="rounded-[30px] p-5 flex-row mb-4 mx-5 relative"
                         style={{
                             backgroundColor: color || '#3B82F6',
-                            shadowColor: provider.is_premium ? '#F59E0B' : '#000',
-                            shadowOffset: { width: 0, height: provider.is_premium ? 12 : 10 },
-                            shadowOpacity: provider.is_premium ? 0.35 : 0.15,
-                            shadowRadius: provider.is_premium ? 18 : 15,
                             elevation: provider.is_premium ? 12 : 8,
                             borderColor: '#FBBF24',
                             borderWidth: provider.is_premium ? 2.5 : 0
@@ -1136,7 +1132,7 @@ export default function ServiceDetailScreen() {
                                 )}
                             </View>
                             <View className="flex-row items-center mb-1">
-                                <Ionicons name="star" size={15} color="white" className='mb-0.4' />
+                                <Ionicons name="star" size={15} color="white" style={{ marginBottom: 1.6 }} />
                                 <Text className="text-white text-xs ml-1">{provider.average_rating || 0}({provider.total_reviews || 0})</Text>
                                 <Ionicons name="time-outline" size={15} color="white" style={{ marginLeft: 12 }} />
                                 <Text className="text-white text-xs ml-1">{provider.distance_km?.toFixed(1) || 0} km</Text>

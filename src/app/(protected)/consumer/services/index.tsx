@@ -243,7 +243,7 @@ export default function ServicesScreen() {
                         ListEmptyComponent={
                             searchQuery.length > 0 ? (
                                 <View className="items-center justify-center py-16 px-5">
-                                    <Ionicons name="search-outline" size={48} color="#EF4444" className="mb-4" />
+                                    <Ionicons name="search-outline" size={48} color="#EF4444" style={{ marginBottom: 16 }} />
                                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-lg">
                                         {t('noServicesFound')}
                                     </Text>
@@ -253,7 +253,7 @@ export default function ServicesScreen() {
                                 </View>
                             ) : (
                                 <View className="items-center justify-center py-16 px-5">
-                                    <Ionicons name="sparkles-outline" size={44} color="#3B82F6" className="mb-4" />
+                                    <Ionicons name="sparkles-outline" size={44} color="#3B82F6" style={{ marginBottom: 16 }} />
                                     <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-base">
                                         {t('searchHindustanServices')}
                                     </Text>

@@ -102,7 +102,7 @@ const ContactListItem = ({ provider, categories, index, isDark }) => {
                                     </View>
 
                                     <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg ml-2">
-                                        <Feather name="clock" size={12} className="text-slate-500 dark:text-slate-400" />
+                                        <Feather name="clock" size={12} color={isDark ? '#94A3B8' : '#64748B'} />
                                         <Text className="text-slate-600 dark:text-slate-300 text-xs ml-1 font-semibold">
                                             {t('yrsExp', { count: provider.experience_years || 0 })}
                                         </Text>
@@ -113,7 +113,7 @@ const ContactListItem = ({ provider, categories, index, isDark }) => {
                             {/* Contact Action Row */}
                             <View className="flex-row items-center justify-between mt-3">
                                 <View className="flex-row items-center">
-                                    <Feather name="phone" size={12} className="text-slate-400 dark:text-slate-500" />
+                                    <Feather name="phone" size={12} color={isDark ? '#64748B' : '#94A3B8'} />
                                     <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold ml-1.5">
                                         {provider.mobile}
                                     </Text>

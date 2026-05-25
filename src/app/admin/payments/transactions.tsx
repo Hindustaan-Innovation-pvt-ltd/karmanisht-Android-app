@@ -115,7 +115,7 @@ export default function TransactionsLedgerScreen() {
     const textSubClass = isDark ? 'text-slate-400' : 'text-slate-500';
 
     return (
-        <View className={`flex-1 ${isDark ? 'bg-slate-955' : 'bg-slate-550/5'}`} style={{ paddingTop: insets.top }}>
+        <View className={`flex-1 ${isDark ? 'bg-slate-950' : 'bg-slate-500/5'}`} style={{ paddingTop: insets.top }}>
             {/* Header */}
             <View className={`pt-4 pb-5 px-6 flex-row items-center justify-between border-b ${isDark ? 'border-slate-900 bg-slate-950' : 'border-slate-200 bg-white'}`}>
                 <View className="flex-row items-center">
@@ -160,7 +160,7 @@ export default function TransactionsLedgerScreen() {
                                     <Feather name="trending-up" size={14} color="#10B981" />
                                 </View>
                                 <Text className={`text-xl font-black ${textMainClass}`}>₹{stats.totalVolume}</Text>
-                                <Text className="text-[8px] font-semibold text-slate-455 mt-1">From {stats.successCount} sales</Text>
+                                <Text className="text-[8px] font-semibold text-slate-400 mt-1">From {stats.successCount} sales</Text>
                                 <View className="absolute -right-3 -bottom-3 opacity-5">
                                     <MaterialCommunityIcons name="currency-inr" size={54} color={isDark ? '#FFF' : '#000'} />
                                 </View>
@@ -173,7 +173,7 @@ export default function TransactionsLedgerScreen() {
                                     <Feather name="shield" size={14} color="#6366F1" />
                                 </View>
                                 <Text className="text-xl font-black text-indigo-500">{stats.successRate}%</Text>
-                                <Text className="text-[8px] font-semibold text-slate-455 mt-1">{stats.failedCount} failed tx</Text>
+                                <Text className="text-[8px] font-semibold text-slate-400 mt-1">{stats.failedCount} failed tx</Text>
                                 <View className="absolute -right-3 -bottom-3 opacity-5">
                                     <Feather name="shield" size={54} color={isDark ? '#FFF' : '#000'} />
                                 </View>
@@ -186,7 +186,7 @@ export default function TransactionsLedgerScreen() {
                                     <Feather name="shopping-bag" size={14} color="#F59E0B" />
                                 </View>
                                 <Text className={`text-xl font-black ${textMainClass}`}>{stats.totalCount}</Text>
-                                <Text className="text-[8px] font-semibold text-slate-455 mt-1">Completed logs</Text>
+                                <Text className="text-[8px] font-semibold text-slate-400 mt-1">Completed logs</Text>
                                 <View className="absolute -right-3 -bottom-3 opacity-5">
                                     <Feather name="shopping-bag" size={54} color={isDark ? '#FFF' : '#000'} />
                                 </View>
@@ -250,7 +250,7 @@ export default function TransactionsLedgerScreen() {
 
                                     let statusColor = 'text-amber-600 bg-amber-500/10 dark:text-amber-400';
                                     let statusText = 'Pending';
-                                    let statusDot = 'bg-amber-550';
+                                    let statusDot = 'bg-amber-500';
                                     if (tx.payment_status === 'paid') {
                                         statusColor = 'text-green-650 bg-green-500/10 dark:text-green-400';
                                         statusText = 'Successful';
@@ -280,13 +280,13 @@ export default function TransactionsLedgerScreen() {
                                                 </Text>
 
                                                 <View className="flex-row gap-2 mt-2 flex-wrap items-center">
-                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 rounded-md border border-slate-200/50 dark:border-slate-850">
-                                                        <Text className="text-[9px] font-semibold text-slate-455 uppercase tracking-wide">
+                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 rounded-md border border-slate-200/50 dark:border-slate-800">
+                                                        <Text className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide">
                                                             {tx.payment_type === 'unlock_pass' ? 'Unlock Pass' : 'Subscription'}
                                                         </Text>
                                                     </View>
-                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 rounded-md border border-slate-200/50 dark:border-slate-850">
-                                                        <Text className="text-[9px] font-semibold text-slate-455 uppercase tracking-wide">
+                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 rounded-md border border-slate-200/50 dark:border-slate-800">
+                                                        <Text className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide">
                                                             {tx.gateway?.toUpperCase() || 'MOCK'}
                                                         </Text>
                                                     </View>

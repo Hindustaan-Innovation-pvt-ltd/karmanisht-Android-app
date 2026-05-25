@@ -486,10 +486,19 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
                                 .select('provider_id, category_id')
                                 .in('provider_id', providerIds);
 
-                            const providersWithCat = providers.map(p => {
-                                const match = pServices?.find(ps => ps.provider_id === p.id);
-                                return { ...p, category_id: match ? match.category_id : null };
-                            });
+                            const { data: activeCats } = await insforge.database
+                                .from('service_categories')
+                                .select('id')
+                                .eq('is_active', true);
+                            const activeCatIds = new Set((activeCats || []).map(c => c.id));
+
+                            const providersWithCat = providers
+                                .map(p => {
+                                    const match = pServices?.find(ps => ps.provider_id === p.id);
+                                    return { ...p, category_id: match ? match.category_id : null };
+                                })
+                                .filter(p => p.category_id && activeCatIds.has(p.category_id));
+
                             set({ unlockedProviders: providersWithCat });
                         }
                     } else {

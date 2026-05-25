@@ -502,7 +502,7 @@ export default function AdminRequestsConsole() {
                             placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
                             multiline={true}
                             numberOfLines={3}
-                            className={`p-4 rounded-2xl min-h-[90px] text-sm font-semibold border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-850' : 'bg-slate-50 text-slate-800 border-slate-200'}`}
+                            className={`p-4 rounded-2xl min-h-[90px] text-sm font-semibold border ${isDark ? 'bg-slate-950 text-slate-100 border-slate-800' : 'bg-slate-50 text-slate-800 border-slate-200'}`}
                         />
 
                         <View className="h-6" />

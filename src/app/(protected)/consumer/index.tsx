@@ -228,7 +228,7 @@ export default function ConsumerHome() {
                         <Text className="ml-1.5 text-base font-bold text-gray-900 dark:text-white" numberOfLines={1}>
                             {truncate(locationName)}
                         </Text>
-                        <Ionicons name="chevron-down" size={14} color="#94A3B8" className="ml-1" />
+                        <Ionicons name="chevron-down" size={14} color="#94A3B8" style={{ marginLeft: 4 }} />
                     </ScalePressable>
                 </View>
 
@@ -397,7 +397,7 @@ export default function ConsumerHome() {
                             ListEmptyComponent={
                                 searchQuery.length > 0 ? (
                                     <View className="items-center justify-center py-16 px-5">
-                                        <Ionicons name="search-outline" size={48} color="#EF4444" className="mb-4" />
+                                        <Ionicons name="search-outline" size={48} color="#EF4444" style={{ marginBottom: 16 }} />
                                         <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-lg">
                                             {t('noServicesFound')}
                                         </Text>
@@ -407,7 +407,7 @@ export default function ConsumerHome() {
                                     </View>
                                 ) : (
                                     <View className="items-center justify-center py-16 px-5">
-                                        <Ionicons name="sparkles-outline" size={44} color="#3B82F6" className="mb-4" />
+                                        <Ionicons name="sparkles-outline" size={44} color="#3B82F6" style={{ marginBottom: 16 }} />
                                         <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-base">
                                             {t('searchHindustanServices')}
                                         </Text>

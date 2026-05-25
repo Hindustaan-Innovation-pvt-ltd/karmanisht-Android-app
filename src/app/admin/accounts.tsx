@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-    View, Text, ScrollView, TouchableOpacity, 
+import {
+    View, Text, ScrollView, TouchableOpacity,
     TextInput, ActivityIndicator, Alert, Modal, Platform, RefreshControl,
     Image
 } from 'react-native';
@@ -73,12 +73,12 @@ interface SelectedUserType {
 }
 
 // Safe cross-platform shadow styles
-const shadowSm = Platform.OS === 'web' 
-    ? { boxShadow: '0 1px 2px rgba(0,0,0,0.05)' } 
+const shadowSm = Platform.OS === 'web'
+    ? { boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
     : { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 };
 
-const shadow2xl = Platform.OS === 'web' 
-    ? { boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' } 
+const shadow2xl = Platform.OS === 'web'
+    ? { boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }
     : { elevation: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.25, shadowRadius: 16 };
 
 export default function AdminAccountsConsole() {
@@ -87,7 +87,7 @@ export default function AdminAccountsConsole() {
     const insets = useSafeAreaInsets();
     const [userType, setUserType] = useState<UserType>('consumer');
     const [searchQuery, setSearchQuery] = useState('');
-    
+
     // Data states
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -138,7 +138,7 @@ export default function AdminAccountsConsole() {
     const toggleUserField = async (userId: string, type: UserType, field: string, currentValue: boolean) => {
         const tableName = type === 'consumer' ? 'users' : 'service_providers';
         const newValue = !currentValue;
-        
+
         try {
             const { error } = await insforge.database
                 .from(tableName)
@@ -163,7 +163,7 @@ export default function AdminAccountsConsole() {
         if (!selectedUser) return;
         setIsDeleting(true);
         const userId = selectedUser.id;
-        const targetType = selectedUser.type; 
+        const targetType = selectedUser.type;
         const userMobile = selectedUser.mobile;
         const userFullName = selectedUser.full_name;
 
@@ -176,14 +176,14 @@ export default function AdminAccountsConsole() {
                 // Delete unlock_transactions
                 const { error: unlocksErr } = await insforge.database.from('unlock_transactions').delete().eq('user_id', userId);
                 if (unlocksErr) throw unlocksErr;
-                
+
                 // Update deletion requests table status if one is pending
                 const { data: existingReqs, error: checkErr } = await insforge.database
                     .from('account_deletion_requests')
                     .select('id')
                     .eq('user_id', userId)
                     .eq('status', 'pending');
-                
+
                 if (!checkErr && existingReqs && existingReqs.length > 0) {
                     const { error: reqErr } = await insforge.database.from('account_deletion_requests')
                         .update({
@@ -236,7 +236,7 @@ export default function AdminAccountsConsole() {
                     .select('id')
                     .eq('user_id', userId)
                     .eq('status', 'pending');
-                
+
                 if (!checkErr && existingReqs && existingReqs.length > 0) {
                     const { error: reqErr } = await insforge.database.from('account_deletion_requests')
                         .update({
@@ -285,13 +285,13 @@ export default function AdminAccountsConsole() {
     const getFilteredAccounts = () => {
         const query = searchQuery.toLowerCase();
         if (userType === 'consumer') {
-            return consumers.filter(c => 
+            return consumers.filter(c =>
                 (c.full_name || '').toLowerCase().includes(query) ||
                 (c.mobile || '').includes(query) ||
                 (c.email || '').toLowerCase().includes(query)
             );
         } else {
-            return workers.filter(w => 
+            return workers.filter(w =>
                 (w.full_name || '').toLowerCase().includes(query) ||
                 (w.business_name || '').toLowerCase().includes(query) ||
                 (w.mobile || '').includes(query) ||
@@ -311,7 +311,7 @@ export default function AdminAccountsConsole() {
             {/* Header */}
             <View className={`pt-4 pb-5 px-6 flex-row items-center justify-between border-b ${isDark ? 'border-slate-900 bg-slate-950' : 'border-slate-200 bg-white'}`}>
                 <View className="flex-row items-center">
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => router.back()}
                         className={`w-12 h-12 rounded-2xl items-center justify-center mr-3 ${isDark ? 'bg-slate-900' : 'bg-slate-100'}`}
                     >
@@ -322,7 +322,7 @@ export default function AdminAccountsConsole() {
                         <Text className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Global Admin</Text>
                     </View>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => fetchAccountsData(true)}
                     className={`w-12 h-12 rounded-2xl items-center justify-center ${isDark ? 'bg-slate-900' : 'bg-slate-100'}`}
                 >
@@ -333,7 +333,7 @@ export default function AdminAccountsConsole() {
             <View className="flex-1 px-5 pt-5">
                 {/* Toggle Segment Selector */}
                 <View className="flex-row p-1.5 rounded-2xl mb-4 gap-1.5 border" style={isDark ? { backgroundColor: 'rgba(15, 23, 42, 0.4)', borderColor: 'rgba(30, 41, 59, 0.8)' } : { backgroundColor: 'rgba(226, 232, 240, 0.4)', borderColor: 'rgba(226, 232, 240, 0.8)' }}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => setUserType('consumer')}
                         className="flex-1 rounded-xl overflow-hidden active:scale-[0.98]"
                     >
@@ -353,7 +353,7 @@ export default function AdminAccountsConsole() {
                             </View>
                         )}
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => setUserType('worker')}
                         className="flex-1 rounded-xl overflow-hidden active:scale-[0.98]"
                     >
@@ -378,7 +378,7 @@ export default function AdminAccountsConsole() {
                 {/* Modernized Search Bar */}
                 <View className={`flex-row items-center px-4 py-3 rounded-2xl mb-4 border ${searchBgClass}`}>
                     <Feather name="search" size={18} color="#64748B" />
-                    <TextInput 
+                    <TextInput
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         placeholder="Search by name, business or mobile..."
@@ -393,8 +393,8 @@ export default function AdminAccountsConsole() {
                         <Text className="text-xs font-bold text-slate-500 mt-4 tracking-widest uppercase">Loading accounts...</Text>
                     </View>
                 ) : (
-                    <ScrollView 
-                        className="flex-1" 
+                    <ScrollView
+                        className="flex-1"
                         showsVerticalScrollIndicator={false}
                         refreshControl={
                             <RefreshControl refreshing={refreshing} onRefresh={() => fetchAccountsData(true)} colors={['#6366F1']} />
@@ -413,17 +413,17 @@ export default function AdminAccountsConsole() {
                                 const gradientColors = avatarGradients[nameHash % avatarGradients.length];
 
                                 return (
-                                    <View 
-                                        key={userObj.id} 
+                                    <View
+                                        key={userObj.id}
                                         className={`p-5 rounded-[24px] mb-4 border ${cardBgClass}`}
                                         style={shadowSm}
                                     >
                                         <View className="flex-row items-center justify-between mb-4">
                                             <View className="flex-row items-center flex-1 pr-2">
                                                 {hasImage ? (
-                                                    <Image 
-                                                        source={{ uri: userObj.profile_image! }} 
-                                                        className="w-12 h-12 rounded-full mr-3.5" 
+                                                    <Image
+                                                        source={{ uri: userObj.profile_image! }}
+                                                        className="w-12 h-12 rounded-lg mr-3"
                                                     />
                                                 ) : (
                                                     <LinearGradient
@@ -435,7 +435,7 @@ export default function AdminAccountsConsole() {
                                                         <Text className="text-white font-extrabold text-sm tracking-wider">{initials}</Text>
                                                     </LinearGradient>
                                                 )}
-                                                
+
                                                 <View className="flex-1">
                                                     <Text className={`text-base font-extrabold tracking-tight ${textMainClass}`}>
                                                         {userObj.full_name || 'Anonymous User'}
@@ -451,7 +451,7 @@ export default function AdminAccountsConsole() {
                                                 </View>
                                             </View>
 
-                                            <TouchableOpacity 
+                                            <TouchableOpacity
                                                 onPress={() => {
                                                     setSelectedUser({
                                                         id: userObj.id,
@@ -470,10 +470,10 @@ export default function AdminAccountsConsole() {
 
                                         {userType === 'worker' && userObj.business_name && (
                                             <View className={`flex-row items-center px-3.5 py-2.5 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/40' : 'bg-slate-50'}`}>
-                                                 <Feather name="briefcase" size={12} color="#6366F1" />
-                                                 <Text className={`text-xs font-bold ml-2.5 ${textMainClass}`}>
-                                                     {userObj.business_name}
-                                                 </Text>
+                                                <Feather name="briefcase" size={12} color="#6366F1" />
+                                                <Text className={`text-xs font-bold ml-2.5 ${textMainClass}`}>
+                                                    {userObj.business_name}
+                                                </Text>
                                             </View>
                                         )}
 
@@ -483,19 +483,18 @@ export default function AdminAccountsConsole() {
                                                 <Text className="text-[10px] font-bold text-slate-400">
                                                     Joined: {new Date(userObj.created_at).toLocaleDateString()}
                                                 </Text>
-                                                
-                                                <TouchableOpacity 
+
+                                                <TouchableOpacity
                                                     onPress={() => toggleUserField(userObj.id, 'consumer', 'is_active', userObj.is_active !== false)}
                                                     className="px-3.5 py-2 rounded-xl border flex-row items-center active:scale-[0.97]"
-                                                    style={{ 
+                                                    style={{
                                                         backgroundColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
                                                         borderColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'
                                                     }}
                                                 >
                                                     <Feather name={userObj.is_active !== false ? "check-circle" : "slash"} size={11} color={userObj.is_active !== false ? "#16A34A" : "#EF4444"} />
-                                                    <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
-                                                        userObj.is_active !== false ? 'text-green-600 dark:text-green-400' : 'text-red-500'
-                                                    }`}>
+                                                    <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${userObj.is_active !== false ? 'text-green-600 dark:text-green-400' : 'text-red-500'
+                                                        }`}>
                                                         {userObj.is_active !== false ? 'Active' : 'Suspended'}
                                                     </Text>
                                                 </TouchableOpacity>
@@ -513,52 +512,49 @@ export default function AdminAccountsConsole() {
 
                                                 <View className="flex-row flex-wrap items-center gap-2">
                                                     {/* Active status */}
-                                                    <TouchableOpacity 
+                                                    <TouchableOpacity
                                                         onPress={() => toggleUserField(userObj.id, 'worker', 'is_active', userObj.is_active !== false)}
                                                         className="px-3 py-2 rounded-xl border flex-row items-center active:scale-[0.97]"
-                                                        style={{ 
+                                                        style={{
                                                             backgroundColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)',
                                                             borderColor: userObj.is_active !== false ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'
                                                         }}
                                                     >
                                                         <Feather name={userObj.is_active !== false ? "check-circle" : "slash"} size={11} color={userObj.is_active !== false ? "#16A34A" : "#EF4444"} />
-                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
-                                                            userObj.is_active !== false ? 'text-green-600 dark:text-green-400' : 'text-red-500'
-                                                        }`}>
+                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${userObj.is_active !== false ? 'text-green-600 dark:text-green-400' : 'text-red-500'
+                                                            }`}>
                                                             {userObj.is_active !== false ? 'Active' : 'Suspended'}
                                                         </Text>
                                                     </TouchableOpacity>
 
                                                     {/* Verified status */}
-                                                    <TouchableOpacity 
+                                                    <TouchableOpacity
                                                         onPress={() => toggleUserField(userObj.id, 'worker', 'is_verified', userObj.is_verified === true)}
                                                         className="px-3 py-2 rounded-xl border flex-row items-center active:scale-[0.97]"
-                                                        style={{ 
+                                                        style={{
                                                             backgroundColor: userObj.is_verified === true ? 'rgba(99, 102, 241, 0.08)' : 'rgba(100, 116, 139, 0.08)',
                                                             borderColor: userObj.is_verified === true ? 'rgba(99, 102, 241, 0.15)' : 'rgba(100, 116, 139, 0.15)'
                                                         }}
                                                     >
                                                         <Feather name="award" size={11} color={userObj.is_verified === true ? "#4F46E5" : "#64748B"} />
-                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
-                                                            userObj.is_verified === true ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'
-                                                        }`}>
+                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${userObj.is_verified === true ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'
+                                                            }`}>
                                                             Verified
                                                         </Text>
                                                     </TouchableOpacity>
 
                                                     {/* KYC status */}
-                                                    <TouchableOpacity 
+                                                    <TouchableOpacity
                                                         onPress={() => toggleUserField(userObj.id, 'worker', 'is_kyc_verified', userObj.is_kyc_verified === true)}
                                                         className="px-3 py-2 rounded-xl border flex-row items-center active:scale-[0.97]"
-                                                        style={{ 
+                                                        style={{
                                                             backgroundColor: userObj.is_kyc_verified === true ? 'rgba(14, 165, 233, 0.08)' : 'rgba(100, 116, 139, 0.08)',
                                                             borderColor: userObj.is_kyc_verified === true ? 'rgba(14, 165, 233, 0.15)' : 'rgba(100, 116, 139, 0.15)'
                                                         }}
                                                     >
                                                         <Feather name="shield" size={11} color={userObj.is_kyc_verified === true ? "#0284C7" : "#64748B"} />
-                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${
-                                                            userObj.is_kyc_verified === true ? 'text-sky-600 dark:text-sky-400' : 'text-slate-500'
-                                                        }`}>
+                                                        <Text className={`text-[9px] font-black uppercase tracking-wider ml-1.5 ${userObj.is_kyc_verified === true ? 'text-sky-600 dark:text-sky-400' : 'text-slate-500'
+                                                            }`}>
                                                             KYC
                                                         </Text>
                                                     </TouchableOpacity>
@@ -585,7 +581,7 @@ export default function AdminAccountsConsole() {
                     <View className={`w-full p-6 rounded-[32px] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} style={shadow2xl}>
                         <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
                             <Text className={`text-xl font-black tracking-tight ${textMainClass}`}>Confirm Cascaded Removal</Text>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={() => {
                                     setDeleteModalVisible(false);
                                     setSelectedUser(null);
@@ -602,7 +598,7 @@ export default function AdminAccountsConsole() {
                                 <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Account Profile</Text>
                                 <Text className="text-base font-bold text-red-500 mt-1">{selectedUser.full_name || 'Anonymous User'}</Text>
                                 <Text className="text-xs font-semibold text-red-400 mt-0.5">Mobile ID: {selectedUser.mobile}</Text>
-                                
+
                                 <View className="mt-3 pt-3 border-t" style={{ borderTopColor: 'rgba(244, 63, 94, 0.1)' }}>
                                     <Text className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase tracking-wider">
                                         ⚠️ CRITICAL: Cascading removal deletes all service listings, reviews, unlocks, and telemetry.
@@ -612,7 +608,7 @@ export default function AdminAccountsConsole() {
                         )}
 
                         <Text className={`text-xs font-bold mb-2 ${textSubClass}`}>Audit Remarks / Reason:</Text>
-                        <TextInput 
+                        <TextInput
                             value={deletionReason}
                             onChangeText={setDeletionReason}
                             placeholder="State reason (e.g. Account Deletion Request, Violating Terms)..."
@@ -628,7 +624,7 @@ export default function AdminAccountsConsole() {
                             <ActivityIndicator size="small" color="#EF4444" />
                         ) : (
                             <View className="flex-row gap-3">
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={() => {
                                         setDeleteModalVisible(false);
                                         setSelectedUser(null);
@@ -637,7 +633,7 @@ export default function AdminAccountsConsole() {
                                 >
                                     <Text className={`text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Cancel</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={performDeletion}
                                     className="flex-1 bg-red-600 py-4 rounded-2xl items-center"
                                     style={Platform.OS === 'web' ? { boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.2)' } : { elevation: 6, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 4 }}

@@ -167,10 +167,10 @@ export default function OverridesConfigScreen() {
     const cardBgClass = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100';
     const textMainClass = isDark ? 'text-slate-100' : 'text-slate-900';
     const borderClass = isDark ? 'border-slate-800' : 'border-slate-200';
-    const inputBgClass = isDark ? 'bg-slate-955 text-slate-100 border-slate-850' : 'bg-slate-550/5 text-slate-800 border-slate-200';
+    const inputBgClass = isDark ? 'bg-slate-905 text-slate-100 border-slate-800' : 'bg-slate-500/5 text-slate-800 border-slate-200';
 
     return (
-        <View className={`flex-1 ${isDark ? 'bg-slate-955' : 'bg-slate-50'}`} style={{ paddingTop: insets.top }}>
+        <View className={`flex-1 ${isDark ? 'bg-slate-950' : 'bg-slate-550/5'}`} style={{ paddingTop: insets.top }}>
             {/* Header */}
             <View className={`pt-4 pb-5 px-6 flex-row items-center justify-between border-b ${isDark ? 'border-slate-900 bg-slate-950' : 'border-slate-200 bg-white'}`}>
                 <View className="flex-row items-center">
@@ -256,7 +256,7 @@ export default function OverridesConfigScreen() {
                                 <View className="flex-row gap-3">
                                     <View className="flex-1">
                                         <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Unlock Price (INR)</Text>
-                                        <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-850">
+                                        <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                                             <Text className="text-slate-400 font-bold mr-1 text-xs">₹</Text>
                                             <TextInput
                                                 value={overrideUnlockPrice}
@@ -268,7 +268,7 @@ export default function OverridesConfigScreen() {
                                     </View>
                                     <View className="flex-1">
                                         <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Duration</Text>
-                                        <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-850">
+                                        <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                                             <TextInput
                                                 value={overrideDuration}
                                                 onChangeText={setOverrideDuration}
@@ -283,7 +283,7 @@ export default function OverridesConfigScreen() {
                                 <View className="flex-row gap-3">
                                     <View className="flex-1">
                                         <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Basic Subscription</Text>
-                                        <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-850">
+                                        <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                                             <Text className="text-slate-400 font-bold mr-1 text-xs">₹</Text>
                                             <TextInput
                                                 value={overrideBasicFee}
@@ -295,7 +295,7 @@ export default function OverridesConfigScreen() {
                                     </View>
                                     <View className="flex-1">
                                         <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Premium Subscription</Text>
-                                        <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-850">
+                                        <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                                             <Text className="text-slate-400 font-bold mr-1 text-xs">₹</Text>
                                             <TextInput
                                                 value={overridePremiumFee}
@@ -332,8 +332,8 @@ export default function OverridesConfigScreen() {
                         <Text className={`text-xs font-black uppercase tracking-wider text-slate-400`}>Existing Regional Overrides ({overridesList.length})</Text>
                         {overridesList.length === 0 ? (
                             <View className="py-12 items-center justify-center">
-                                <Feather name="layers" size={36} color="#64748B" className="opacity-50" />
-                                <Text className="text-xs font-bold text-slate-450 italic mt-2">No regional overrides configured yet.</Text>
+                                <Feather name="layers" size={36} color="#64748B" style={{ opacity: 0.5 }} />
+                                <Text className="text-xs font-bold text-slate-400 italic mt-2">No regional overrides configured yet.</Text>
                             </View>
                         ) : (
                             <View className="gap-3">
@@ -350,23 +350,23 @@ export default function OverridesConfigScreen() {
                                             <View className="gap-1.5 flex-1 mr-2">
                                                 <View className="flex-row items-center gap-1.5 flex-wrap">
                                                     <Text className={`text-sm font-medium ${textMainClass}`}>{cObj?.name || 'City'}</Text>
-                                                    <Text className="text-xs text-slate-450">|</Text>
+                                                    <Text className="text-xs text-slate-400">|</Text>
                                                     <Text className="text-xs font-bold text-indigo-500">{catObj?.name || 'Category'}</Text>
                                                 </View>
 
                                                 <View className="flex-row flex-wrap gap-2 mt-1.5">
-                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-850">
-                                                        <Text className={`text-[10px] font-semibold text-slate-455`}>
+                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-800">
+                                                        <Text className={`text-[10px] font-semibold text-slate-400`}>
                                                             Unlock: <Text className="font-bold text-indigo-650 dark:text-indigo-400">₹{ov.unlock_price}</Text> ({ov.unlock_duration_hours}h)
                                                         </Text>
                                                     </View>
-                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-850">
-                                                        <Text className={`text-[10px] font-semibold text-slate-455`}>
+                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-800">
+                                                        <Text className={`text-[10px] font-semibold text-slate-400`}>
                                                             Basic Sub: <Text className="font-bold text-indigo-650 dark:text-indigo-400">₹{ov.provider_basic_fee}</Text>
                                                         </Text>
                                                     </View>
-                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-850">
-                                                        <Text className={`text-[10px] font-semibold text-slate-455`}>
+                                                    <View className="bg-slate-100 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-800">
+                                                        <Text className={`text-[10px] font-semibold text-slate-400`}>
                                                             Premium Sub: <Text className="font-bold text-indigo-650 dark:text-indigo-400">₹{ov.provider_premium_fee}</Text>
                                                         </Text>
                                                     </View>
@@ -393,8 +393,8 @@ export default function OverridesConfigScreen() {
             <Modal visible={citySelectModalVisible} transparent animationType="slide" onRequestClose={() => setCitySelectModalVisible(false)}>
                 <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
                     <View className={`h-[60%] p-6 rounded-t-[36px] border-t ${cardBgClass}`} style={shadow2xl}>
-                        <View className="w-12 h-1.5 rounded-full self-center mb-6 bg-slate-200 dark:bg-slate-850" />
-                        <View className="flex-row justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-850">
+                        <View className="w-12 h-1.5 rounded-full self-center mb-6 bg-slate-200 dark:bg-slate-800" />
+                        <View className="flex-row justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
                             <Text className={`text-lg font-black tracking-tight ${textMainClass}`}>Select Target City</Text>
                             <TouchableOpacity onPress={() => setCitySelectModalVisible(false)} className="w-8 h-8 rounded-full items-center justify-center bg-slate-100 dark:bg-slate-800">
                                 <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />
@@ -426,8 +426,8 @@ export default function OverridesConfigScreen() {
             <Modal visible={categorySelectModalVisible} transparent animationType="slide" onRequestClose={() => setCategorySelectModalVisible(false)}>
                 <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
                     <View className={`h-[60%] p-6 rounded-t-[36px] border-t ${cardBgClass}`} style={shadow2xl}>
-                        <View className="w-12 h-1.5 rounded-full self-center mb-6 bg-slate-200 dark:bg-slate-850" />
-                        <View className="flex-row justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-850">
+                        <View className="w-12 h-1.5 rounded-full self-center mb-6 bg-slate-200 dark:bg-slate-800" />
+                        <View className="flex-row justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
                             <Text className={`text-lg font-black tracking-tight ${textMainClass}`}>Select Target Category</Text>
                             <TouchableOpacity onPress={() => setCategorySelectModalVisible(false)} className="w-8 h-8 rounded-full items-center justify-center bg-slate-100 dark:bg-slate-800">
                                 <Ionicons name="close" size={20} color={isDark ? '#94A3B8' : '#64748B'} />

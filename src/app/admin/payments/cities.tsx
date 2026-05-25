@@ -147,12 +147,12 @@ export default function CitiesConfigScreen() {
     const cardBgClass = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100';
     const textMainClass = isDark ? 'text-slate-100' : 'text-slate-900';
     const borderClass = isDark ? 'border-slate-800' : 'border-slate-200';
-    const inputBgClass = isDark ? 'bg-slate-955 text-slate-100 border-slate-850' : 'bg-slate-550/5 text-slate-800 border-slate-200';
+    const inputBgClass = isDark ? 'bg-slate-900 text-slate-100 border-slate-800' : 'bg-slate-500/5 text-slate-800 border-slate-200';
 
     return (
-        <View className={`flex-1 ${isDark ? 'bg-slate-955' : 'bg-slate-50'}`} style={{ paddingTop: insets.top }}>
+        <View className={`flex-1 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`} style={{ paddingTop: insets.top }}>
             {/* Header */}
-            <View className={`pt-4 pb-5 px-6 flex-row items-center justify-between border-b ${isDark ? 'border-slate-900 bg-slate-955' : 'border-slate-200 bg-white'}`}>
+            <View className={`pt-4 pb-5 px-6 flex-row items-center justify-between border-b ${isDark ? 'border-slate-900 bg-slate-950' : 'border-slate-200 bg-white'}`}>
                 <View className="flex-row items-center">
                     <TouchableOpacity
                         onPress={() => router.back()}

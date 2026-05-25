@@ -106,7 +106,10 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="categories"
         options={{
-          href: null,
+          title: t('adminCategoriesTab', 'Categories'),
+          tabBarIcon: ({ color }) => (
+            <Feather name="grid" size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen

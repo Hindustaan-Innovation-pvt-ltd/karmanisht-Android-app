@@ -12,6 +12,13 @@ import { useTheme } from '@/lib/theme';
 import { useAppStore } from '@/lib/store';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withTiming,
+    interpolateColor
+} from 'react-native-reanimated';
 const shadowSm = Platform.OS === 'web'
     ? { boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
     : { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 };
@@ -22,6 +29,70 @@ export default function AdminDashboard() {
     const { signOut } = useAppStore();
     const { isDark } = useTheme();
     const insets = useSafeAreaInsets();
+
+    // Breathing Background Micro-animation Progress
+    const colorProgress = useSharedValue(0);
+    useEffect(() => {
+        colorProgress.value = withRepeat(
+            withTiming(1, { duration: 6000 }),
+            -1,
+            true
+        );
+    }, []);
+
+    const animatedBgStyle = useAnimatedStyle(() => {
+        const bgColor = interpolateColor(
+            colorProgress.value,
+            [0, 1],
+            isDark ? ['#030712', '#0f172a'] : ['#f8fafc', '#f1f5f9']
+        );
+        return {
+            backgroundColor: bgColor
+        };
+    });
+
+    // Drifting Glowing Orbs Micro-animations
+    const orb1X = useSharedValue(0);
+    const orb1Y = useSharedValue(0);
+    const orb2X = useSharedValue(0);
+    const orb2Y = useSharedValue(0);
+
+    useEffect(() => {
+        orb1X.value = withRepeat(
+            withTiming(45, { duration: 11000 }),
+            -1,
+            true
+        );
+        orb1Y.value = withRepeat(
+            withTiming(35, { duration: 13000 }),
+            -1,
+            true
+        );
+        orb2X.value = withRepeat(
+            withTiming(-45, { duration: 15000 }),
+            -1,
+            true
+        );
+        orb2Y.value = withRepeat(
+            withTiming(-35, { duration: 12000 }),
+            -1,
+            true
+        );
+    }, []);
+
+    const orb1Style = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: orb1X.value },
+            { translateY: orb1Y.value }
+        ]
+    }));
+
+    const orb2Style = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: orb2X.value },
+            { translateY: orb2Y.value }
+        ]
+    }));
 
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -127,7 +198,39 @@ export default function AdminDashboard() {
     const kycWorkersPercent = stats.workersCount > 0 ? Math.round((stats.kycWorkers / stats.workersCount) * 100) : 0;
 
     return (
-        <View className={`flex-1 ${bgClass}`} style={{ paddingTop: insets.top }}>
+        <Animated.View className="flex-1" style={[{ paddingTop: insets.top }, animatedBgStyle]}>
+            {/* Elegant Floating Glowing Orbs in Background */}
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', zIndex: 0 }} pointerEvents="none">
+                <Animated.View
+                    style={[
+                        {
+                            position: 'absolute',
+                            top: -100,
+                            right: -100,
+                            width: 320,
+                            height: 320,
+                            borderRadius: 160,
+                            backgroundColor: isDark ? 'rgba(99, 102, 241, 0.04)' : 'rgba(99, 102, 241, 0.08)',
+                        },
+                        orb1Style
+                    ]}
+                />
+                <Animated.View
+                    style={[
+                        {
+                            position: 'absolute',
+                            bottom: -100,
+                            left: -100,
+                            width: 340,
+                            height: 340,
+                            borderRadius: 170,
+                            backgroundColor: isDark ? 'rgba(14, 165, 233, 0.03)' : 'rgba(14, 165, 233, 0.06)',
+                        },
+                        orb2Style
+                    ]}
+                />
+            </View>
+
             {/* Header */}
             <View className={`pt-4 pb-5 px-6 flex-row items-center justify-between border-b ${isDark ? 'border-slate-900 bg-slate-950' : 'border-slate-200 bg-white'}`}>
                 <View className="flex-row items-center">
@@ -310,95 +413,95 @@ export default function AdminDashboard() {
                         {/* Users Accounts Navigation */}
                         <TouchableOpacity
                             onPress={() => router.push('/admin/accounts')}
-                            className={`p-4 rounded-2xl flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
+                            className={`p-5 rounded-[24px] flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
                             style={shadowSm}
                         >
-                            <View className="flex-row items-center">
-                                <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-indigo-500/10">
-                                    <Feather name="users" size={18} color="#6366F1" />
+                            <View className="flex-row items-center flex-1 mr-4">
+                                <View className="w-12 h-12 rounded-[18px] items-center justify-center mr-4 bg-indigo-500/10">
+                                    <Feather name="users" size={22} color="#6366F1" />
                                 </View>
-                                <View className="flex-1 mr-2">
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminUserAccountsTitle', 'User Accounts Console')}</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminUserAccountsDesc', 'Manage, verify, suspension, and search consumers/workers')}</Text>
+                                <View className="flex-1">
+                                    <Text className={`text-base font-black tracking-tight mb-0.5 ${textMainClass}`}>{t('adminUserAccountsTitle', 'User Accounts Console')}</Text>
+                                    <Text className="text-[11px] font-bold text-slate-400 dark:text-slate-500" numberOfLines={2}>{t('adminUserAccountsDesc', 'Manage, verify, suspension, and search consumers/workers')}</Text>
                                 </View>
-                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
+                            <Feather name="chevron-right" size={20} color="#6366F1" />
                         </TouchableOpacity>
 
                         {/* Skill Taxonomy Grid */}
                         <TouchableOpacity
                             onPress={() => router.push('/admin/categories')}
-                            className={`p-4 rounded-2xl flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
+                            className={`p-5 rounded-[24px] flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
                             style={shadowSm}
                         >
-                            <View className="flex-row items-center">
-                                <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-purple-500/10">
-                                    <Feather name="grid" size={18} color="#A855F7" />
+                            <View className="flex-row items-center flex-1 mr-4">
+                                <View className="w-12 h-12 rounded-[18px] items-center justify-center mr-4 bg-purple-500/10">
+                                    <Feather name="grid" size={22} color="#A855F7" />
                                 </View>
-                                <View className="flex-1 mr-2">
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminCategoriesTagsTitle', 'Service Categories & Tags')}</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminCategoriesTagsDesc', 'Configure visual category items and sub specialty taxonomies')}</Text>
+                                <View className="flex-1">
+                                    <Text className={`text-base font-black tracking-tight mb-0.5 ${textMainClass}`}>{t('adminCategoriesTagsTitle', 'Service Categories & Tags')}</Text>
+                                    <Text className="text-[11px] font-bold text-slate-400 dark:text-slate-500" numberOfLines={2}>{t('adminCategoriesTagsDesc', 'Configure visual category items and sub specialty taxonomies')}</Text>
                                 </View>
-                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
+                            <Feather name="chevron-right" size={20} color="#6366F1" />
                         </TouchableOpacity>
 
                         {/* Payments Console */}
                         <TouchableOpacity
                             onPress={() => router.push('/admin/payments')}
-                            className={`p-4 rounded-2xl flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
+                            className={`p-5 rounded-[24px] flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
                             style={shadowSm}
                         >
-                            <View className="flex-row items-center">
-                                <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-sky-500/10">
-                                    <Feather name="credit-card" size={18} color="#0EA5E9" />
+                            <View className="flex-row items-center flex-1 mr-4">
+                                <View className="w-12 h-12 rounded-[18px] items-center justify-center mr-4 bg-sky-500/10">
+                                    <Feather name="credit-card" size={22} color="#0EA5E9" />
                                 </View>
-                                <View className="flex-1 mr-2">
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminPaymentsConsoleTitle', 'Payments Console')}</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminPaymentsConsoleDesc', 'Configure tier defaults, gateways, regional overrides, and ledger')}</Text>
+                                <View className="flex-1">
+                                    <Text className={`text-base font-black tracking-tight mb-0.5 ${textMainClass}`}>{t('adminPaymentsConsoleTitle', 'Payments Console')}</Text>
+                                    <Text className="text-[11px] font-bold text-slate-400 dark:text-slate-500" numberOfLines={2}>{t('adminPaymentsConsoleDesc', 'Configure tier defaults, gateways, regional overrides, and ledger')}</Text>
                                 </View>
-                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
+                            <Feather name="chevron-right" size={20} color="#6366F1" />
                         </TouchableOpacity>
 
                         {/* Deletion Requests */}
                         <TouchableOpacity
                             onPress={() => router.push('/admin/requests')}
-                            className={`p-4 rounded-2xl flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
+                            className={`p-5 rounded-[24px] flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
                             style={shadowSm}
                         >
-                            <View className="flex-row items-center">
-                                <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-rose-500/10">
-                                    <Feather name="alert-triangle" size={18} color="#F43F5E" />
+                            <View className="flex-row items-center flex-1 mr-4">
+                                <View className="w-12 h-12 rounded-[18px] items-center justify-center mr-4 bg-rose-500/10">
+                                    <Feather name="alert-triangle" size={22} color="#F43F5E" />
                                 </View>
-                                <View className="flex-1 mr-2">
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminDeletionRequestsTitle', 'Deletion Requests')}</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminDeletionRequestsDesc', 'Review user complaints and process cascading account purges')}</Text>
+                                <View className="flex-1">
+                                    <Text className={`text-base font-black tracking-tight mb-0.5 ${textMainClass}`}>{t('adminDeletionRequestsTitle', 'Deletion Requests')}</Text>
+                                    <Text className="text-[11px] font-bold text-slate-400 dark:text-slate-500" numberOfLines={2}>{t('adminDeletionRequestsDesc', 'Review user complaints and process cascading account purges')}</Text>
                                 </View>
-                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
+                            <Feather name="chevron-right" size={20} color="#6366F1" />
                         </TouchableOpacity>
 
                         {/* Auditing */}
                         <TouchableOpacity
                             onPress={() => router.push('/admin/audit')}
-                            className={`p-4 rounded-2xl flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
+                            className={`p-5 rounded-[24px] flex-row items-center justify-between border ${cardBgClass} active:scale-98`}
                             style={shadowSm}
                         >
-                            <View className="flex-row items-center">
-                                <View className="w-10 h-10 rounded-xl items-center justify-center mr-3.5 bg-green-500/10">
-                                    <Feather name="shield" size={18} color="#22C55E" />
+                            <View className="flex-row items-center flex-1 mr-4">
+                                <View className="w-12 h-12 rounded-[18px] items-center justify-center mr-4 bg-green-500/10">
+                                    <Feather name="shield" size={22} color="#22C55E" />
                                 </View>
-                                <View className="flex-1 mr-2">
-                                    <Text className={`text-sm font-bold ${textMainClass}`}>{t('adminAuditTrailsTitle', 'Administrative Audit Trails')}</Text>
-                                    <Text className="text-[10px] font-medium text-slate-400" numberOfLines={1}>{t('adminAuditTrailsDesc', 'Review audit logs and compliance records')}</Text>
+                                <View className="flex-1">
+                                    <Text className={`text-base font-black tracking-tight mb-0.5 ${textMainClass}`}>{t('adminAuditTrailsTitle', 'Administrative Audit Trails')}</Text>
+                                    <Text className="text-[11px] font-bold text-slate-400 dark:text-slate-500" numberOfLines={2}>{t('adminAuditTrailsDesc', 'Review audit logs and compliance records')}</Text>
                                 </View>
-                                <Feather name="chevron-right" size={18} color="#94A3B8" />
                             </View>
+                            <Feather name="chevron-right" size={20} color="#6366F1" />
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
             )}
-        </View>
+        </Animated.View>
     );
 }

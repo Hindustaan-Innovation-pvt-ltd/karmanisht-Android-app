@@ -121,7 +121,7 @@ export default function DefaultsConfigScreen() {
     const borderClass = isDark ? 'border-slate-800' : 'border-slate-200';
 
     return (
-        <View className={`flex-1 ${isDark ? 'bg-slate-955' : 'bg-slate-50'}`} style={{ paddingTop: insets.top }}>
+        <View className={`flex-1 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`} style={{ paddingTop: insets.top }}>
             {/* Header */}
             <View className={`pt-4 pb-5 px-6 flex-row items-center justify-between border-b ${isDark ? 'border-slate-900 bg-slate-950' : 'border-slate-200 bg-white'}`}>
                 <View className="flex-row items-center">
@@ -171,7 +171,7 @@ export default function DefaultsConfigScreen() {
                             <View className="gap-4">
                                 <View>
                                     <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Default Unlock Duration</Text>
-                                    <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-850">
+                                    <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                                         <TextInput
                                             value={durationHours}
                                             onChangeText={setDurationHours}
@@ -191,8 +191,8 @@ export default function DefaultsConfigScreen() {
                                             { label: 'Tier 3 Town', value: priceTier3, setter: setPriceTier3, color: 'border-emerald-500/30' }
                                         ].map((tier, idx) => (
                                             <View key={idx} className="flex-1">
-                                                <Text className="text-[9px] font-bold text-slate-455 uppercase mb-1.5">{tier.label}</Text>
-                                                <View className={`flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-955 border-slate-200 dark:border-slate-850 ${tier.color}`}>
+                                                <Text className="text-[9px] font-bold text-slate-400 uppercase mb-1.5">{tier.label}</Text>
+                                                <View className={`flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 ${tier.color}`}>
                                                     <Text className="text-slate-400 font-bold mr-1 text-xs">₹</Text>
                                                     <TextInput
                                                         value={tier.value}
@@ -215,8 +215,8 @@ export default function DefaultsConfigScreen() {
                                             { label: 'Tier 3 Town', value: basicTier3, setter: setBasicTier3 }
                                         ].map((tier, idx) => (
                                             <View key={idx} className="flex-1">
-                                                <Text className="text-[9px] font-bold text-slate-455 uppercase mb-1.5">{tier.label}</Text>
-                                                <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-955 border-slate-200 dark:border-slate-850">
+                                                <Text className="text-[9px] font-bold text-slate-400 uppercase mb-1.5">{tier.label}</Text>
+                                                <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                                                     <Text className="text-slate-400 font-bold mr-1 text-xs">₹</Text>
                                                     <TextInput
                                                         value={tier.value}
@@ -239,8 +239,8 @@ export default function DefaultsConfigScreen() {
                                             { label: 'Tier 3 Town', value: premTier3, setter: setPremTier3 }
                                         ].map((tier, idx) => (
                                             <View key={idx} className="flex-1">
-                                                <Text className="text-[9px] font-bold text-slate-455 uppercase mb-1.5">{tier.label}</Text>
-                                                <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-955 border-slate-200 dark:border-slate-850">
+                                                <Text className="text-[9px] font-bold text-slate-400 uppercase mb-1.5">{tier.label}</Text>
+                                                <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-955 border-slate-200 dark:border-slate-800">
                                                     <Text className="text-slate-400 font-bold mr-1 text-xs">₹</Text>
                                                     <TextInput
                                                         value={tier.value}
@@ -266,15 +266,15 @@ export default function DefaultsConfigScreen() {
                                     Gateway Credentials
                                 </Text>
                             </View>
-                            <Text className="text-[10px] font-medium text-slate-450 mb-4 leading-normal">
+                            <Text className="text-[10px] font-medium text-slate-400 mb-4 leading-normal">
                                 Enter active system keys for Razorpay, Stripe, and Paytm below. Active routing configurations will be set by corporate administration.
                             </Text>
 
                             <View className="gap-4">
                                 <View>
                                     <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Razorpay Key ID</Text>
-                                    <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-955 border-slate-200 dark:border-slate-850">
-                                        <MaterialCommunityIcons name="api" size={16} color="#64748B" className="mr-2" />
+                                    <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                                        <MaterialCommunityIcons name="api" size={16} color="#64748B" style={{ marginRight: 8 }} />
                                         <TextInput
                                             value={keyRazorpay}
                                             onChangeText={setKeyRazorpay}
@@ -286,8 +286,8 @@ export default function DefaultsConfigScreen() {
                                 </View>
                                 <View>
                                     <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Stripe Publishable Key</Text>
-                                    <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-955 border-slate-200 dark:border-slate-850">
-                                        <MaterialCommunityIcons name="api" size={16} color="#64748B" className="mr-2" />
+                                    <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                                        <MaterialCommunityIcons name="api" size={16} color="#64748B" style={{ marginRight: 8 }} />
                                         <TextInput
                                             value={keyStripe}
                                             onChangeText={setKeyStripe}
@@ -299,8 +299,8 @@ export default function DefaultsConfigScreen() {
                                 </View>
                                 <View>
                                     <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Paytm Merchant ID</Text>
-                                    <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-955 border-slate-200 dark:border-slate-850">
-                                        <MaterialCommunityIcons name="api" size={16} color="#64748B" className="mr-2" />
+                                    <View className="flex-row items-center border rounded-2xl px-3 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                                        <MaterialCommunityIcons name="api" size={16} color="#64748B" style={{ marginRight: 8 }} />
                                         <TextInput
                                             value={keyPaytm}
                                             onChangeText={setKeyPaytm}
