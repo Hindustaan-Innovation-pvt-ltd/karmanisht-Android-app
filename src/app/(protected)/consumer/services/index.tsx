@@ -315,7 +315,7 @@ export default function ServicesScreen() {
                 data={filteredCategories}
                 keyExtractor={(item) => item.id}
                 numColumns={3}
-                columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 20 }}
+                columnWrapperStyle={{ justifyContent: 'flex-start', paddingHorizontal: 20, gap: 12 }}
                 ListEmptyComponent={
                     isCategoriesLoading ? (
                         <View className="items-center justify-center py-16 px-5">

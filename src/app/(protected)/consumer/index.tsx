@@ -206,12 +206,12 @@ export default function ConsumerHome() {
             });
         }
     }, [userLocation]);
-     function truncate(str:string){
-        if(str.length>20){
-            return str.slice(0,20)+'...'  
+    function truncate(str: string) {
+        if (str.length > 20) {
+            return str.slice(0, 20) + '...'
         }
         return str
-     }
+    }
     // Priority: saved DB address > profile location > GPS address > fallback
     const locationName = savedAddressName || user.location || readableAddress || (userLocation ? t('locating') : "Shankar Nagar, Raipur");
 
@@ -252,7 +252,7 @@ export default function ConsumerHome() {
                 <Text className="text-2xl font-black text-gray-900 dark:text-white leading-tight">
                     {t('helloUser', 'Hello')}, {user?.name || t('guest')}!
                 </Text>
-                
+
                 {/* Search Bar */}
                 <TouchableOpacity
                     onPress={() => {
@@ -273,24 +273,62 @@ export default function ConsumerHome() {
 
             {/* Your Contacts Section */}
             <View className="py-5 px-5">
-                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-5">{t('yourContacts')}</Text>
+                <Text className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-4">{t('yourContacts')}</Text>
                 <FlatList
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     data={unlockedProviders}
                     keyExtractor={(item) => item.id}
+                    contentContainerStyle={{ paddingVertical: 4 }}
                     renderItem={({ item, index }) => <ContactCard provider={item} index={index} />}
                     ListEmptyComponent={
-                        <></>
+                        <View className="flex-row items-center bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-900/60 p-4 rounded-2xl w-full">
+                            <View className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-950/40 items-center justify-center">
+                                <Ionicons name="people-outline" size={20} color="#6366F1" />
+                            </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-xs font-black text-slate-800 dark:text-slate-200">
+                                    {t('noContactsYet', 'No Quick Contacts')}
+                                </Text>
+                                <Text className="text-[10px] font-medium text-slate-400 dark:text-slate-550 mt-0.5">
+                                    {t('unlockProvidersMsg', 'Unlock service providers to call them.')}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => router.push('/(protected)/consumer/services' as any)}
+                                className="bg-indigo-600 px-3.5 py-2 rounded-xl active:scale-95"
+                            >
+                                <Text className="text-[10px] font-black text-white uppercase tracking-wider">
+                                    {t('browse', 'Browse')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     }
                     ListFooterComponent={
-                        <TouchableOpacity
-                            onPress={() => router.push('/(protected)/consumer/services' as any)}
-                            className="w-44 h-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-[15px] items-center justify-center ml-2 shadow-sm"
-                        >
-                            <Ionicons name="add" size={40} color="#D1D5DB" />
-                            <Text className="text-sm text-gray-400 dark:text-slate-550 font-medium mt-2">{t('findMore')}</Text>
-                        </TouchableOpacity>
+                        unlockedProviders.length > 0 ? (
+                            <View className="items-center justify-start ml-2">
+                                <TouchableOpacity
+                                    onPress={() => router.push('/(protected)/consumer/services' as any)}
+                                    style={{
+                                        width: 76,
+                                        height: 76,
+                                        borderRadius: 38,
+                                        borderWidth: 2,
+                                        borderStyle: 'dashed',
+                                        borderColor: isDark ? '#334155' : '#CBD5E1',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.2)' : 'rgba(241, 245, 249, 0.4)',
+                                    }}
+                                    className="active:scale-95"
+                                >
+                                    <Ionicons name="add" size={28} color={isDark ? '#64748B' : '#94A3B8'} />
+                                </TouchableOpacity>
+                                <Text className="text-xs font-bold text-slate-400 dark:text-slate-550 mt-2 text-center">
+                                    {t('findMore')}
+                                </Text>
+                            </View>
+                        ) : null
                     }
                 />
             </View>
@@ -300,136 +338,6 @@ export default function ConsumerHome() {
             {/* Explore Services Header */}
             <View className="mt-8 px-5 mb-6 flex-row items-center justify-between h-12" onTouchStart={(e) => e.stopPropagation()}>
                 <Text className="text-xl font-bold text-gray-900 dark:text-slate-100">{t('exploreServices')}</Text>
-                <Modal
-                    visible={isSearchToggle}
-                    transparent={false}
-                    animationType="fade"
-                    onRequestClose={() => {
-                        setIsSearchToggle(false);
-                        setSearchQuery('');
-                        if (isListening) ExpoSpeechRecognitionModule.stop();
-                    }}
-                >
-                    <View className="flex-1 bg-white dark:bg-slate-950 px-6" style={{ paddingTop: topOffset }}>
-                        {/* Header Search Box */}
-                        <View className="flex-row items-center py-4 gap-3 border-b border-slate-100 dark:border-slate-900">
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setIsSearchToggle(false);
-                                    setSearchQuery('');
-                                    if (isListening) ExpoSpeechRecognitionModule.stop();
-                                }}
-                                className="w-10 h-10 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900 active:scale-95"
-                            >
-                                <Ionicons name="chevron-back" size={22} color={isDark ? '#FFFFFF' : '#000000'} />
-                            </TouchableOpacity>
-
-                            <View className="flex-1 flex-row items-center bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2 border border-slate-100 dark:border-slate-800">
-                                <Ionicons name="search" size={16} color="#94A3B8" />
-                                <TextInput
-                                    className="ml-2 flex-1 text-slate-900 dark:text-white font-semibold text-sm p-0 m-0"
-                                    placeholder={isListening ? t('listening') : t('searchServices')}
-                                    placeholderTextColor="#94A3B8"
-                                    value={searchQuery}
-                                    onChangeText={setSearchQuery}
-                                    autoFocus
-                                />
-                                {searchQuery.length > 0 && (
-                                    <TouchableOpacity onPress={() => setSearchQuery('')} className="p-0.5 mr-1">
-                                        <Ionicons name="close-circle" size={18} color="#94A3B8" />
-                                    </TouchableOpacity>
-                                )}
-                                <TouchableOpacity onPress={handleVoiceSearch} className="p-0.5">
-                                    <Ionicons
-                                        name={isListening ? "mic" : "mic-outline"}
-                                        size={20}
-                                        color={isListening ? "#EF4444" : "#94A3B8"}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        {/* List of Results */}
-                        <FlatList
-                            className="flex-1 mt-4"
-                            showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled"
-                            data={filteredCategories}
-                            keyExtractor={(item) => item.id}
-                            renderItem={({ item, index }) => {
-                                const color = getVibrantColor(item);
-                                const icon = item.icon || 'lightning-bolt';
-                                return (
-                                    <Animated.View
-                                        entering={FadeInDown.delay(index * 20).springify().damping(12)}
-                                        className="mb-3"
-                                    >
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                setIsSearchToggle(false);
-                                                router.push({
-                                                    pathname: '/(protected)/consumer/services/[id]',
-                                                    params: { id: item.id, name: item.name, color: color, icon: icon }
-                                                } as any);
-                                            }}
-                                            className="flex-row items-center bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-900/60 p-3 rounded-2xl active:scale-98"
-                                        >
-                                            <View
-                                                style={{ backgroundColor: color }}
-                                                className="w-10 h-10 rounded-xl items-center justify-center shadow-sm"
-                                            >
-                                                <SafeIcon name={icon} size={20} color="white" />
-                                            </View>
-                                            <View className="ml-4 flex-1">
-                                                <Text
-                                                    style={{ fontSize: adjustHindiFont(t(item.name), 16, 1.15) }}
-                                                    className="font-bold text-slate-900 dark:text-slate-100"
-                                                >
-                                                    {t(item.name)}
-                                                </Text>
-                                                <Text className="text-xs text-slate-400 dark:text-slate-550 font-medium mt-0.5">{t('exploreActiveProviders')}</Text>
-                                            </View>
-                                            <Ionicons name="chevron-forward" size={16} color={isDark ? '#475569' : '#CBD5E1'} />
-                                        </TouchableOpacity>
-                                    </Animated.View>
-                                );
-                            }}
-                            ListEmptyComponent={
-                                searchQuery.length > 0 ? (
-                                    <View className="items-center justify-center py-16 px-5">
-                                        <Ionicons name="search-outline" size={48} color="#EF4444" style={{ marginBottom: 16 }} />
-                                        <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-lg">
-                                            {t('noServicesFound')}
-                                        </Text>
-                                        <Text className="text-slate-400 dark:text-slate-550 text-sm mt-1.5 text-center px-4">
-                                            {t('trySearchingDifferent')}
-                                        </Text>
-                                    </View>
-                                ) : (
-                                    <View className="items-center justify-center py-16 px-5">
-                                        <Ionicons name="sparkles-outline" size={44} color="#3B82F6" style={{ marginBottom: 16 }} />
-                                        <Text className="text-slate-900 dark:text-slate-100 font-bold text-center text-base">
-                                            {t('searchHindustanServices')}
-                                        </Text>
-                                        <Text className="text-slate-400 dark:text-slate-550 text-xs mt-1.5 text-center">
-                                            {t('discoverPros')}
-                                        </Text>
-                                    </View>
-                                )
-                            }
-                        />
-                    </View>
-                </Modal>
-                <TouchableOpacity
-                    onPress={() => {
-                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                        setIsSearchToggle(!isSearchToggle);
-                    }}
-                    className="flex-row items-center rounded-xl px-4 py-2 border-2 border-gray-100 dark:border-slate-800"
-                >
-                    <Ionicons name="search" size={18} color="#9CA3AF" />
-                    <Text className="ml-2 text-gray-400 font-medium text-sm">{t('search')}</Text>
-                </TouchableOpacity>
             </View>
         </View>
     );
@@ -471,7 +379,8 @@ export default function ConsumerHome() {
                 keyExtractor={(item) => item.id}
                 numColumns={3}
                 columnWrapperStyle={{
-                    justifyContent: 'space-between', paddingHorizontal: 20
+                    justifyContent: 'flex-start', paddingHorizontal: 16,
+                    gap: 12
                 }}
                 renderItem={({ item, index }) => <ServiceCard service={item} index={index} />}
                 ListEmptyComponent={
@@ -504,35 +413,37 @@ export default function ConsumerHome() {
 const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
     const { t } = useTranslation();
     const router = useRouter();
+    const { isDark } = useTheme();
     const avatar =
         provider.profile_image ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(provider.full_name)}&background=6366F1&color=fff&size=176`;
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(provider.full_name)}&background=6366F1&color=fff&size=100`;
+
     const scale = useSharedValue(1);
-    const borderOpacity = useSharedValue(0);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
     }));
 
-    const borderStyle = useAnimatedStyle(() => ({
-        opacity: borderOpacity.value,
-    }));
-
     const handlePressIn = () => {
-        scale.value = withSpring(0.93, { damping: 18, stiffness: 220 });
-        borderOpacity.value = withSpring(1, { damping: 20, stiffness: 300 });
+        scale.value = withSpring(0.92, { damping: 15, stiffness: 200 });
     };
 
     const handlePressOut = () => {
-        scale.value = withSpring(1, { damping: 18, stiffness: 220 });
-        borderOpacity.value = withSpring(0, { damping: 20, stiffness: 300 });
+        scale.value = withSpring(1, { damping: 15, stiffness: 200 });
     };
 
-    const rating = provider.average_rating ? Number(provider.average_rating).toFixed(1) : null;
+    // Extract first name and last initial for compact layout
+    const getCompactName = (name: string) => {
+        if (!name) return "";
+        const parts = name.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0];
+        return `${parts[0]} ${parts[1][0]}.`;
+    };
 
     return (
         <Animated.View
-            entering={FadeInRight.delay(index * 55).springify().damping(18).stiffness(140)}
+            entering={FadeInRight.delay(index * 50).springify().damping(18).stiffness(140)}
+            className="items-center mr-6"
         >
             <Animated.View style={animatedStyle}>
                 <TouchableOpacity
@@ -545,75 +456,39 @@ const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
                             params: { id: provider.category_id, providerId: provider.id },
                         } as any)
                     }
-                    style={{ width: 176, height: 176, borderRadius: 20, overflow: 'hidden', marginRight: 12 }}
+                    className="relative items-center"
                 >
-                    {/* Photo */}
-                    <Image
-                        source={{ uri: avatar }}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                    />
-
-                    {/* Animated press border ring */}
-                    <Animated.View
-                        pointerEvents="none"
-                        style={[
-                            {
-                                position: 'absolute',
-                                top: 0, left: 0, right: 0, bottom: 0,
-                                borderRadius: 20,
-                                borderWidth: 2.5,
-                                borderColor: '#6366F1',
-                            },
-                            borderStyle,
-                        ]}
-                    />
-
-                    {/* Gradient nameplate */}
+                    {/* Ring Gradient for Premium look */}
                     <LinearGradient
-                        colors={['transparent', 'rgba(214, 214, 214, 0.72)', 'rgba(218, 218, 218, 0.92)']}
-                        locations={[0, 0.55, 1]}
+                        colors={['#6366F1', '#A855F7']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
                         style={{
-                            position: 'absolute',
-                            bottom: 0, left: 0, right: 0,
-                            paddingTop: 24,
-                            paddingBottom: 10,
-                            paddingHorizontal: 10,
+                            width: 76,
+                            height: 76,
+                            borderRadius: 38,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            shadowColor: '#6366F1',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 6,
+                            elevation: 3,
                         }}
                     >
-                        <Text
-                            style={{ color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 0.1 }}
-                            numberOfLines={1}
-                        >
-                            {provider.full_name}
-                        </Text>
-                        {provider.business_name ? (
-                            <Text
-                                style={{ color: 'rgba(255,255,255,0.65)', fontSize: 9.5, fontWeight: '600', marginTop: 1 }}
-                                numberOfLines={1}
-                            >
-                                {provider.business_name}
-                            </Text>
-                        ) : null}
-
-                        {/* Rating row */}
-                        {rating && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                                <Ionicons name="star" size={10} color="#FBBF24" />
-                                <Text style={{ color: '#FBBF24', fontSize: 10, fontWeight: '800', marginLeft: 3 }}>
-                                    {rating}
-                                </Text>
-                                {provider.total_jobs_completed > 0 && (
-                                    <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 9, marginLeft: 4 }}>
-                                        · {t('jobsCount', { count: provider.total_jobs_completed })}
-                                    </Text>
-                                )}
-                            </View>
-                        )}
+                        {/* Avatar Image Frame */}
+                        <View className="w-[70px] h-[70px] rounded-full border-2 border-white dark:border-slate-950 overflow-hidden">
+                            <Image
+                                source={{ uri: avatar }}
+                                style={{ width: '100%', height: '100%' }}
+                                resizeMode="cover"
+                            />
+                        </View>
                     </LinearGradient>
 
-                    {/* Call FAB */}
+                    {/* Integrated Micro Call FAB */}
                     <TouchableOpacity
+                        activeOpacity={0.8}
                         onPress={() => {
                             if (provider.mobile) {
                                 Linking.openURL(`tel:${provider.mobile}`).catch((err) => {
@@ -623,17 +498,16 @@ const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
                         }}
                         style={{
                             position: 'absolute',
-                            top: 10,
-                            right: 10,
-                            width: 34,
-                            height: 34,
-                            borderRadius: 17,
-                            overflow: 'hidden',
-                            shadowColor: '#fff',
+                            bottom: 0,
+                            right: 0,
+                            width: 26,
+                            height: 26,
+                            borderRadius: 13,
+                            shadowColor: '#000',
                             shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.35,
-                            shadowRadius: 4,
-                            elevation: 6,
+                            shadowOpacity: 0.25,
+                            shadowRadius: 3,
+                            elevation: 4,
                         }}
                     >
                         <LinearGradient
@@ -643,15 +517,38 @@ const ContactCard = ({ provider, index }: { provider: any; index: number }) => {
                             style={{
                                 width: '100%',
                                 height: '100%',
+                                borderRadius: 13,
                                 alignItems: 'center',
                                 justifyContent: 'center',
                             }}
                         >
-                            <Ionicons name="call" size={16} color="#fff" />
+                            <Ionicons name="call" size={12} color="#fff" />
                         </LinearGradient>
                     </TouchableOpacity>
                 </TouchableOpacity>
             </Animated.View>
+
+            {/* Provider Compact Name & Rating under avatar */}
+            <Text
+                className="text-xs font-extrabold text-slate-800 dark:text-slate-200 mt-2 text-center"
+                numberOfLines={1}
+                style={{ maxWidth: 84 }}
+            >
+                {getCompactName(provider.full_name)}
+            </Text>
+
+            {provider.average_rating ? (
+                <View className="flex-row items-center mt-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-1.5 py-0.5 rounded-full">
+                    <Ionicons name="star" size={8} color="#FBBF24" />
+                    <Text className="text-[8.5px] font-black text-amber-500 ml-1">
+                        {Number(provider.average_rating).toFixed(1)}
+                    </Text>
+                </View>
+            ) : (
+                <Text className="text-[8.5px] font-medium text-slate-400 dark:text-slate-550 mt-0.5">
+                    {t('unlocked', 'Unlocked')}
+                </Text>
+            )}
         </Animated.View>
     );
 };
@@ -704,7 +601,7 @@ const ServiceCard = ({ service, index }: { service: any; index: number }) => {
                 } as any)}
                 hapticType="light"
                 scaleTo={0.93}
-                className="w-full h-full rounded-lg items-center justify-center shadow-sm"
+                className="w-full h-full rounded-xl items-center justify-center shadow-sm"
                 style={{ backgroundColor: color }}
             >
                 <SafeIcon name={icon} size={28} color="white" />

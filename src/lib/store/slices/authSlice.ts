@@ -42,10 +42,10 @@ function isTokenExpired(token: string | null): boolean {
             const now = Math.floor(Date.now() / 1000);
             return payload.exp - now < 300; // expires in < 5 minutes
         }
+        return false; // No exp claim means permanent token (server-side decision)
     } catch {
         return true;
     }
-    return true;
 }
 
 export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (set, get) => ({
@@ -79,6 +79,9 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
             return null;
         }
         try {
+            // Reset/initialize the 30-day client session hard-limit login timer on successful login
+            await AsyncStorage.setItem('@@app_session_login_time', String(Date.now()));
+
             // Ensure CSRF token cookie is primed in memory from AsyncStorage
             const csrfToken = await AsyncStorage.getItem('@@app_csrf_token');
             if (csrfToken && typeof document !== 'undefined') {
@@ -303,6 +306,20 @@ export const createAuthSlice: StateCreator<AppStoreType, [], [], AuthSlice> = (s
     // ─────────────────────────────────────────────────────────────────────────
     refreshProfile: async () => {
         try {
+            // Enforce the 30-day client-side session hard limit
+            const loginTimeStr = await AsyncStorage.getItem('@@app_session_login_time');
+            if (loginTimeStr) {
+                const loginTime = parseInt(loginTimeStr, 10);
+                const now = Date.now();
+                const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                if (now - loginTime > thirtyDaysMs) {
+                    console.warn('[Auth] Client session has exceeded the 30-day limit. Forcing sign-out.');
+                    await get().signOut();
+                    set({ isSessionExpired: true, isLoading: false, hasCheckedAuth: true });
+                    return;
+                }
+            }
+
             // Ensure CSRF token cookie is primed in memory from AsyncStorage
             const csrfToken = await AsyncStorage.getItem('@@app_csrf_token');
             if (csrfToken && typeof document !== 'undefined') {

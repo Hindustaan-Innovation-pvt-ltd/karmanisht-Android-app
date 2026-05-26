@@ -543,6 +543,23 @@ export default function AdminCategoriesConsole() {
         );
     };
 
+    // Get search-aware category counts for filter tabs
+    const getCountForFilter = (filterType: 'all' | 'active' | 'inactive') => {
+        let list = categoriesList;
+        if (filterType === 'active') {
+            list = categoriesList.filter(c => c.is_active !== false);
+        } else if (filterType === 'inactive') {
+            list = categoriesList.filter(c => c.is_active === false);
+        }
+
+        const query = searchQuery.toLowerCase();
+        if (!query) return list.length;
+        return list.filter(c =>
+            (c.name || '').toLowerCase().includes(query) ||
+            tagsList.some(t => t.category_id === c.id && (t.name || '').toLowerCase().includes(query))
+        ).length;
+    };
+
     const bgClass = isDark ? 'bg-slate-950' : 'bg-slate-50';
     const cardBgClass = isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100';
     const textMainClass = isDark ? 'text-slate-100' : 'text-slate-900';
@@ -600,38 +617,33 @@ export default function AdminCategoriesConsole() {
                     {(['all', 'active', 'inactive'] as const).map((filter) => {
                         const isSelected = activeFilter === filter;
                         const label = filter === 'all' ? 'All' : filter === 'active' ? 'Active' : 'Disabled';
-                        
-                        // Compute category counts for each status
-                        let count = categoriesList.length;
-                        if (filter === 'active') {
-                            count = categoriesList.filter(c => c.is_active !== false).length;
-                        } else if (filter === 'inactive') {
-                            count = categoriesList.filter(c => c.is_active === false).length;
-                        }
+                        const count = getCountForFilter(filter);
 
                         return (
                             <TouchableOpacity
                                 key={filter}
+                                activeOpacity={0.7}
                                 onPress={() => setActiveFilter(filter)}
-                                className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl border ${
-                                    isSelected
-                                        ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm'
-                                        : 'border-transparent'
-                                }`}
+                                className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl border ${isSelected
+                                        ? (filter === 'active'
+                                            ? 'bg-emerald-600 border-emerald-600'
+                                            : filter === 'inactive'
+                                                ? 'bg-rose-600 border-rose-600'
+                                                : 'bg-indigo-600 border-indigo-600')
+                                        : 'bg-transparent border-transparent'
+                                    }`}
+                                style={isSelected ? shadowSm : undefined}
                             >
-                                <Text className={`text-[10px] font-black uppercase tracking-wider ${
-                                    isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'
-                                }`}>
+                                <Text className={`text-[10px] font-black uppercase tracking-wider ${isSelected ? 'text-white' : 'text-slate-400 dark:text-slate-500'
+                                    }`}>
                                     {label}
                                 </Text>
-                                <View className={`ml-2 px-1.5 py-0.5 rounded-full ${
-                                    isSelected
-                                        ? 'bg-indigo-50 dark:bg-indigo-950/50'
-                                        : 'bg-slate-200/50 dark:bg-slate-800/40'
-                                }`}>
-                                    <Text className={`text-[9px] font-extrabold ${
-                                        isSelected ? 'text-indigo-650 dark:text-indigo-450' : 'text-slate-500'
+                                <View className={`ml-2 px-1.5 py-0.5 rounded-full ${isSelected
+                                        ? 'bg-white/20'
+                                        : 'bg-slate-200 dark:bg-slate-800/60'
                                     }`}>
+                                    <Text className={`text-[9px] font-extrabold ${isSelected ? 'text-white' : 'text-slate-500 dark:text-slate-400'
+                                        }`}>
                                         {count}
                                     </Text>
                                 </View>
@@ -666,13 +678,13 @@ export default function AdminCategoriesConsole() {
                                     return (
                                         <View
                                             key={cat.id}
-                                            className={`w-[48%] p-4 rounded-3xl border relative ${cardBgClass} ${
-                                                !isActive ? 'opacity-65 border-dashed border-slate-350 dark:border-slate-800' : ''
-                                            }`}
-                                            style={shadowSm}
+                                            className={`w-[48%] p-4 rounded-3xl border relative border-slate-200 ${isActive
+                                                    ? `${cardBgClass}`
+                                                    : 'bg-slate-100/50 dark:bg-slate-900/60 border-slate-300 dark:border-slate-800 border-dashed'
+                                                }`}
                                         >
                                             {/* Card Top Row with Icon Frame & Settings Dropdown Toggle */}
-                                            <View className="flex-row justify-between items-center mb-3.5">
+                                            <View className="flex-row justify-between items-center mb-3.5 opacity-90">
                                                 <TouchableOpacity
                                                     onPress={() => {
                                                         setSelectedCategory(cat);
@@ -703,11 +715,22 @@ export default function AdminCategoriesConsole() {
                                             >
                                                 <Text className={`text-base font-black tracking-tight leading-tight ${textMainClass}`}>{cat.name}</Text>
 
-                                                <View className="flex-row items-center mt-2 gap-1.5">
-                                                    <View className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-slate-400'}`} />
-                                                    <Text className={`text-[10px] font-black uppercase tracking-wider ${isActive ? 'text-green-600 dark:text-green-400' : 'text-slate-500'}`}>
-                                                        {isActive ? 'Active' : 'Disabled'}
-                                                    </Text>
+                                                <View className="flex-row items-center mt-2.5">
+                                                    {isActive ? (
+                                                        <View className="flex-row items-center px-2 py-0.5 rounded-full border bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/20">
+                                                            <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1" />
+                                                            <Text className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                                                                Active
+                                                            </Text>
+                                                        </View>
+                                                    ) : (
+                                                        <View className="flex-row items-center px-2 py-0.5 rounded-full border bg-rose-50 dark:bg-rose-950/30 border-rose-100 dark:border-rose-900/20">
+                                                            <View className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1" />
+                                                            <Text className="text-[9px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                                                                Disabled
+                                                            </Text>
+                                                        </View>
+                                                    )}
                                                 </View>
 
                                                 {/* Inline specialty tag capsules */}
@@ -723,15 +746,15 @@ export default function AdminCategoriesConsole() {
                                                         ))}
                                                         {categoryTags.length > 2 && (
                                                             <View className={`px-2 py-0.5 rounded-full border ${isDark ? 'bg-slate-950/40 border-slate-800/80' : 'bg-slate-50 border-slate-200'}`}>
-                                                                <Text className={`text-[9px] font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-650'}`}>+{categoryTags.length - 2}</Text>
+                                                                <Text className={`text-[9px] font-bold ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>+{categoryTags.length - 2}</Text>
                                                             </View>
                                                         )}
                                                     </View>
                                                 )}
 
                                                 <View className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex-row items-center gap-1.5">
-                                                    <Feather name="tag" size={11} color="#A855F7" />
-                                                    <Text className="text-[11px] font-bold text-purple-600 dark:text-purple-400">
+                                                    <Feather name="tag" size={11} color={isActive ? "#A855F7" : "#64748B"} />
+                                                    <Text className={`text-[11px] font-bold ${isActive ? 'text-purple-600 dark:text-purple-400' : 'text-slate-500'}`}>
                                                         {categoryTags.length} {categoryTags.length === 1 ? 'specialty' : 'specialties'}
                                                     </Text>
                                                 </View>
@@ -854,9 +877,8 @@ export default function AdminCategoriesConsole() {
                                 <TouchableOpacity
                                     activeOpacity={0.8}
                                     onPress={() => setNewCategoryActive(!newCategoryActive)}
-                                    className={`w-12 h-7 rounded-full p-1 flex-row items-center ${
-                                        newCategoryActive ? 'bg-indigo-600 justify-end' : 'bg-slate-200 dark:bg-slate-800 justify-start'
-                                    }`}
+                                    className={`w-12 h-7 rounded-full p-1 flex-row items-center ${newCategoryActive ? 'bg-indigo-600 justify-end' : 'bg-slate-200 dark:bg-slate-800 justify-start'
+                                        }`}
                                 >
                                     <View className="w-5 h-5 rounded-full bg-white shadow-sm" />
                                 </TouchableOpacity>
@@ -1045,9 +1067,8 @@ export default function AdminCategoriesConsole() {
                                 <TouchableOpacity
                                     activeOpacity={0.8}
                                     onPress={() => setEditCategoryActive(!editCategoryActive)}
-                                    className={`w-12 h-7 rounded-full p-1 flex-row items-center ${
-                                        editCategoryActive ? 'bg-indigo-600 justify-end' : 'bg-slate-200 dark:bg-slate-800 justify-start'
-                                    }`}
+                                    className={`w-12 h-7 rounded-full p-1 flex-row items-center ${editCategoryActive ? 'bg-indigo-600 justify-end' : 'bg-slate-200 dark:bg-slate-800 justify-start'
+                                        }`}
                                 >
                                     <View className="w-5 h-5 rounded-full bg-white shadow-sm" />
                                 </TouchableOpacity>
