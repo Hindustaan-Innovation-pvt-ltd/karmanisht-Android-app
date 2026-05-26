@@ -207,7 +207,7 @@ export default function CustomPolicyModel({ visible, onClose, role, type }: Cust
           {doc.sections.map((section) => (
             <View
               key={section.id}
-              className="bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-850 rounded-2xl p-5 mb-4 shadow-sm"
+              className="bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-950 rounded-2xl p-5 mb-4 shadow-sm"
             >
               <View className="flex-row items-center mb-3">
                 <View className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/20 items-center justify-center mr-3">
@@ -224,18 +224,18 @@ export default function CustomPolicyModel({ visible, onClose, role, type }: Cust
           ))}
 
           {/* Footer branding details */}
-          <View className="items-center mt-6 pt-6 border-t border-slate-100 dark:border-slate-850">
-            <Text className="text-[10px] font-black text-slate-350 dark:text-slate-700 tracking-widest uppercase mb-1">
+          <View className="items-center mt-6 pt-6 border-t border-slate-100 dark:border-slate-950">
+            <Text className="text-[10px] font-black text-slate-350 dark:text-slate-400 tracking-widest uppercase mb-1">
               Hindustaan Innovations Pvt. Ltd.
             </Text>
-            <Text className="text-[9px] font-semibold text-slate-450 dark:text-slate-600">
+            <Text className="text-[9px] font-semibold text-slate-450 dark:text-slate-500">
               Last Updated: May 2026
             </Text>
           </View>
         </ScrollView>
 
         {/* Bottom CTA Action Bar */}
-        <View className="px-6 py-4 border-t border-slate-100 dark:border-slate-850 bg-white dark:bg-slate-950">
+        <View className="px-6 py-4 border-t border-slate-100 dark:border-slate-950 bg-white dark:bg-slate-950">
           <TouchableOpacity
             onPress={onClose}
             activeOpacity={0.8}

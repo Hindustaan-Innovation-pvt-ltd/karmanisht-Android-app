@@ -163,7 +163,7 @@ export default function SettingsScreen() {
                                 // 1. Clean up unlocked contact transactions and reviews
                                 await insforge.database.from('reviews').delete().eq('user_id', user.id);
                                 await insforge.database.from('unlock_transactions').delete().eq('user_id', user.id);
- 
+
                                 // Create account deletion audit requests log
                                 await insforge.database.from('account_deletion_requests').insert([{
                                     user_id: user.id,
@@ -176,7 +176,7 @@ export default function SettingsScreen() {
                                     processed_by: 'user',
                                     admin_notes: 'Self-deletion completed successfully.'
                                 }]);
- 
+
                                 // 2. Delete the core user record
                                 const { error } = await insforge.database.from('users').delete().eq('id', user.id);
                                 if (error) {
@@ -692,9 +692,9 @@ export default function SettingsScreen() {
             >
                 <View className="flex-1 justify-end bg-black/40">
                     <Pressable style={{ flex: 1 }} onPress={() => setLanguageModalVisible(false)} />
-                    <View className="bg-white dark:bg-slate-900 rounded-t-[28px] p-6 pb-8 border-t border-slate-100 dark:border-slate-800 shadow-xl">
+                    <View className="bg-white dark:bg-slate-950 rounded-t-[28px] p-6 pb-8 border-t border-slate-100 dark:border-slate-800 shadow-xl">
                         <View className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full self-center mb-6" />
-                        
+
                         <View className="flex-row justify-between items-center mb-2">
                             <Text className="text-xl font-bold text-slate-950 dark:text-slate-100">{t('selectLanguage')}</Text>
                             <ScalePressable
@@ -713,11 +713,10 @@ export default function SettingsScreen() {
                         <ScalePressable
                             onPress={() => handleLanguageChange('en')}
                             hapticType="medium"
-                            className={`flex-row items-center border p-4 rounded-xl mb-4 ${
-                                currentLanguage === 'en'
-                                    ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
-                                    : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
-                            }`}
+                            className={`flex-row items-center border p-4 rounded-xl mb-4 ${currentLanguage === 'en'
+                                ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+                                : 'bg-slate-800 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
+                                }`}
                         >
                             <View className="ml-2 flex-1">
                                 <Text className={`text-base font-bold ${currentLanguage === 'en' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'}`}>English</Text>
@@ -728,11 +727,10 @@ export default function SettingsScreen() {
                         <ScalePressable
                             onPress={() => handleLanguageChange('hi')}
                             hapticType="medium"
-                            className={`flex-row items-center border p-4 rounded-xl mb-6 ${
-                                currentLanguage === 'hi'
-                                    ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
-                                    : 'bg-slate-50 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
-                            }`}
+                            className={`flex-row items-center border p-4 rounded-xl mb-6 ${currentLanguage === 'hi'
+                                ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800'
+                                : 'bg-slate-800 dark:bg-slate-850 border-slate-100 dark:border-slate-800'
+                                }`}
                         >
                             <View className="ml-2 flex-1">
                                 <Text className={`text-base font-bold ${currentLanguage === 'hi' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'}`}>हिंदी (Hindi)</Text>

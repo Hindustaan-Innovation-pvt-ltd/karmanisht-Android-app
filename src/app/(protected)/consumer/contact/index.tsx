@@ -103,9 +103,11 @@ const ContactListItem = ({ provider, categories, index }: { provider: any; categ
                                     <View
                                         className="px-2.5 py-1 rounded-full flex-row items-center border border-slate-200 dark:border-slate-800"
                                     >
-                                        <SafeIcon name={categoryIcon} size={12} color={color} />
+                                        <SafeIcon name={categoryIcon} size={12} color={
+                                            isDark ? '#fff' : '#000'
+                                        } />
                                         <Text
-                                            className="text-[9px] font-semibold ml-1.5 uppercase tracking-wider text-slate-700 dark:text-slate-350"
+                                            className="text-[9px] font-semibold ml-1.5 uppercase tracking-wider text-slate-700 dark:text-slate-300"
                                         >
                                             {categoryName}
                                         </Text>
@@ -136,7 +138,7 @@ const ContactListItem = ({ provider, categories, index }: { provider: any; categ
                                         e.stopPropagation();
                                         handleCall(provider.mobile);
                                     }}
-                                    className="w-10 h-10 rounded-full items-center justify-center border border-slate-200"
+                                    className="w-10 h-10 rounded-full items-center justify-center border border-slate-200 dark:border-slate-500/20"
                                     style={{ backgroundColor: color }}
                                     activeOpacity={0.8}
                                 >

@@ -83,7 +83,7 @@ const ContactDetailModal = ({ visible, provider, onClose, themeColor, categoryNa
                     </View>
 
                     {/* Phone Number Field */}
-                    <View className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex-row items-center justify-between mb-6">
+                    <View className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 flex-row items-center justify-between mb-6">
                         <View className="flex-row items-center">
                             <View style={{ backgroundColor: `${themeColor}20`, padding: 10, borderRadius: 12 }}>
                                 <Ionicons name="call" size={24} color={themeColor} />
@@ -318,9 +318,9 @@ const UnlockCategoryPassModal = ({
                         <TouchableOpacity
                             onPress={onClose}
                             style={{ flex: 1 }}
-                            className="bg-slate-100 py-4 rounded-2xl items-center justify-center border border-slate-200"
+                            className="bg-slate-100 dark:bg-slate-800 py-4 rounded-2xl items-center justify-center border border-slate-200"
                         >
-                            <Text className="text-base font-bold text-slate-600">{t('cancel')}</Text>
+                            <Text className="text-base font-bold text-slate-600 dark:text-slate-100">{t('cancel')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -904,7 +904,7 @@ export default function ServiceDetailScreen() {
             {/* Search Bar */}
             <View className="px-5 mb-4">
                 <View
-                    className="bg-white border border-gray-200 rounded-xl px-4 h-12 flex-row items-center"
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-500/20 rounded-xl px-4 h-12 flex-row items-center"
                     style={{
                         shadowColor: '#000',
                         shadowOffset: { width: 0, height: 1 },
@@ -916,7 +916,7 @@ export default function ServiceDetailScreen() {
                     <Ionicons name="search-outline" size={20} color="#6d737eff" />
                     <TextInput
                         placeholder={isListening ? t('listening') : t('searchRequiredServices')}
-                        className="flex-1 ml-2 text-sm text-gray-700"
+                        className="flex-1 ml-2 text-sm text-gray-700 dark:text-gray-200"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
@@ -969,19 +969,19 @@ export default function ServiceDetailScreen() {
                                             } : {})
                                         }} // 1 column logic + shadow
                                         className={`py-3 rounded-2xl border flex-row items-center justify-start ml-2 px-3 ${isSelected
-                                            ? 'bg-black border-black'
-                                            : 'bg-slate-50 border-slate-100'
+                                            ? 'bg-black dark:bg-slate-900 border-black dark:border-slate-700'
+                                            : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800'
                                             }`}
                                     >
                                         <Ionicons
                                             name={isSelected ? "checkmark-circle" : "add-circle-outline"}
                                             size={18}
-                                            color={isSelected ? "white" : "#64748B"}
+                                            color={isSelected ? "white" : "#475569"}
                                         />
                                         <Text
                                             numberOfLines={1}
                                             style={{ fontSize: adjustHindiFont(item.label, 14, 1.15) }}
-                                            className={`ml-2 font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-600'
+                                            className={`ml-2 font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-600 dark:text-slate-400'
                                                 }`}
                                         >
                                             {t(item.label)}
@@ -996,15 +996,10 @@ export default function ServiceDetailScreen() {
                     {subCategories.length > 3 && (
                         <TouchableOpacity
                             onPress={() => setIsExpanded(!isExpanded)}
-                            className="mt-4 items-center justify-center py-2 rounded-xl"
-                            style={{
-                                backgroundColor: 'rgba(241, 245, 249, 0.5)',
-                                borderColor: 'rgba(226, 232, 240, 0.5)',
-                                borderWidth: 1
-                            }}
+                            className="mt-4 items-center justify-center py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800"
                         >
                             <View className="flex-row items-center">
-                                <Text className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                                <Text className="text-slate-500 dark:text-slate-200 font-bold text-xs uppercase tracking-widest">
                                     {isExpanded ? t('showLess') : t('viewMore', { count: subCategories.length - 3 })}
                                 </Text>
                                 <Ionicons
@@ -1079,10 +1074,10 @@ export default function ServiceDetailScreen() {
     };
 
     return (
-        <View className="flex-1 bg-white">
+        <View className="flex-1">
             {/* Fixed title bar — never scrolls */}
             <View
-                className="px-5 flex-row items-center gap-2 bg-white mb-4"
+                className="px-5 flex-row items-center gap-2 mb-4"
                 style={{ paddingTop: 60, paddingBottom: 12, borderBottomWidth: 0 }}
             >
                 <Ionicons
@@ -1091,7 +1086,7 @@ export default function ServiceDetailScreen() {
                     color={colorScheme === 'dark' ? '#ffffff' : '#000000'}
                     onPress={() => router.back()}
                 />
-                <Text className="text-xl font-bold text-gray-900">{t('exploreCategory', { category: t(name) })}</Text>
+                <Text className="text-xl font-bold text-gray-900 dark:text-white">{t('exploreCategory', { category: t(name) })}</Text>
             </View>
 
             {/* Category card + search + tags + Available Providers + cards — all scroll together */}
