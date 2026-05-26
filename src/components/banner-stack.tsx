@@ -41,7 +41,7 @@ const BANNERS = [
 const CARD_HEIGHT = 150;
 const CARD_RADIUS = 24;
 const DRAG_SENSITIVITY = 320;
-const AUTO_PLAY_DELAY = 6000;
+const AUTO_PLAY_DELAY = 2000;
 
 function impact() {
     Haptics.impactAsync(
