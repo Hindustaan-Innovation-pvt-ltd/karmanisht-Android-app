@@ -62,11 +62,7 @@ const ContactListItem = ({ provider, categories, index }: { provider: any; categ
                             params: { id: provider.category_id, providerId: provider.id },
                         } as any)
                     }
-                    className="mx-4 mb-4 rounded-[24px] overflow-hidden flex-row border shadow-sm dark:shadow-none"
-                    style={{
-                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.45)' : 'rgba(255, 255, 255, 0.95)',
-                        borderColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)',
-                    }}
+                    className="mx-4 mb-4 rounded-[24px] overflow-hidden flex-row border shadow-sm dark:shadow-none bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800"
                 >
                     {/* Left Accent Color bar */}
                     <View style={{ width: 5, backgroundColor: color }} />
@@ -190,7 +186,7 @@ export default function ContactScreen() {
             </View>
 
             <View className="px-5">
-                <View className="flex-row items-center px-4 py-3 rounded-2xl border bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                <View className="flex-row items-center px-4 py-3 rounded-2xl border bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-950">
                     <Feather name="search" size={16} color="#64748B" />
                     <TextInput
                         value={searchQuery}
